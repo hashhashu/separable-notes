@@ -105,7 +105,7 @@
         "separableNotes.noteId": {
           "type": "string",
           "description": "noteId",
-          "default":"sepNotes"
+          "default":"sepNotes "
         }
       }
     }

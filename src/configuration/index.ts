@@ -31,7 +31,7 @@ function _logLevel(): string {
 function _noteId(): string{
     let noteid = workspace.getConfiguration().get<string>('separableNotes.noteId');
     if(!noteid){
-        noteid = 'sepNotes';
+        noteid = 'sepNotes ';
     }
     return noteid;
 }

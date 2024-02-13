@@ -76,7 +76,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 
 ### Installation
 * From VS Code by searching separable notes
-* From [marketplace]()
+* From [marketplace](https://marketplace.visualstudio.com/items?itemName=hurly.separable-notes)
 ### ChageLog
 #### 0.1.0
 * First working version

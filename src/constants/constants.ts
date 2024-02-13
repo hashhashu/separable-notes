@@ -22,7 +22,7 @@ export namespace Constants {
       mkdir.sync(separableNotes_paths.data);
     }
 
-    export const noteId = 'sepNotes';
+    export const noteId = 'sepNotes ';
 
     export const keyNotes = 'separableNotes.notesKey';
 }
