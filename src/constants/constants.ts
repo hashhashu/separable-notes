@@ -2,6 +2,7 @@ const pkg = require('../../package.json');
 import envPaths from 'env-paths';
 import fs from 'fs';
 import * as mkdir from 'make-dir';
+import path from 'path';
 import * as vscode from 'vscode'
 
 export namespace Constants {
@@ -21,6 +22,8 @@ export namespace Constants {
     if (!fs.existsSync(separableNotes_paths.data)) {
       mkdir.sync(separableNotes_paths.data);
     }
+// sepNotes     // 222
+    export const markdownFilePath = path.join(workspaceFolder,'.vscode','sepNotes.md');
 
     export const noteId = 'sepNotes ';
 
@@ -34,6 +37,7 @@ export namespace Commands {
     export const detachAll = 'separableNotes.detachAll';
     export const attachAll = 'separableNotes.attachAll';
     export const noteIt = 'separableNotes.NoteIt';
+    export const syncWithMdFile = 'separableNotes.syncWithMdFile';
 }
 
 export enum NoteMode{

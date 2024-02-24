@@ -68,6 +68,10 @@
       {
         "command": "separableNotes.NoteIt",
         "title": "separableNotes NoteIt"
+      },
+      {
+        "command": "separableNotes.syncWithMdFile",
+        "title": "separableNotes syncWithMdFile"
       }
     ],
     "menus": {

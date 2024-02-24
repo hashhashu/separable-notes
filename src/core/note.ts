@@ -1,9 +1,10 @@
 import { Constants,NoteMode} from "../constants/constants";
-import {encode,decode, splitIntoLines, addEof} from '../utils/utils'
+import {encode,decode, splitIntoLines, addEof, addMdEof, getLanguageIdetifier, getFileName} from '../utils/utils'
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Configuration } from "../configuration";
 import { logger } from "../logging/logger";
+import path from "path";
 
 export class NoteFile{
     path: string;
@@ -140,6 +141,42 @@ export class NoteFile{
       return this.inProcess;
     }
 
+    exportToMd():string{
+      const content = decode(fs.readFileSync(this.path),this.configuration.encoding);
+      const contentLines = splitIntoLines(content);
+      let below = 0;
+      let lineCount = 1;
+      let lastLineCount = -1;
+      let contentExport = '';
+      let fileName = getFileName(this.path);
+      for(let line of contentLines){
+        if(line.includes(this.configuration.noteId)){
+          // add seperator
+          if(below == 0 && lastLineCount >=0 && (lastLineCount+1) != lineCount ){
+            contentExport += '  \n';
+          }
+          if(contentExport.length == 0){
+            contentExport += '```'+getLanguageIdetifier(this.configuration.associations,this.path)+'\n';
+          }
+          contentExport += (lineCount.toString() + '  ' + addEof(line.replace(new RegExp(this.configuration.noteId,'g'),'')));
+          below = 3;
+        }
+        else if(below > 0){
+          contentExport += (lineCount.toString() + '  ' + addEof(line));
+          --below;
+          if(below == 0){
+            lastLineCount = lineCount;
+          }
+        }
+        ++lineCount;
+      }
+      if(contentExport.length > 0){
+        contentExport = '['+ fileName +']'+'(' + this.path +')' + '  \n' + contentExport + '```\n';
+      }
+      logger.info('from:'+Constants.markdownFilePath+'  TO:'+this.path);
+      logger.info('path:' + this.path + ' ' + contentExport);
+      return contentExport;
+    }
 }
 export class serializableNoteFile{
     path: string;

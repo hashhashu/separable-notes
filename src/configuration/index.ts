@@ -8,13 +8,15 @@ export interface Configuration {
     logLevel: string;
     noteId: string;
     encoding: string;
+    associations: { [extension: string]: string };
 }
 
 export function getConfiguration(extensionContext: ExtensionContext) {
     return {
         logLevel: _logLevel(),
         noteId: _noteId(),
-        encoding: _encoding()
+        encoding: _encoding(),
+        associations: _associations()
     } as Configuration;
 }
 
@@ -42,4 +44,9 @@ function _encoding(): string{
         encoding = 'UTF-8';
     }
     return encoding;
+}
+
+function _associations():  {[extension: string]:string}{
+    let associations = workspace.getConfiguration().get<{ [extension: string]: string }>('files.associations');
+    return associations || {};
 }
