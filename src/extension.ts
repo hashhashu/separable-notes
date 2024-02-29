@@ -8,7 +8,7 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines,encode, getLineNumber,extractLinksFromMarkdown } from './utils/utils';
+import { addEof, splitIntoLines,encode, getLineNumber,extractLinksFromMarkdown, extractId, RateLimiter } from './utils/utils';
 import * as fs from 'fs';
 
 let configuration: Configuration;
@@ -17,7 +17,7 @@ let Notes: Map<string,NoteFile> = new Map<string,NoteFile>();
 let serializedNotes :Array<serializableNoteFile> = new Array<serializableNoteFile>() ;
 let statusBarItem: vscode.StatusBarItem;
 let inAll = false;
-let allNotShow = false;
+let ratelimiter:RateLimiter;
 
 export async function activate(extensionContext: ExtensionContext): Promise<boolean> {
     logger.info(
@@ -40,26 +40,45 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             Notes.set(note.path,new NoteFile(note.path,note.noteMode,configuration,statusBarItem,note.blocks));
         }
     }
+    for(let [_,note] of Notes){
+        note.refreshId();
+    }
+    ratelimiter = new RateLimiter(1,1000);
+
     extensionContext.subscriptions.push(
         workspace.onDidChangeTextDocument((event)=>{
             if (window.activeTextEditor && event.document === window.activeTextEditor.document) {
                 if(event.contentChanges.length > 0){
                     let path = event.document.uri.fsPath;
-                    if(!inAll && !allNotShow && Notes.has(path)){
+                    if(!inAll && Notes.has(path)){
                         let note = Notes.get(path);
-                        if(note.afterDetach()){
-                            if(note.isAttached()){
-                                window.showInformationMessage('attach file: '+path+' over');
-                            }
-                            else{
-                                window.showInformationMessage('detach file: '+ path +' over');
+                        let ret = note.afterDetach();
+                        if(ret >= 0){
+                            if(ret == 0){
+                                if(note.isAttached()){
+                                    window.showInformationMessage('attach file: '+path+' over');
+                                }
+                                else{
+                                    window.showInformationMessage('detach file: '+ path +' over');
+                                }
                             }
                         }
                         else if(note.shouldWarn()){
                             window.showInformationMessage('if you want modify this file, please attach it first');
                         }
+                        else{
+                            if(ratelimiter.isAllowed()){
+                                note.refreshId();
+                            }
+                            else{
+                                setTimeout(function(){
+                                    if(ratelimiter.isAllowed()){
+                                        note.refreshId();
+                                    }
+                                },2000);
+                            }
+                        }
                     }
-                    allNotShow = false;
                 }
             }
         })
@@ -98,17 +117,28 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             commands.executeCommand(Commands.reloadSettings);
         })
     );
+    
 
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.test, async () => {
 			window.showInformationMessage('Hello World from tiger! well well ');
-            // let path = activeEditor.document.uri.fsPath;
+            let path = activeEditor.document.uri.fsPath;
             // extensionContext.workspaceState.update(Constants.keyNotes,null);
             // let aa = await vscode.languages.getLanguages();
             // for(let a of aa){
             //     logger.info(a);
             // }
-            logger.info(JSON.stringify(configuration.associations));
+            // let id = extractId('','@id= 123');
+            // if(id){
+            //     logger.info('id:'+id);
+            // }
+            for(let [_,note] of Notes){
+                logger.info('path:'+note.path);
+                for(let id of note.ids){
+                    logger.info(id);
+                }
+            }
+            // logger.info(JSON.stringify(configuration.associations));
 		}));
 
 
@@ -120,6 +150,10 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }
             let path = activeEditor.document.uri.fsPath;
             if(!fs.existsSync(path)){
+                return;
+            }
+            if(path.endsWith('sepNotes.md')){
+                vscode.window.showInformationMessage('cannot attach sepNotes.md');
                 return;
             }
             if(!Notes.has(path)){
@@ -151,14 +185,13 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         window.showInformationMessage('not finished yet');
                     }
                     else{
-                        note.attachContent();
+                        note.attachContent(true);
                     }
                 }
                 activeEditor = vscode.window.activeTextEditor;
                 updateState(activeEditor,extensionContext);
                 window.showInformationMessage('atach all finished');
                 inAll = false;
-                allNotShow = true;
             }
         }
 	));
@@ -172,14 +205,13 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         window.showInformationMessage('not finished yet');
                     }
                     else{
-                        note.detachContent();
+                        note.detachContent(true);
                     }
                 }
                 activeEditor = vscode.window.activeTextEditor;
                 updateState(activeEditor,extensionContext);
                 window.showInformationMessage('detach all finished');
                 inAll = false;
-                allNotShow = true;
             }
         }
 	));
@@ -235,6 +267,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 else{
                     vscode.commands.executeCommand('editor.action.removeCommentLine');
                 }
+                activeEditor.selection = new vscode.Selection(selection.start.line, Number.MAX_SAFE_INTEGER, selection.start.line, Number.MAX_SAFE_INTEGER);
             }
             else{
                 window.showInformationMessage('please attach it first before add note');
@@ -305,6 +338,7 @@ date:{${now.toLocaleDateString()} ${now.toLocaleTimeString()}}  \n
         }
 	));
     
+    //markdown definition in src file 
     function provideDefinition(document:vscode.TextDocument, position:vscode.Position, token) {
         const line		= document.lineAt(position);
         let lineNumber = getLineNumber(line.text);
@@ -317,15 +351,42 @@ date:{${now.toLocaleDateString()} ${now.toLocaleTimeString()}}  \n
                     break;
                 }
             }
+            // TODO
             if((filePath != '') && fs.existsSync(filePath)){
                 return new vscode.Location(vscode.Uri.file(filePath), new vscode.Position(lineNumber - 1, position.character - 2 - lineNumber.toString().length));
             }
         }
+        let id = extractId(line.text,false,configuration.noteId);
+        if(id){
+            for(let [_,note] of Notes){
+                let ret = note.matchId(id);
+                if(ret.line > 0){
+                    return new vscode.Location(vscode.Uri.file(note.path), new vscode.Position(ret.line - 1, 0));
+                }
+            }
+        }
     }
+    
 
     extensionContext.subscriptions.push(vscode.languages.registerDefinitionProvider(['markdown'],{
         provideDefinition
         })
+    );
+
+    // markdown completion for id in src
+    function provideCompletionItems(document:vscode.TextDocument, position:vscode.Position, token, context) {
+        let ret: vscode.CompletionItem[] = new Array();
+        for (let [_, note] of Notes) {
+            for (let id of note.fetchIds()) {
+                logger.info(id.content);
+                ret.push(new vscode.CompletionItem('#'+configuration.noteId+'@refid=' + id.content, vscode.CompletionItemKind.Field));
+            }
+        }
+        return ret;
+    }
+    extensionContext.subscriptions.push(vscode.languages.registerCompletionItemProvider(['markdown'],{
+        provideCompletionItems
+        },'@')
     );
 
     for (let activatable of activatables) {

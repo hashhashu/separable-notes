@@ -3,7 +3,8 @@ separable notes is a VSCode extension that can make your note separable, which m
 
 It can be applied to scenarios such as:
 * keep your note private and not committing to the repository that is maintained by many people.
-* reorganize your note in markdown file(regrouping or else)
+* outline your code (will generate markdown file from note, and can easily switch between the two files)
+* reorganize your note in markdown file(by define @id and @refid, can easily imbed code in arbitrary markdown file)
 
 ![demo](pic/demo.gif)
 
@@ -40,8 +41,6 @@ if you change this, you should also change the configuration for todo-tree or ot
             "type": "tag"
         }
     },
-    "todo-tree.regex.regex": "(//|#|<!--|;|/\\*|^|^[ \\t]*(-|\\d+.))\\s*($TAGS)",
-    "todo-tree.filtering.ignoreGitSubmodules": true,
     "todo-tree.tree.showCountsInTree": true,
     "todo-tree.regex.regexCaseSensitive": false,
     "todo-tree.general.statusBar": "current file",
@@ -68,9 +67,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 
 
 ### TODO
-* export to one markdown file
-* add uuid in the ?
 
-Please start it if you like it, Thanks.
+Please star it if you like it, Thanks.
 
 Thanks to [todo-tree](https://github.com/Gruntfuggly/todo-tree)

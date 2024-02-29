@@ -78,8 +78,7 @@
       "editor/context": [
         {
           "command": "separableNotes.NoteIt",
-          "group": "separableNotes@1",
-          "when": "editorHasSelection"
+          "group": "separableNotes@1"
         }
       ]
     },

@@ -62,7 +62,13 @@ export function getLanguageIdetifier(associations:{ [extension: string]: string 
       return associations[extension];
     }
   }
-  return getFileExt(filePath);
+  let ext = getFileExt(filePath);
+  if(ext == 'pas'){
+    return 'pascal';
+  }
+  else{
+    return ext;
+  }
 }
 
 export function getLineNumber(line:string):number{
@@ -86,5 +92,49 @@ export function extractLinksFromMarkdown(markdown: string): string {
     else{
       return '';
     }
-
 }  
+
+export function extractId(line:string,idOrRefer:boolean = true,identifier:string=''):string|null{
+  let regex;
+  if(idOrRefer){
+    regex = new RegExp(`@id\\s*=\\s*([^\\s]+)`) ;  
+  }
+  else{
+    regex = new RegExp(`${identifier}@refid\\s*=\\s*([^\\s]+)`) ;  
+  }
+  
+  const match = line.match(regex);  
+  
+  return match ? match[1] : null;  
+}
+
+export class RateLimiter {  
+  private tokens: number;  
+  private lastRefillTime: number;  
+  private maxTokens: number;  
+  private refillRate: number; // tokens per second  
+  
+  constructor(maxTokens: number, refillRate: number) {  
+    this.tokens = maxTokens;  
+    this.lastRefillTime = Date.now();  
+    this.maxTokens = maxTokens;  
+    this.refillRate = refillRate;  
+  }  
+  
+  private refillTokens(): void {  
+    const now = Date.now();  
+    const timeSinceLastRefill = now - this.lastRefillTime;  
+    const newTokens = timeSinceLastRefill / this.refillRate;  
+    this.tokens = Math.min(this.maxTokens, this.tokens + newTokens);  
+    this.lastRefillTime = now;
+  }  
+  
+  isAllowed(): boolean {  
+    this.refillTokens();  
+    if (this.tokens > 0) {  
+      this.tokens--;  
+      return true;  
+    }  
+    return false;  
+  }  
+} 

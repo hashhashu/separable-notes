@@ -22,7 +22,7 @@ export namespace Constants {
     if (!fs.existsSync(separableNotes_paths.data)) {
       mkdir.sync(separableNotes_paths.data);
     }
-// sepNotes     // 222
+// sepNotes   @id = test1    // 222
     export const markdownFilePath = path.join(workspaceFolder,'.vscode','sepNotes.md');
 
     export const noteId = 'sepNotes ';
