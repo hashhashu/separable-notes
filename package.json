@@ -70,8 +70,8 @@
         "title": "separableNotes NoteIt"
       },
       {
-        "command": "separableNotes.syncWithMdFile",
-        "title": "separableNotes syncWithMdFile"
+        "command": "separableNotes.syncMdWithSrc",
+        "title": "separableNotes syncMdWithSrc"
       }
     ],
     "menus": {

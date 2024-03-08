@@ -3,6 +3,7 @@ import * as os from 'os';
 import { logger } from '../logging/logger';
 import * as vscode from 'vscode';
 import path from "path";
+import { Constants } from '../constants/constants';
 
 export function randomString(length: number, extended: boolean = false) {
     let text = "";
@@ -77,24 +78,89 @@ export function getLineNumber(line:string):number{
   return match ? parseInt(match[0], 10) : -1;
 }
 
-export function extractLinksFromMarkdown(markdown: string): string {  
-    const linkRegex = /\[(.*?)\]\((.*?)\)|<(.*?)>/;  
-    const links = markdown.match(linkRegex);  
-    
-    if(links){
-      let link = links[0];
-      if (link.startsWith('<') && link.endsWith('>')) {  
-        return link.slice(1, -1);  
-      } else {  
-        return link.split('](')[1].split(')')[0];  
-      } 
+export function getLineNumberDown(documment:vscode.TextDocument, startpos:number):number{
+  let content = documment.getText();
+  let lines = splitIntoLines(content);
+  for(let i=startpos;i<lines.length;i++){
+    let line = lines[i];
+    if(line.startsWith('```')){
+      return getLineNumber(lines[i+1]);
     }
-    else{
-      return '';
-    }
-}  
+  }
+  return -1;
+}
 
-export function extractId(line:string,idOrRefer:boolean = true,identifier:string=''):string|null{
+export function getLineNumberUp(documment:vscode.TextDocument,startpos:number){
+  let content = documment.getText();
+  let lines = splitIntoLines(content);
+  let line = '';
+  for(let i=startpos-1; i>=0 ;i--){
+    line = lines[i];
+    if(line.startsWith('```')){
+      return getLineNumber(lines[i+1]);
+    }
+  }
+  return -1;
+}
+
+export function getSrcFileFromMd(documment:vscode.TextDocument,startpos:number): string {  
+  let content = documment.getText();
+  let lines = splitIntoLines(content);
+  let ret = '';  
+  for(let i=startpos - 1;i>=0;i--){
+    let line = lines[i];
+    if(line.startsWith('# [')){
+      const linkRegex = /\[(.*?)\]\((.*?)\)|<(.*?)>/;  
+      const links = line.match(linkRegex);  
+      
+      if(links){
+        let link = links[0];
+        if (link.startsWith('<') && link.endsWith('>')) {  
+          ret = link.slice(1, -1);  
+        } else {  
+          ret = link.split('](')[1].split(')')[0];  
+        }
+        if(ret.length > 0){
+          return ret;
+        } 
+      }
+    }
+  }
+  return '';
+}
+
+export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number){
+  let content = documment.getText();
+  let lines = splitIntoLines(content);
+  let ret = '';
+  let start = startpos;
+  let line = '';
+  for(let i=startpos; i>=0 ;i--){
+    line = lines[i];
+    if(line.startsWith('```') || line.startsWith('# [')){
+      start = i+1;
+      break;
+    }
+  }
+  let end = startpos;
+  for(let i=startpos;i<lines.length;i++){
+    line = lines[i];
+    if(line.startsWith('```')){
+      end = i - 1;
+      break;
+    }
+  }
+  for(let i=start;i<=end;i++){
+    ret += addEof(lines[i]);
+  }
+  logger.info('getAnnoFromMd------------------');
+  // logger.info(ret+'   \n'+line.toString());
+  return {"text":ret,"linenumber":getLineNumber(lines[end+2])};
+}
+
+
+
+export function getId(line:string,idOrRefer:boolean = true,identifier:string=''):string|null{
   let regex;
   if(idOrRefer){
     regex = new RegExp(`@id\\s*=\\s*([^\\s]+)`) ;  
@@ -106,6 +172,29 @@ export function extractId(line:string,idOrRefer:boolean = true,identifier:string
   const match = line.match(regex);  
   
   return match ? match[1] : null;  
+}
+
+export function cutNoteId(line:string,noteId:string):string{
+  return line.substring(line.indexOf(noteId)+noteId.length).trimLeft();
+}
+
+export function getPrefix(line:string,noteId:string):string{
+  return line.substring(0,line.indexOf(noteId)+noteId.length);
+}
+
+export function isSepNotesFile(path:string):boolean{
+  if(path.endsWith(Constants.sepNotesFileName)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+export function rowsChanged(change: vscode.TextDocumentContentChangeEvent):number {
+  let oriLineCount = change.range.end.line - change.range.start.line + 1;
+  let curLineCount = change.text.split('\n').length;
+  return curLineCount - oriLineCount;
 }
 
 export class RateLimiter {  

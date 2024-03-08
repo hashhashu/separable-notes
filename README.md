@@ -18,7 +18,7 @@ After installing separable notes, you will be able to attach and detach your not
    * detach all notes in this workspace 
 * separableNotes attachAll
   * attach all notes in this workspace
-* separableNotes syncWithMdFile
+* separableNotes syncMdWithSrc
   * export notes in markdown file(in .vscode/sepNotes.md)
   * in generated markdown file, you can go to src file by click ctrl+(left button)
 
@@ -57,6 +57,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 
 #### 0.1.1
 * export note to markdown file for easy to view
+* add @id and @refid to mbed code in arbitrary markdown file
 
 #### 0.1.0
 * First working version

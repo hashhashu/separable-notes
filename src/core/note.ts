@@ -1,5 +1,5 @@
 import { Constants,NoteMode} from "../constants/constants";
-import {encode,decode, splitIntoLines, addEof, addMdEof, getLanguageIdetifier, getFileName, extractId} from '../utils/utils'
+import {encode,decode, splitIntoLines, addEof, addMdEof, getLanguageIdetifier, getFileName, getId, cutNoteId, getPrefix, getLineNumber} from '../utils/utils'
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Configuration } from "../configuration";
@@ -13,6 +13,7 @@ export class NoteFile{
     configuration: Configuration;
     blocks: Array<NoteBlock>;
     ids: Array<NoteBlock>;
+    mdChangedLine: Array<NoteBlock>;
     respondCount: number;
     inProcess: boolean;
     constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,blocks:Array<NoteBlock> = new Array()){
@@ -25,6 +26,7 @@ export class NoteFile{
       this.respondCount = 0;
       this.inProcess = false;
       this.ids = new Array();
+      this.mdChangedLine = new Array();
       logger.debug('note file end');
     }
 
@@ -32,11 +34,11 @@ export class NoteFile{
       this.statusbaritem.text = Constants.NoteModeItems[noteMode];
       this.noteMode = noteMode;
     }
-    detachContent(detachAll:boolean = false){
+    detachContent(detachAll:boolean = false,document:vscode.TextDocument = null){
       logger.debug('detachContent begin'+this.blocks.length.toString()+'  ,'+this.noteMode.toString());
       this.inProcess = true;
       if (this.noteMode == NoteMode.Attached) {
-        const content = decode(fs.readFileSync(this.path), this.configuration.encoding);
+        const content = this.getContent(document);
         const contentLines = splitIntoLines(content);
         let detachedContent = '';
         this.blocks.length = 0;
@@ -62,17 +64,17 @@ export class NoteFile{
       logger.debug('detachContent end');
     }
 
-    attachContent(attachAll:boolean = false){
+    attachContent(attachAll:boolean = false,document:vscode.TextDocument = null){
       logger.debug('attachContent begin'+this.blocks.length.toString()+'  ,'+this.noteMode.toString());
       this.inProcess = true;
       if((this.blocks.length > 0) && (this.noteMode == NoteMode.Detached)){
-        const content = decode(fs.readFileSync(this.path),this.configuration.encoding);
+        const content = this.getContent(document);
         const contentLines = splitIntoLines(content);
         let attachedContent = '';
         let lastIndex = 0;
         let attachedLength = 0;
         for(let block of this.blocks){
-          let end = lastIndex + (block.line - attachedLength);
+          let end = lastIndex + (block.linenumber - attachedLength);
           for(let i = lastIndex; i < end ; i++){
             attachedContent += addEof(contentLines[i]);
             ++attachedLength;
@@ -101,14 +103,14 @@ export class NoteFile{
       logger.debug('attachContent end');
     }
     
-    async ModeSwitch(selected:string){
+    async ModeSwitch(selected:string,document:vscode.TextDocument = null){
       logger.debug('ModeSwitch begin');
       if(selected != Constants.NoteModeItems[this.noteMode]){
         if(selected == Constants.NoteModeItems[NoteMode.Attached]){
-          this.attachContent();
+          this.attachContent(false,document);
         }
         else{
-          this.detachContent();
+          this.detachContent(false,document);
         }
       }
       logger.debug('ModeSwitch end');
@@ -160,52 +162,90 @@ export class NoteFile{
       return this.inProcess;
     }
 
-    exportToMd():string{
-      const content = decode(fs.readFileSync(this.path),this.configuration.encoding);
+    exportToMd(document:vscode.TextDocument = null):string{
+      let content = this.getContent(document);
       const contentLines = splitIntoLines(content);
       let below = 0;
       let lineCount = 1;
-      let lastLineCount = -1;
       let contentExport = '';
       let fileName = getFileName(this.path);
       for(let line of contentLines){
         if(line.includes(this.configuration.noteId)){
-          // add seperator
-          if(below == 0 && lastLineCount >=0 && (lastLineCount+1) != lineCount ){
-            contentExport += '  \n';
+          if(below > 0 && below < 3){
+            contentExport += '```\n';
           }
-          if(contentExport.length == 0){
-            contentExport += '```'+getLanguageIdetifier(this.configuration.associations,this.path)+'\n';
-          }
-          contentExport += (lineCount.toString() + '  ' + addEof(line));
+          contentExport += addEof(cutNoteId(line,this.configuration.noteId));
           below = 3;
         }
         else if(below > 0){
+          if(below == 3){
+            contentExport += '```'+getLanguageIdetifier(this.configuration.associations,this.path)+'\n';
+          }
           contentExport += (lineCount.toString() + '  ' + addEof(line));
           --below;
           if(below == 0){
-            lastLineCount = lineCount;
+            contentExport += '```\n';
           }
         }
         ++lineCount;
       }
-      if(contentExport.length > 0){
-        contentExport = '#### ['+ fileName +']'+'(' + this.path +')' + '  \n' + contentExport + '```\n';
+      if(below > 0 && below < 3){
+        contentExport += '```\n';
       }
+      if(contentExport.length > 0){
+        contentExport = '# ['+ fileName +']'+'(' + this.path +')' + '  \n' + contentExport + '  \n  \n';
+      }
+      this.mdChangedLine.length = 0;
       logger.info('from:'+Constants.markdownFilePath+'  TO:'+this.path);
-      logger.info('path:' + this.path + ' ' + contentExport);
+      // logger.info('path:' + this.path + ' ' + contentExport);
       return contentExport;
     }
 
-    refreshId(){
+    refreshMd(document:vscode.TextDocument = null){
+      logger.info('refreshMd---------------------');
+      const content = fs.readFileSync(Constants.markdownFilePath).toString();
+      const contentLines = splitIntoLines(content);
+      let fileName = getFileName(this.path);
+      let contentAll = '';
+      const matchFileStart = '# ['+ fileName +']'+'(' + this.path +')';
+      const matchFileEnd = '# [';
+      let fileStart = false;
+      let fileEnd = false;
+      for(let line of contentLines){
+        if(!fileStart){
+          if(line.startsWith(matchFileStart)){
+            fileStart = true;
+          }
+          else{
+            contentAll += addEof(line);
+          }
+        }
+        else if(!fileEnd){
+          if(line.startsWith(matchFileEnd)){
+            fileEnd = true;
+            contentAll += this.exportToMd(document);
+            contentAll += addEof(line);
+          }
+        }
+        else{
+          contentAll += addEof(line);
+        }
+      }
+      if(!fileEnd){
+        contentAll += this.exportToMd(document);
+      }
+      fs.writeFileSync(Constants.markdownFilePath, contentAll);
+    }    
+
+    refreshId(document:vscode.TextDocument = null){
       if(this.isAttached()){
         this.ids.length = 0;
-        const content = decode(fs.readFileSync(this.path),this.configuration.encoding);
+        let content = this.getContent(document);
         const contentLines = splitIntoLines(content);
         let lineCount = 1;
         for(let line of contentLines){
           if(line.includes(this.configuration.noteId)){
-            let id = extractId(line);
+            let id = getId(line);
             if(id){
               logger.info('id:'+id);
               this.ids.push(new NoteBlock(lineCount,id));
@@ -216,25 +256,129 @@ export class NoteFile{
       }
     }
 
-    fetchIds(){
+    getIds(){
       return this.ids;
     }
 
-    matchId(ido:string){
+    matchId(ido:string,document:vscode.TextDocument = null){
       if(this.isAttached()){
         for(let idi of this.ids){
           if(idi.content == ido){
             let ret = '';
-            const content = decode(fs.readFileSync(this.path),this.configuration.encoding);
+            let content = this.getContent(document);
             const contentLines = splitIntoLines(content);
-            for(let i = idi.line ; i<Math.min(contentLines.length,idi.line+3) ;i++){
+            for(let i = idi.linenumber ; i<Math.min(contentLines.length,idi.linenumber+3) ;i++){
               ret += addEof(contentLines[i-1]);
             }
-            return {"line":idi.line,"content":ret};
+            return {"line":idi.linenumber,"content":ret};
           }
         }
       }
       return {"line":0,"content":''};
+    }
+
+    refresh(document:vscode.TextDocument = null){
+      this.refreshId(document);
+      this.refreshMd(document);
+    }
+
+    private getContent(document:vscode.TextDocument = null):string{
+      let content = '';
+      if (document) {
+        content = document.getText().toString();
+      }
+      else {
+        content = decode(fs.readFileSync(this.path), this.configuration.encoding);
+      }
+      return content;
+    }
+
+    syncSrcWithMd(text:string,linenumber:number){
+      logger.info('syncSrcWithMd:'+linenumber.toString());
+      if(this.isMdLineChanged()){
+        linenumber = this.getMdLine(linenumber);
+        logger.info('syncSrcWithMd af:'+linenumber.toString());
+      }
+      let content = this.getContent();
+      const contentLines = splitIntoLines(content);
+      const prefix = getPrefix(contentLines[linenumber - 2],this.configuration.noteId);
+      const annoLines = splitIntoLines(text);
+      let annoConcat ='';
+      for(let line of annoLines){
+        annoConcat += addEof(prefix + line);
+      }
+      let start = linenumber - 2;
+      for(let i = start;i>=0;i--){
+        if(!contentLines[i].includes(this.configuration.noteId)){
+          start = i + 1;
+          break;
+        }
+      }
+      let ret = '';
+      for(let i=0;i<start;i++){
+        ret += addEof(contentLines[i]);
+      }
+      ret += annoConcat;
+      logger.info('syncSrcWithMd:'+annoConcat);
+      for(let i=linenumber - 1;i<contentLines.length;i++){
+        ret += addEof(contentLines[i]);
+      }
+      fs.writeFileSync(this.path, encode(ret, this.configuration.encoding));
+    }
+
+    updateMdLine(linenumber:number, changedLine:number){
+      if(this.mdChangedLine.length == 0){
+        const content = fs.readFileSync(Constants.markdownFilePath).toString();
+        const contentLines = splitIntoLines(content);
+        let fileName = getFileName(this.path);
+        const matchFileStart = '# [' + fileName + ']' + '(' + this.path + ')';
+        const matchFileEnd = '# [';
+        let fileStart = false;
+        let fileEnd = false;
+        for (let i=0;i<contentLines.length;i++) {
+          let line = contentLines[i];
+          if (!fileStart) {
+            if (line.startsWith(matchFileStart)) {
+              fileStart = true;
+            }
+          }
+          else if (!fileEnd) {
+            if (line.startsWith(matchFileEnd)) {
+              fileEnd = true;
+              break;
+            }
+            else if(line.startsWith('```'+getLanguageIdetifier(this.configuration.associations,this.path))
+                 && (i+1) < (contentLines.length)){
+              let lineprefix = getLineNumber(contentLines[i+1]);
+              let noteblock = new NoteBlock(lineprefix,'',0);
+              this.mdChangedLine.push(noteblock)  
+            }
+          }
+        }
+      }
+      for (let block of this.mdChangedLine) {
+        if (block.linenumber == linenumber) {
+          block.changedLine += changedLine;
+          break;
+        }
+      }
+    }
+
+    isMdLineChanged():boolean{
+      return this.mdChangedLine.length != 0;
+    }
+
+    getMdLine(linenumber:number){
+      let accuLines = 0;
+      for (let block of this.mdChangedLine) {
+        if (block.linenumber == linenumber) {
+          return block.linenumber + block.changedLine + accuLines;
+        }
+        else{
+          accuLines += block.changedLine;
+        }
+      }
+      return 0;
     }
 }
 export class serializableNoteFile{
@@ -255,18 +399,21 @@ export class serializableNoteFile{
       };  
     }  
 }
-// sddw
+
 class NoteBlock{
-  line: number;
+  linenumber: number;
   content: string;
-  constructor(linep: number, contentp: string){
-    this.line = linep;
+  changedLine: number;
+  constructor(linenumberp: number, contentp: string, changedline:number = 0){
+    this.linenumber = linenumberp;
     this.content = contentp;
+    this.changedLine = changedline;
   }
   toJSON(): any {  
     return {  
-      line: this.line,  
-      content: this.content  
+      line: this.linenumber,  
+      content: this.content,
+      changedLine: this.changedLine   
     };  
   }
 }
