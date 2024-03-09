@@ -1,4 +1,4 @@
-**其他语言版本: [English](README.md), [中文](README_zh.md).**
+**其他语言版本: [English](README.md), [中文](README_ZH.md).**
 # separable-notes 
 separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔记，并可以使你的笔记可分离
 
@@ -9,7 +9,7 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 
 ![demo](pic/demo.gif)
 
-在 Windows 10 上经过测试。
+在 Windows 10 上经过测试。 
 
 ### 用法
 安装 separable notes 插件后，您将能够管理您的内联代码笔记。
