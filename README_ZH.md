@@ -1,0 +1,88 @@
+**其他语言版本: [English](README.md), [中文](README_zh.md).**
+# separable-notes 
+separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔记，并可以使你的笔记可分离
+
+它可以应用于以下场景，例如：
+* 保持你的笔记私密性，不将其提交给由多人维护的存储库。
+* 梳理你的代码，并将你的代码笔记组织到独立的 Markdown 文件中。
+* 在 Markdown 文件中重新组织你的笔记（通过定义 @id 和 @refid，可以轻松将代码嵌入到任意的 Markdown 文件中
+
+![demo](pic/demo.gif)
+
+在 Windows 10 上经过测试。
+
+### 用法
+安装 separable notes 插件后，您将能够管理您的内联代码笔记。
+
+#### 快捷命令:
+##### 全局命令
+* separableNotes detachAll:
+   * 将此工作区中的所有笔记分离
+* separableNotes attachAll
+  * 将此工作区中的所有笔记附加
+* separableNotes syncMdWithSrc
+  * 将笔记导出到 Markdown 文件（位于 .vscode/sepNotes.md）
+  * 在生成的 Markdown 文件中，你可以通过按下 Ctrl 键和（鼠标左键）跳转到源文件
+##### 菜单命令
+* separableNotes NoteIt
+  * 添加注释 或 取消注释
+* separableNotes openSepNotes
+  * 快速打开 sepNotes 文件
+
+##### 关于源文件和 sepNotes 文件的同步
+* 当你编辑源文件时，内容可以与 sepNotes 文件同步，反之亦然
+
+#### 配置
+**noteId** 可以被配置用来标识应该被分离的行(默认是 SEPNOTES).
+ \
+如果你更改了这个设置，你也应该更改 todo-tree 或其他插件的配置。
+
+#### todo-tree 的推荐配置如下：
+* 为新的 noteId 添加标签和自定义高亮：
+```json
+    "todo-tree.general.tags": [
+        "SEPNOTES"
+    ],
+    "todo-tree.highlights.customHighlight": {
+        "SEPNOTES":{
+            "icon": "note",
+            "foreground": "#409EFF",
+            "gutterIcon": true,
+            "type": "tag"
+        }
+    },
+    "todo-tree.tree.showCountsInTree": true,
+    "todo-tree.regex.regexCaseSensitive": false,
+    "todo-tree.general.statusBar": "current file",
+```
+
+### 前提条件
+[TODO Tree](https://marketplace.visualstudio.com/items?itemName=Gruntfuggly.todo-tree) 或者其他 VSCode 插件用于标签高亮
+
+
+### 安装
+* 在vscode 插件中搜索separable notes
+* 从[应用商店](https://marketplace.visualstudio.com/items?itemName=hurly.separable-notes)
+### 变更日志
+
+#### 0.1.1
+* sync notes with standalone markdown file for summarize and easy to view  ``in sepNotes.md``
+  * this file also record information about file attach status and sync time
+  * can easily open this file by clicking on the menu
+  * 
+* add @id and @refid to mbed code in arbitrary markdown file
+
+#### 0.1.0
+* First working version
+
+
+### 反馈
+* 如果你有任何问题，请随时提问，我会在周末回复你。
+
+
+### TODO
+* 重新匹配代码和笔记
+
+如果你喜欢的话，请给它点个星，谢谢。
+
+感谢 [todo-tree](https://github.com/Gruntfuggly/todo-tree)

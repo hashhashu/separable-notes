@@ -1,19 +1,22 @@
-# separable-notes 
-separable notes is a VSCode extension that can make your note separable, which means that you can attach and detach your note easily.
+**Read this in other languages: [English](README.md), [中文](README_zh.md).**
 
-It can be applied to scenarios such as:
+# separable-notes 
+separable notes is a VSCode extension that can manage your inline code note, make your note separable.
+
+It can be applied to scenarios sucmh as:
 * keep your note private and not committing to the repository that is maintained by many people.
-* outline your code (will generate markdown file from note, and can easily switch between the two files)
+* outline your code and organize you code note in standalone markdown file.
 * reorganize your note in markdown file(by define @id and @refid, can easily imbed code in arbitrary markdown file)
 
 ![demo](pic/demo.gif)
 
-It is tested on windowns 10.
+It is tested on windows 10.
 
 ### Usage
-After installing separable notes, you will be able to attach and detach your note.
+After installing separable notes, you will be able to manage your inline code note.
 
 #### Quick Commands:
+##### global commands
 * separableNotes detachAll:
    * detach all notes in this workspace 
 * separableNotes attachAll
@@ -21,6 +24,14 @@ After installing separable notes, you will be able to attach and detach your not
 * separableNotes syncMdWithSrc
   * export notes in markdown file(in .vscode/sepNotes.md)
   * in generated markdown file, you can go to src file by click ctrl+(left button)
+##### menu commands
+* separableNotes NoteIt
+  * Add Comment or Remove Comment
+* separableNotes openSepNotes
+  * for quick open sepNotes file
+
+##### about src file and sepNotes file sync
+* when you edit src file, content can be synced with sepNotes file and vice versa.
 
 #### Configuration
 **noteId** can be configurated to identify the line which should be detached(default is SEPNOTES).
@@ -56,7 +67,10 @@ if you change this, you should also change the configuration for todo-tree or ot
 ### ChageLog
 
 #### 0.1.1
-* export note to markdown file for easy to view
+* sync notes with standalone markdown file for summarize and easy to view  ``in sepNotes.md``
+  * this file also record information about file attach status and sync time
+  * can easily open this file by clicking on the menu
+  * 
 * add @id and @refid to mbed code in arbitrary markdown file
 
 #### 0.1.0
@@ -68,6 +82,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 
 
 ### TODO
+* 重新匹配代码和笔记
 
 Please star it if you like it, Thanks.
 

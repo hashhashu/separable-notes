@@ -72,12 +72,20 @@
       {
         "command": "separableNotes.syncMdWithSrc",
         "title": "separableNotes syncMdWithSrc"
+      },
+      {
+        "command": "separableNotes.openSepNotes",
+        "title": "separableNotes openSepNotes"
       }
     ],
     "menus": {
       "editor/context": [
         {
           "command": "separableNotes.NoteIt",
+          "group": "separableNotes@1"
+        },
+        {
+          "command": "separableNotes.openSepNotes",
           "group": "separableNotes@1"
         }
       ]

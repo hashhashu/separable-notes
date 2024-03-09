@@ -8,12 +8,14 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines,encode, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberDown, getLineNumberUp } from './utils/utils';
+import { addEof, splitIntoLines,encode, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberDown, getLineNumberUp, getMdPos } from './utils/utils';
 import * as fs from 'fs';
 
 let configuration: Configuration;
 let activatables: Array<Activatable> = new Array();
 let Notes: Map<string,NoteFile> = new Map<string,NoteFile>();
+let attachedFileNum = 0;
+let detachedFileNum = 0;
 let serializedNotes :Array<serializableNoteFile> = new Array<serializableNoteFile>() ;
 let statusBarItem: vscode.StatusBarItem;
 let inAll = false;
@@ -32,8 +34,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     statusBarItem.text = 'Detached';
     statusBarItem.show();
 
-    if(!fs.existsSync(Constants.markdownFilePath)){
-        fs.writeFileSync(Constants.markdownFilePath, Constants.markdownFileHead);
+    if(!fs.existsSync(Constants.sepNotesFilePath)){
+        fs.writeFileSync(Constants.sepNotesFilePath, Constants.sepNotesFileHead);
     }
 
     let activeEditor = vscode.window.activeTextEditor;
@@ -46,6 +48,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     }
     for(let [_,note] of Notes){
         note.refreshId();
+        if(note.isAttached()){
+            attachedFileNum += 1;
+        }
+        else{
+            detachedFileNum += 1;
+        }
     }
     ratelimiter = new RateLimiter(1,200);
 
@@ -54,7 +62,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             if (window.activeTextEditor && event.document === window.activeTextEditor.document) {
                 if(event.contentChanges.length > 0){
                     let path = event.document.uri.fsPath;
-                    logger.info('onDidChangeTextDocument:'+path);
                     if(!inAll && Notes.has(path)){
                         let note = Notes.get(path);
                         let ret = note.afterDetach();
@@ -71,14 +78,15 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         else if(note.shouldWarn()){
                             window.showInformationMessage('if you want modify this file, please attach it first');
                         }
+                        // sync markdown with source
                         else if(note.isAttached()){
                             if(ratelimiter.isAllowed()){
-                                note.refresh(event.document);
+                                note.refresh(event.document,fetchMdStatus());
                             }
                             else{
                                 setTimeout(function(){
                                     if(ratelimiter.isAllowed()){
-                                        note.refresh(event.document);
+                                        note.refresh(event.document,fetchMdStatus());
                                     }
                                 },500);
                             }
@@ -189,8 +197,11 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     }
                 ).then(async selected => {
                     if (typeof selected !== "undefined") {
-                        Notes.get(path).ModeSwitch(selected,activeEditor.document);
+                        let status = Notes.get(path).ModeSwitch(selected,activeEditor.document);
+                        attachedFileNum += status;
+                        detachedFileNum -= status;
                         updateState(activeEditor,extensionContext);
+                        updateMdStatus();
                     }
                 });
             }
@@ -200,17 +211,20 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 		commands.registerCommand(Commands.attachAll, async () => {
             if(!inAll){
                 inAll = true;
+                attachedFileNum = 0;
+                detachedFileNum = 0;
                 for(let [_,note] of Notes){
                     if(note.notFinished()){
                         window.showInformationMessage('not finished yet');
                     }
                     else{
-                        note.attachContent(true);
+                        attachedFileNum += note.attachContent(true);
                     }
                 }
                 activeEditor = vscode.window.activeTextEditor;
                 updateState(activeEditor,extensionContext);
                 window.showInformationMessage('atach all finished');
+                updateMdStatus();
                 inAll = false;
             }
         }
@@ -220,17 +234,20 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 		commands.registerCommand(Commands.detachAll, async () => {
             if(!inAll){
                 inAll = true;
+                attachedFileNum = 0;
+                detachedFileNum = 0;
                 for(let [_,note] of Notes){
                     if(note.notFinished()){
                         window.showInformationMessage('not finished yet');
                     }
                     else{
-                        note.detachContent(true);
+                        detachedFileNum += note.detachContent(true);
                     }
                 }
                 activeEditor = vscode.window.activeTextEditor;
                 updateState(activeEditor,extensionContext);
                 window.showInformationMessage('detach all finished');
+                updateMdStatus();
                 inAll = false;
             }
         }
@@ -338,7 +355,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     );
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.syncMdWithSrc, async () => {
-            let content = Constants.markdownFileHead;
+            let content = Constants.sepNotesFileHead;
             let notAttached = false;
             for(let [_,note] of Notes){
                 if(note.isAttached())
@@ -352,9 +369,10 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 window.showInformationMessage('there are files not attached'); 
             }
             else{
-                fs.writeFileSync(Constants.markdownFilePath, content);
+                fs.writeFileSync(Constants.sepNotesFilePath, content);
                 window.showInformationMessage('sync with file ./vscode/'+Constants.sepNotesFileName+' success');
             }
+            updateMdStatus();
         }
 	));
     
@@ -413,6 +431,87 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         activatable.activate(extensionContext);
     }
 
+	extensionContext.subscriptions.push(
+		commands.registerCommand(Commands.openSepNotes, async () => {
+            vscode.workspace.openTextDocument(Constants.sepNotesFilePath).then(document => {  
+                vscode.window.showTextDocument(document);  
+            }); 
+        }
+	));
+
+    extensionContext.subscriptions.push(
+        vscode.window.onDidChangeTextEditorVisibleRanges(event => {
+            if (event && event.textEditor && event.textEditor.document && fs.existsSync(event.textEditor.document.uri.fsPath)) {
+            logger.info('onDidChangeVisibleTextEditors start');
+            // markdown file visible
+            let editorSepNotes:vscode.TextEditor = null;
+            let editorSrc:vscode.TextEditor = null;
+            for(let editor of vscode.window.visibleTextEditors){
+                logger.info('visible doc'+editor.document.uri.fsPath);
+                if(editor.document.uri.fsPath.endsWith(Constants.sepNotesFileName)){
+                    editorSepNotes = editor;
+                    logger.info('sepnots visible');
+                }
+                else if(Notes.has(editor.document.uri.fsPath)){
+                    editorSrc = editor;
+                }
+            } 
+            if(editorSepNotes && editorSrc){
+                let path = event.textEditor.document.uri.fsPath;
+                logger.info('path change:' + path);
+                // source changed
+                if(Notes.has(path)){
+                    logger.info('has path');
+                }
+                else{
+                    logger.info('has not path');
+                }
+                if (!isSepNotesFile(path) && Notes.has(path)) {
+                    // logger.info('come here?');
+                    // let curLine = 0;
+                    // if (event.visibleRanges.length > 0) {
+                    //     let range = event.visibleRanges[0];
+                    //     curLine = Math.floor((range.start.line + range.end.line) / 2);
+                    // }
+                    // let mdLine = getMdPos(path, curLine);
+                    // let mdLineStart = mdLine;
+                    // let mdLineEnd = mdLine;
+                    // if(editorSepNotes.visibleRanges.length > 0){
+                    //     let range = editorSepNotes.visibleRanges[0];
+                    //     let visLength  = Math.floor((range.end.line - range.start.line)/2);
+                    //     mdLineStart = mdLine - visLength;
+                    //     mdLineEnd = mdLine + visLength; 
+                    // }
+                    // logger.info('mdLine:'+mdLine.toString()+' start:'+mdLineStart.toString()+' end:'+mdLineEnd.toString());
+                    // editorSepNotes.revealRange(new vscode.Range(mdLineStart, 0, mdLineEnd, 0));
+                }
+                // markdown changed
+                else if(isSepNotesFile(path)){
+                    let curLine = 0;
+                    if (event.visibleRanges.length > 0) {
+                        let range = event.visibleRanges[0];
+                        curLine = Math.floor((range.start.line + range.end.line) / 2);
+                    }
+                    let path = getSrcFileFromMd(event.textEditor.document,curLine);
+                    let srcLine = getLineNumberUp(event.textEditor.document,curLine);
+                    let srcLineStart = srcLine;
+                    let srcLineEnd = srcLine;
+                    if(path == editorSrc.document.uri.fsPath){
+                        if(editorSrc.visibleRanges.length > 0){
+                            let range = editorSrc.visibleRanges[0];
+                            let visLength  = Math.floor((range.end.line - range.start.line)/2);
+                            srcLineStart = srcLine - visLength;
+                            srcLineEnd = srcLine + visLength; 
+                        }
+                        logger.info('srcLine:'+srcLine.toString()+' start:'+srcLineStart.toString()+' end:'+srcLineEnd.toString());
+                        editorSrc.revealRange(new vscode.Range(srcLineStart, 0, srcLineEnd, 0));
+                    }
+                }
+            }
+        }
+        })
+    );
+
     logger.info(`Extension ${Constants.extensionName} v${Constants.extensionVersion} activated.`);
     return Promise.resolve(true);
 }
@@ -446,6 +545,30 @@ function updateState(textEditor:vscode.TextEditor,extensionContext: ExtensionCon
     extensionContext.workspaceState.update(Constants.keyNotes,serializedNotes);
 }
 
+function fetchMdStatus():string{
+    let status = Constants.sepNotesFileHeadStatus;
+    status = status.replace('#attachedFileNum',attachedFileNum.toString());
+    status = status.replace('#detachedFileNum',detachedFileNum.toString());
+
+    let now = new Date();
+    status = status.replace('#Time',now.toLocaleDateString()+'  '+now.toLocaleTimeString());
+    return status;
+}
+
+function updateMdStatus(){
+    let content = fs.readFileSync(Constants.sepNotesFilePath).toString();
+    let status = Constants.sepNotesFileHeadStatus;
+    status = status.replace('#attachedFileNum',attachedFileNum.toString());
+    status = status.replace('#detachedFileNum',detachedFileNum.toString());
+
+    let now = new Date();
+    status = status.replace('#Time',now.toLocaleDateString()+'  '+now.toLocaleTimeString());
+    let lines = splitIntoLines(content);
+    lines[1] = status;
+    content = lines.join('\n');
+    logger.info('updateMdStatus:'+status);
+    fs.writeFileSync(Constants.sepNotesFilePath,content);
+}
 
 
 

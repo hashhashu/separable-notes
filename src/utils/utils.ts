@@ -4,6 +4,7 @@ import { logger } from '../logging/logger';
 import * as vscode from 'vscode';
 import path from "path";
 import { Constants } from '../constants/constants';
+import * as fs from 'fs'; 
 
 export function randomString(length: number, extended: boolean = false) {
     let text = "";
@@ -189,6 +190,30 @@ export function isSepNotesFile(path:string):boolean{
   else{
     return false;
   }
+}
+
+export function getMdPos(srcPath:string,srcPos:number){
+    let content = fs.readFileSync(Constants.sepNotesFilePath).toString();
+    let lines = splitIntoLines(content);
+    let fileName = getFileName(srcPath);
+    const matchFileStart = '# ['+ fileName +']'+'(' + srcPath +')';
+    const matchFileEnd = '# [';
+    let fileStart = false;
+    let lineNumber = 0;
+    for(let line of lines){
+      if (!fileStart) {
+        if (line.startsWith(matchFileStart)) {
+          fileStart = true;
+        }
+      }
+      else {
+        if((getLineNumber(line) >= srcPos) || line.startsWith(matchFileEnd)) {
+          break;
+        }
+      }
+      ++lineNumber;
+    }
+    return lineNumber;
 }
 
 export function rowsChanged(change: vscode.TextDocumentContentChangeEvent):number {
