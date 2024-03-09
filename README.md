@@ -1,4 +1,4 @@
-**Read this in other languages: [English](README.md), [中文](README_zh.md).**
+**Read this in other languages: [English](README.md), [中文](README_ZH.md).**
 
 # separable-notes 
 separable notes is a VSCode extension that can manage your inline code note, make your note separable.
