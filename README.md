@@ -8,7 +8,8 @@ It can be applied to scenarios sucmh as:
 * outline your code and organize you code note in standalone markdown file.
 * reorganize your note in markdown file(by define @id and @refid, can easily imbed code in arbitrary markdown file)
 
-![demo](pic/demo.gif)
+![demo1](pic/demo1.PNG)
+![demo2](pic/demo2.PNG)
 
 It is tested on windows 10.
 
@@ -83,6 +84,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 
 ### TODO
 * 重新匹配代码和笔记
+* record note history
 
 Please star it if you like it, Thanks.
 

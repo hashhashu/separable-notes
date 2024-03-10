@@ -41,15 +41,32 @@ export class NoteFile{
         const content = this.getContent(document);
         const contentLines = splitIntoLines(content);
         let detachedContent = '';
+        let block = new NoteBlock();
         this.blocks.length = 0;
         for (let i = 0; i < contentLines.length; i++) {
           let curLine = contentLines[i];
           if (curLine.includes(this.configuration.noteId)) {
-            this.blocks.push(new NoteBlock(i, contentLines[i]));
+            if(block.noteStartLine == -1){
+              block.noteStartLine = i;
+              block.note += addEof(contentLines[i]);
+              block.noteLineCount += 1;
+            }
+            else{
+              block.note += addEof(contentLines[i]);
+              block.noteLineCount += 1;
+            }
           }
           else {
+            if((block.noteStartLine + block.noteLineCount) == i){
+              block.codeBelow = addEof(contentLines[i]);
+              this.blocks.push(block);
+              block = new NoteBlock();
+            }
             detachedContent += addEof(contentLines[i]);
           }
+        }
+        if(block.noteStartLine != -1){
+          this.blocks.push(block);
         }
         if(!detachAll){
           this.respondCount = 1;
@@ -77,19 +94,40 @@ export class NoteFile{
           let attachedContent = '';
           let lastIndex = 0;
           let attachedLength = 0;
+          let diffNote = '';
           for(let block of this.blocks){
-            let end = lastIndex + (block.linenumber - attachedLength);
+            let end = lastIndex + (block.noteStartLine - attachedLength);
             logger.info('lastindex:'+lastIndex.toString()+' end:'+end.toString());
             for(let i = lastIndex; i < end ; i++){
               attachedContent += addEof(contentLines[i]);
-              ++attachedLength;
             }
+            attachedLength += (end - lastIndex);
             lastIndex = end;
-            attachedContent += addEof(block.content);
-            ++attachedLength;
+            attachedContent += block.note;
+            attachedLength += block.noteLineCount;
+            if(end < contentLines.length && block.codeBelow.trim() != contentLines[end].trim()){
+              diffNote += block.note;
+              diffNote += '```'+getLanguageIdetifier(this.configuration.associations,this.path)+'\n';
+              diffNote += ((block.noteStartLine+block.noteLineCount+1).toString()+ '  ' + block.codeBelow);
+              diffNote += '```\n';
+            }
           }
           for(let i = lastIndex; i<contentLines.length ; i++){
             attachedContent += addEof(contentLines[i]);
+          }
+          if(diffNote != ''){
+            let fileName = getFileName(this.path);
+            diffNote = '# ['+ fileName +']'+'(' + this.path +')' + '  \n' + diffNote + '  \n  \n';
+            if(!attachAll){
+              fs.writeFileSync(Constants.sepNotesDiffFilePath,diffNote);
+            }
+            else{
+              fs.appendFileSync(Constants.sepNotesDiffFilePath,diffNote);
+            }
+            vscode.window.showWarningMessage('codes have changed, please see the diff in '+Constants.sepNotesDiffFilePath);
+          }
+          else if(!attachAll){
+            fs.writeFileSync(Constants.sepNotesDiffFilePath,'');
           }
           if(!attachAll){
             this.respondCount = 1;
@@ -275,14 +313,14 @@ export class NoteFile{
     matchId(ido:string,document:vscode.TextDocument = null){
       if(this.isAttached()){
         for(let idi of this.ids){
-          if(idi.content == ido){
+          if(idi.note == ido){
             let ret = '';
             let content = this.getContent(document);
             const contentLines = splitIntoLines(content);
-            for(let i = idi.linenumber ; i<Math.min(contentLines.length,idi.linenumber+3) ;i++){
+            for(let i = idi.noteStartLine ; i<Math.min(contentLines.length,idi.noteStartLine+3) ;i++){
               ret += addEof(contentLines[i-1]);
             }
-            return {"line":idi.linenumber,"content":ret};
+            return {"line":idi.noteStartLine,"content":ret};
           }
         }
       }
@@ -362,14 +400,14 @@ export class NoteFile{
             else if(line.startsWith('```'+getLanguageIdetifier(this.configuration.associations,this.path))
                  && (i+1) < (contentLines.length)){
               let lineprefix = getLineNumber(contentLines[i+1]);
-              let noteblock = new NoteBlock(lineprefix,'',0);
+              let noteblock = new NoteBlock(lineprefix,'',1);
               this.mdChangedLine.push(noteblock)  
             }
           }
         }
       }
       for (let block of this.mdChangedLine) {
-        if (block.linenumber == linenumber) {
+        if (block.noteStartLine == linenumber) {
           block.changedLine += changedLine;
           break;
         }
@@ -383,8 +421,8 @@ export class NoteFile{
     getMdLine(linenumber:number){
       let accuLines = 0;
       for (let block of this.mdChangedLine) {
-        if (block.linenumber == linenumber) {
-          return block.linenumber + block.changedLine + accuLines;
+        if (block.noteStartLine == linenumber) {
+          return block.noteStartLine + block.changedLine + accuLines;
         }
         else{
           accuLines += block.changedLine;
@@ -413,19 +451,25 @@ export class serializableNoteFile{
 }
 
 class NoteBlock{
-  linenumber: number;
-  content: string;
+  noteStartLine: number;
+  note: string;
+  noteLineCount: number;
+  codeBelow: string; //code below(for match)
   changedLine: number;
-  constructor(linenumberp: number, contentp: string, changedline:number = 0){
-    this.linenumber = linenumberp;
-    this.content = contentp;
+  constructor(noteStartLinep: number = -1, contentp: string = '', contentLineCountp:number = 0, codeBelowp:string = '', changedline:number = 0){
+    this.noteStartLine = noteStartLinep;
+    this.note = contentp;
+    this.noteLineCount = contentLineCountp;
+    this.codeBelow = codeBelowp;
     this.changedLine = changedline;
   }
   toJSON(): any {  
     return {  
-      linenumber: this.linenumber,  
-      content: this.content,
+      noteStartLine: this.noteStartLine,  
+      note: this.note,
+      noteLineCount: this.noteLineCount,
+      codeBelow: this.codeBelow,
       changedLine: this.changedLine   
-    };  
+    }; 
   }
 }

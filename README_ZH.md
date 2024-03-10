@@ -7,7 +7,8 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * 梳理你的代码，并将你的代码笔记组织到独立的 Markdown 文件中。
 * 在 Markdown 文件中重新组织你的笔记（通过定义 @id 和 @refid，可以轻松将代码嵌入到任意的 Markdown 文件中
 
-![demo](pic/demo.gif)
+![demo1](pic/demo1.PNG)
+![demo2](pic/demo2.PNG)
 
 在 Windows 10 上经过测试。 
 

@@ -56,7 +56,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }
     }
     ratelimiter = new RateLimiter(1,200);
-
+// sepNotes ## sync markdown with source and vice versa
     extensionContext.subscriptions.push(
         workspace.onDidChangeTextDocument((event)=>{
             if (window.activeTextEditor && event.document === window.activeTextEditor.document) {
@@ -76,7 +76,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                             }
                         }
                         else if(note.shouldWarn()){
-                            window.showInformationMessage('if you want modify this file, please attach it first');
+                            window.showWarningMessage('if you want modify this file, please attach it first');
                         }
                         // sync markdown with source
                         else if(note.isAttached()){
@@ -169,7 +169,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             // logger.info(JSON.stringify(configuration.associations));
 		}));
 
-
+// sepNotes ## mode switch
+// sepNotes test  for it
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.NoteModeSwitch, async () => {
             activeEditor = vscode.window.activeTextEditor;
@@ -213,6 +214,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 inAll = true;
                 attachedFileNum = 0;
                 detachedFileNum = 0;
+                //clear diff info
+                fs.writeFileSync(Constants.sepNotesDiffFilePath,'');
                 for(let [_,note] of Notes){
                     if(note.notFinished()){
                         window.showInformationMessage('not finished yet');
@@ -252,7 +255,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }
         }
 	));
-
+// sepNotes ## add comment and remove comment
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.noteIt, async () => {
             activeEditor = vscode.window.activeTextEditor;
@@ -312,7 +315,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             updateState(activeEditor,extensionContext);
         }
 	));
-    
+// sepNotes ## hover for inline code
     function provideHover(document:vscode.TextDocument, position:vscode.Position, token){
         let path = document.uri.fsPath;
         if(!Notes.has(path) || !Notes.get(path).isAttached()){
@@ -416,8 +419,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         let ret: vscode.CompletionItem[] = new Array();
         for (let [_, note] of Notes) {
             for (let id of note.getIds()) {
-                logger.info(id.content);
-                ret.push(new vscode.CompletionItem('#'+configuration.noteId+'@refid=' + id.content, vscode.CompletionItemKind.Field));
+                logger.info(id.note);
+                ret.push(new vscode.CompletionItem('#'+configuration.noteId+'@refid=' + id.note, vscode.CompletionItemKind.Field));
             }
         }
         return ret;
@@ -438,7 +441,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }); 
         }
 	));
-
+// sepNotes ## src and markdown file alignment
     extensionContext.subscriptions.push(
         vscode.window.onDidChangeTextEditorVisibleRanges(event => {
             if (event && event.textEditor && event.textEditor.document && fs.existsSync(event.textEditor.document.uri.fsPath)) {
@@ -544,7 +547,7 @@ function updateState(textEditor:vscode.TextEditor,extensionContext: ExtensionCon
     }
     extensionContext.workspaceState.update(Constants.keyNotes,serializedNotes);
 }
-
+// sepNotes ## markdown file status recording
 function fetchMdStatus():string{
     let status = Constants.sepNotesFileHeadStatus;
     status = status.replace('#attachedFileNum',attachedFileNum.toString());
