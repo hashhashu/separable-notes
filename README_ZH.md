@@ -1,4 +1,5 @@
 **其他语言版本: [English](README.md), [中文](README_ZH.md).**
+**:exclamation:项目还在紧急开发中，目前还不稳定，仅供测试，请谨慎使用**
 # separable-notes 
 separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔记，并可以使你的笔记可分离
 
@@ -8,7 +9,6 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * 在 Markdown 文件中重新组织你的笔记（通过定义 @id 和 @refid，可以轻松将代码嵌入到任意的 Markdown 文件中
 
 ![demo1](pic/demo1.PNG)
-![demo2](pic/demo2.PNG)
 
 在 Windows 10 上经过测试。 
 
@@ -38,6 +38,12 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
  \
 如果你更改了这个设置，你也应该更改 todo-tree 或其他插件的配置。
 
+### 安装
+* 在vscode 插件中搜索separable notes
+* 从[应用商店](https://marketplace.visualstudio.com/items?itemName=hurly.separable-notes)
+
+### 搭配使用
+[TODO Tree](https://marketplace.visualstudio.com/items?itemName=Gruntfuggly.todo-tree) 或者其他 VSCode 插件用于标签高亮
 #### todo-tree 的推荐配置如下：
 * 为新的 noteId 添加标签和自定义高亮：
 ```json
@@ -57,13 +63,8 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
     "todo-tree.general.statusBar": "current file",
 ```
 
-### 前提条件
-[TODO Tree](https://marketplace.visualstudio.com/items?itemName=Gruntfuggly.todo-tree) 或者其他 VSCode 插件用于标签高亮
 
 
-### 安装
-* 在vscode 插件中搜索separable notes
-* 从[应用商店](https://marketplace.visualstudio.com/items?itemName=hurly.separable-notes)
 ### 变更日志
 
 #### 0.1.1
@@ -84,6 +85,6 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 ### TODO
 * 重新匹配代码和笔记
 
-如果你喜欢的话，请给它点个星，谢谢。
+如果你喜欢的话，请给它点个星:star:，谢谢。
 
 感谢 [todo-tree](https://github.com/Gruntfuggly/todo-tree)

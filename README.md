@@ -1,5 +1,7 @@
 **Read this in other languages: [English](README.md), [中文](README_ZH.md).**
 
+**:exclamation:The project is still under urgent development and is currently unstable. Please use it with caution.**
+
 # separable-notes 
 separable notes is a VSCode extension that can manage your inline code note, make your note separable.
 
@@ -9,7 +11,6 @@ It can be applied to scenarios sucmh as:
 * reorganize your note in markdown file(by define @id and @refid, can easily imbed code in arbitrary markdown file)
 
 ![demo1](pic/demo1.PNG)
-![demo2](pic/demo2.PNG)
 
 It is tested on windows 10.
 
@@ -39,6 +40,12 @@ After installing separable notes, you will be able to manage your inline code no
  \
 if you change this, you should also change the configuration for todo-tree or other plugins.
 
+### Installation
+* From VS Code by searching separable notes
+* From [marketplace](https://marketplace.visualstudio.com/items?itemName=hurly.separable-notes)
+
+### Use together
+[TODO Tree](https://marketplace.visualstudio.com/items?itemName=Gruntfuggly.todo-tree) or other tag Highlighting vscode plugin.
 #### Recommended configuration for todo-tree:
 * add tags and  customHighlight for new noteId
 ```json
@@ -58,14 +65,10 @@ if you change this, you should also change the configuration for todo-tree or ot
     "todo-tree.general.statusBar": "current file",
 ```
 
-### Prerequisites
-[TODO Tree](https://marketplace.visualstudio.com/items?itemName=Gruntfuggly.todo-tree) or other tag Highlighting vscode plugin.
-
-
-### Installation
-* From VS Code by searching separable notes
-* From [marketplace](https://marketplace.visualstudio.com/items?itemName=hurly.separable-notes)
 ### ChageLog
+
+#### 0.1.2
+* adjust note line when attach file(file may changed in detach status)
 
 #### 0.1.1
 * sync notes with standalone markdown file for summarize and easy to view  ``in sepNotes.md``
@@ -86,6 +89,6 @@ if you change this, you should also change the configuration for todo-tree or ot
 * 重新匹配代码和笔记
 * record note history
 
-Please star it if you like it, Thanks.
+Please star :star: it if you like it, Thanks.
 
 Thanks to [todo-tree](https://github.com/Gruntfuggly/todo-tree)

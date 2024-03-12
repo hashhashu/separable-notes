@@ -212,6 +212,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 		commands.registerCommand(Commands.attachAll, async () => {
             if(!inAll){
                 inAll = true;
+                let ret;
+                let hasDiff = false;
                 attachedFileNum = 0;
                 detachedFileNum = 0;
                 //clear diff info
@@ -221,13 +223,20 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         window.showInformationMessage('not finished yet');
                     }
                     else{
-                        attachedFileNum += note.attachContent(true);
+                        ret = note.attachContent(true);
+                        attachedFileNum += ret.attached;
+                        if(ret.hasDiff){
+                            hasDiff = true;
+                        }
                     }
                 }
                 activeEditor = vscode.window.activeTextEditor;
                 updateState(activeEditor,extensionContext);
                 window.showInformationMessage('atach all finished');
                 updateMdStatus();
+                if(hasDiff){
+                    vscode.window.showWarningMessage('codes have changed, please see the diff in ' + Constants.sepNotesDiffFilePath);
+                }
                 inAll = false;
             }
         }
@@ -548,6 +557,7 @@ function updateState(textEditor:vscode.TextEditor,extensionContext: ExtensionCon
     extensionContext.workspaceState.update(Constants.keyNotes,serializedNotes);
 }
 // sepNotes ## markdown file status recording
+// sepNotes 111231
 function fetchMdStatus():string{
     let status = Constants.sepNotesFileHeadStatus;
     status = status.replace('#attachedFileNum',attachedFileNum.toString());

@@ -45,7 +45,6 @@ export namespace Commands {
     export const syncMdWithSrc = 'separableNotes.syncMdWithSrc';
     export const openSepNotes = 'separableNotes.openSepNotes';
 }
-// sepNotes 1234523444  5555
-// sepNotes 
+// sepNotes 1234523444  5555 666 7
 export enum NoteMode{  Detached = 0,     Attached = 1}
 

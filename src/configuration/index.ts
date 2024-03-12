@@ -1,5 +1,4 @@
-import { commands, ExtensionContext, workspace } from "vscode";
-import { Commands } from "../constants/constants";
+import { ExtensionContext, workspace } from "vscode";
 import { Level } from "../logging/logger";
 
 const properties = require('../../package.json').contributes.configuration.properties;
@@ -9,6 +8,7 @@ export interface Configuration {
     noteId: string;
     encoding: string;
     associations: { [extension: string]: string };
+    reMatch: boolean;
 }
 
 export function getConfiguration(extensionContext: ExtensionContext) {
@@ -16,7 +16,8 @@ export function getConfiguration(extensionContext: ExtensionContext) {
         logLevel: _logLevel(),
         noteId: _noteId(),
         encoding: _encoding(),
-        associations: _associations()
+        associations: _associations(),
+        reMatch: _reMatch()
     } as Configuration;
 }
 
@@ -49,4 +50,12 @@ function _encoding(): string{
 function _associations():  {[extension: string]:string}{
     let associations = workspace.getConfiguration().get<{ [extension: string]: string }>('files.associations');
     return associations || {};
+}
+
+function _reMatch(): boolean{
+    let reMatch = workspace.getConfiguration().get<boolean>('separableNotes.reMatch');
+    if(!reMatch){
+        reMatch = false;
+    }
+    return reMatch;
 }
