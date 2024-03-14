@@ -8,7 +8,7 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines,encode, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberDown, getLineNumberUp, getMdPos } from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberDown, getLineNumberUp} from './utils/utils';
 import * as fs from 'fs';
 
 let configuration: Configuration;
@@ -56,6 +56,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }
     }
     ratelimiter = new RateLimiter(1,200);
+
 // sepNotes ## sync markdown with source and vice versa
     extensionContext.subscriptions.push(
         workspace.onDidChangeTextDocument((event)=>{
@@ -95,14 +96,18 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     // sync source with markdown
                     if(isSepNotesFile(path)){
                         for(let contentChange of event.contentChanges){
+                            logger.debug(contentChange.text);
+                            logger.debug(contentChange.rangeLength.toString());
                             let startpos = contentChange.range.start.line;
                             let srcPath = getSrcFileFromMd(event.document,startpos);
                             let note = Notes.get(srcPath);
                             if(note){
+                                logger.debug('startpos:'+startpos.toString());
                                 let anno = getAnnoFromMd(event.document,startpos);
+                                logger.debug('text:'+anno.text+' linenumber:'+anno.linenumber.toString());
                                 note.syncSrcWithMd(anno.text,anno.linenumber);
                                 let linenumber = getLineNumberDown(event.document,startpos);
-                                logger.info('getLineNumberDown:'+linenumber);
+                                logger.debug('getLineNumberDown:'+linenumber);
                                 note.updateMdLine(linenumber,rowsChanged(contentChange));
                             }
                         }
@@ -187,6 +192,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }
             if(!Notes.has(path)){
                 Notes.set(path,new NoteFile(path,NoteMode.Detached,configuration,statusBarItem));
+                ++detachedFileNum;
             }
             if(!inAll && Notes.has(path) && !Notes.get(path).notFinished()){
                 vscode.window.showQuickPick(
@@ -235,7 +241,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 window.showInformationMessage('atach all finished');
                 updateMdStatus();
                 if(hasDiff){
-                    vscode.window.showWarningMessage('codes have changed, please see the diff in ' + Constants.sepNotesDiffFilePath);
+                    const options = ['View Diff File'];
+                    switch (await vscode.window.showWarningMessage('codes have changed, please see the diff in ' 
+                            + Constants.sepNotesDiffFilePath, ...options)){
+                        case 'View Diff File':
+                            vscode.workspace.openTextDocument(Constants.sepNotesFilePath);
+                    }
                 }
                 inAll = false;
             }
@@ -324,6 +335,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             updateState(activeEditor,extensionContext);
         }
 	));
+
+
 // sepNotes ## hover for inline code
     function provideHover(document:vscode.TextDocument, position:vscode.Position, token){
         let path = document.uri.fsPath;
@@ -399,9 +412,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 let note = Notes.get(filePath);
                 if(note && note.isMdLineChanged()){
                     let blockLineNumber = getLineNumberUp(document,line.lineNumber);
-                    logger.info('blockLineNumber:'+blockLineNumber.toString());
+                    logger.debug('blockLineNumber:'+blockLineNumber.toString());
                     lineNumber = note.getMdLine(blockLineNumber);
-                    logger.info('lineNumber:'+lineNumber);
+                    logger.debug('lineNumber:'+lineNumber);
                 }
                 return new vscode.Location(vscode.Uri.file(filePath), new vscode.Position(lineNumber - 1, position.character - 2 - lineNumber.toString().length));
             }
@@ -428,7 +441,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         let ret: vscode.CompletionItem[] = new Array();
         for (let [_, note] of Notes) {
             for (let id of note.getIds()) {
-                logger.info(id.note);
+                logger.debug(id.note);
                 ret.push(new vscode.CompletionItem('#'+configuration.noteId+'@refid=' + id.note, vscode.CompletionItemKind.Field));
             }
         }
@@ -454,15 +467,15 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     extensionContext.subscriptions.push(
         vscode.window.onDidChangeTextEditorVisibleRanges(event => {
             if (event && event.textEditor && event.textEditor.document && fs.existsSync(event.textEditor.document.uri.fsPath)) {
-            logger.info('onDidChangeVisibleTextEditors start');
+            logger.debug('onDidChangeVisibleTextEditors start');
             // markdown file visible
             let editorSepNotes:vscode.TextEditor = null;
             let editorSrc:vscode.TextEditor = null;
             for(let editor of vscode.window.visibleTextEditors){
-                logger.info('visible doc'+editor.document.uri.fsPath);
+                logger.debug('visible doc'+editor.document.uri.fsPath);
                 if(editor.document.uri.fsPath.endsWith(Constants.sepNotesFileName)){
                     editorSepNotes = editor;
-                    logger.info('sepnots visible');
+                    logger.debug('sepnots visible');
                 }
                 else if(Notes.has(editor.document.uri.fsPath)){
                     editorSrc = editor;
@@ -470,14 +483,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             } 
             if(editorSepNotes && editorSrc){
                 let path = event.textEditor.document.uri.fsPath;
-                logger.info('path change:' + path);
+                logger.debug('path change:' + path);
                 // source changed
-                if(Notes.has(path)){
-                    logger.info('has path');
-                }
-                else{
-                    logger.info('has not path');
-                }
                 if (!isSepNotesFile(path) && Notes.has(path)) {
                     // logger.info('come here?');
                     // let curLine = 0;
@@ -515,7 +522,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                             srcLineStart = srcLine - visLength;
                             srcLineEnd = srcLine + visLength; 
                         }
-                        logger.info('srcLine:'+srcLine.toString()+' start:'+srcLineStart.toString()+' end:'+srcLineEnd.toString());
+                        logger.debug('srcLine:'+srcLine.toString()+' start:'+srcLineStart.toString()+' end:'+srcLineEnd.toString());
                         editorSrc.revealRange(new vscode.Range(srcLineStart, 0, srcLineEnd, 0));
                     }
                 }
@@ -545,6 +552,7 @@ function updateState(textEditor:vscode.TextEditor,extensionContext: ExtensionCon
     }
     if (!Notes.has(path)) {
         Notes.set(path, new NoteFile(path, NoteMode.Detached, configuration, statusBarItem));
+        ++detachedFileNum;
     }
     Notes.get(path).setStatusBarItemText();
 
@@ -556,8 +564,8 @@ function updateState(textEditor:vscode.TextEditor,extensionContext: ExtensionCon
     }
     extensionContext.workspaceState.update(Constants.keyNotes,serializedNotes);
 }
-// sepNotes ## markdown file status recording
-// sepNotes 111231
+// sepNotes 12345678
+// sepNotes 12345678
 function fetchMdStatus():string{
     let status = Constants.sepNotesFileHeadStatus;
     status = status.replace('#attachedFileNum',attachedFileNum.toString());
@@ -579,7 +587,7 @@ function updateMdStatus(){
     let lines = splitIntoLines(content);
     lines[1] = status;
     content = lines.join('\n');
-    logger.info('updateMdStatus:'+status);
+    logger.debug('updateMdStatus:'+status);
     fs.writeFileSync(Constants.sepNotesFilePath,content);
 }
 

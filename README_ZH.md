@@ -1,5 +1,5 @@
-**其他语言版本: [English](README.md), [中文](README_ZH.md).**
-**:exclamation:项目还在紧急开发中，目前还不稳定，仅供测试，请谨慎使用**
+**其他语言版本: [English](README.md), [中文](README_ZH.md).**  
+**:exclamation:使用前请先做一些测试，代码和笔记请及时备份**
 # separable-notes 
 separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔记，并可以使你的笔记可分离
 
@@ -85,6 +85,6 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 ### TODO
 * 重新匹配代码和笔记
 
-如果你喜欢的话，请给它点个星:star:，谢谢。
+如果你喜欢的话，请给它点个星 :star:，谢谢。
 
 感谢 [todo-tree](https://github.com/Gruntfuggly/todo-tree)

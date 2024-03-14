@@ -1,6 +1,5 @@
 import { window, OutputChannel } from "vscode";
 import { Constants } from "../constants/constants";
-import * as fs from 'fs';
 
 export enum Level {
     DEBUG = "DEBUG",

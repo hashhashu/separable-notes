@@ -118,10 +118,10 @@
           "description": "noteId",
           "default":"sepNotes "
         },
-        "separableNotes.reMatch":{
+        "separableNotes.rematch":{
           "type":"boolean",
           "description": "adjust note line when attach file(file may changed in detach status)",
-          "default": false
+          "default": true
         }
       }
     }

@@ -1,6 +1,6 @@
 **Read this in other languages: [English](README.md), [中文](README_ZH.md).**
 
-**:exclamation:The project is still under urgent development and is currently unstable. Please use it with caution.**
+**:exclamation:Before using, please conduct some tests first, and make sure to backup your code and notes promptly.**
 
 # separable-notes 
 separable notes is a VSCode extension that can manage your inline code note, make your note separable.
@@ -65,7 +65,7 @@ if you change this, you should also change the configuration for todo-tree or ot
     "todo-tree.general.statusBar": "current file",
 ```
 
-### ChageLog
+### ChangeLog
 
 #### 0.1.2
 * adjust note line when attach file(file may changed in detach status)

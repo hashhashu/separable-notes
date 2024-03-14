@@ -101,7 +101,7 @@ export class NoteFile{
           notMatchNum = 0;
           for(let block of this.blocks){
             end = block.codeLine;
-            logger.info('lastindex:'+lastIndex.toString()+' end:'+end.toString());
+            logger.debug('lastindex:'+lastIndex.toString()+' end:'+end.toString());
             for(let i = lastIndex; i < end ; i++){
               attachedContent += addEof(contentLines[i]);
             }
@@ -127,7 +127,7 @@ export class NoteFile{
               lastIndex = 0;
               for(let block of this.blocks){
                 end = block.codeLine;
-                logger.info('lastindex:'+lastIndex.toString()+' end:'+end.toString());
+                logger.debug('lastindex:'+lastIndex.toString()+' end:'+end.toString());
                 for(let i = lastIndex; i < end ; i++){
                   attachedContent += addEof(contentLines[i]);
                 }
@@ -256,13 +256,13 @@ export class NoteFile{
         contentExport = '# ['+ fileName +']'+'(' + this.path +')' + '  \n' + contentExport + '  \n  \n';
       }
       this.mdChangedLine.length = 0;
-      logger.info('from:'+Constants.sepNotesFilePath+'  TO:'+this.path);
+      logger.debug('from:'+Constants.sepNotesFilePath+'  TO:'+this.path);
       // logger.info('path:' + this.path + ' ' + contentExport);
       return contentExport;
     }
 
     refreshMd(document:vscode.TextDocument = null, mdStatus:string){
-      logger.info('refreshMd---------------------');
+      logger.debug('refreshMd---------------------');
       const content = fs.readFileSync(Constants.sepNotesFilePath).toString();
       let contentLines = splitIntoLines(content);
       contentLines[1] = mdStatus;
@@ -308,7 +308,7 @@ export class NoteFile{
           if(line.includes(this.configuration.noteId)){
             let id = getId(line);
             if(id){
-              logger.info('id:'+id);
+              logger.debug('id:'+id);
               this.ids.push(new NoteBlock(lineCount,id));
             }
           }
@@ -355,10 +355,10 @@ export class NoteFile{
     }
 
     syncSrcWithMd(text:string,linenumber:number){
-      logger.info('syncSrcWithMd:'+linenumber.toString());
+      logger.debug('syncSrcWithMd:'+linenumber.toString());
       if(this.isMdLineChanged()){
         linenumber = this.getMdLine(linenumber);
-        logger.info('syncSrcWithMd af:'+linenumber.toString());
+        logger.debug('syncSrcWithMd af:'+linenumber.toString());
       }
       let content = this.getContent();
       const contentLines = splitIntoLines(content);
@@ -380,7 +380,7 @@ export class NoteFile{
         ret += addEof(contentLines[i]);
       }
       ret += annoConcat;
-      logger.info('syncSrcWithMd:'+annoConcat);
+      logger.debug('syncSrcWithMd:'+annoConcat);
       for(let i=linenumber - 1;i<contentLines.length;i++){
         ret += addEof(contentLines[i]);
       }
@@ -446,17 +446,25 @@ export class NoteFile{
       let block:NoteBlock;
       let nextPos;
       let prePos;
+      let accuLines = 0;
       for(let blockIndex = 0;blockIndex < this.blocks.length;blockIndex++){
         block = this.blocks[blockIndex];
         // need adjust
         if(block.changedLine == 1){
+          let curLineNumber = block.codeLine;
+          if((curLineNumber + accuLines) > 0 && (curLineNumber + accuLines) < lines.length){
+            if(block.codeBelow.trim() == lines[curLineNumber + accuLines].trim()){
+              block.codeLine = curLineNumber + accuLines;
+              block.changedLine = 0;
+              continue;
+            }
+          }
           nextPos = lines.length;
           prePos = 0;
           if(blockIndex > 0){
             prePos = this.blocks[blockIndex - 1].codeLine;
           }
           let find = false;
-          let curLineNumber = block.codeLine;
           for (let i = 0; i < lines.length; i++) {
             if (((curLineNumber + i)>=nextPos) && ((curLineNumber - i)<=prePos)) {
               break;
@@ -465,12 +473,14 @@ export class NoteFile{
               find = true;
               block.changedLine = curLineNumber - i - block.codeLine;
               block.codeLine = curLineNumber - i;
+              accuLines += block.changedLine;
               break;
             }
             if (((curLineNumber + i) < nextPos) && (block.codeBelow.trim() == lines[curLineNumber + i].trim())) {
               find = true;
               block.changedLine = curLineNumber + i - block.codeLine;
               block.codeLine = curLineNumber + i;
+              accuLines += block.changedLine;
               break;
             }
           }
@@ -491,7 +501,7 @@ export class NoteFile{
             diffNote += 'not matched and stay still \n';
           }
           else{
-            diffNote += 'move '+block.changedLine.toString()+' lines \n';
+            diffNote += 'move '+ (block.changedLine > 0) ? 'up':'down' + Math.abs(block.changedLine).toString()+' lines \n';
           }
           diffNote += block.note;
           diffNote += '```'+getLanguageIdetifier(this.configuration.associations,this.path)+'\n';
@@ -503,6 +513,7 @@ export class NoteFile{
       diffNote = '# [' + fileName + ']' + '(' + this.path + ')' + '  \n' + diffNote + '  \n  \n';
       if (!attachAll) {
         fs.writeFileSync(Constants.sepNotesDiffFilePath, diffNote);
+                            const options = ['View Diff File'];
         vscode.window.showWarningMessage('codes have changed, please see the diff in ' + Constants.sepNotesDiffFilePath);
       }
       else {

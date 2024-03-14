@@ -154,8 +154,7 @@ export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number){
   for(let i=start;i<=end;i++){
     ret += addEof(lines[i]);
   }
-  logger.info('getAnnoFromMd------------------');
-  // logger.info(ret+'   \n'+line.toString());
+  logger.debug('getAnnoFromMd------------------');
   return {"text":ret,"linenumber":getLineNumber(lines[end+2])};
 }
 
