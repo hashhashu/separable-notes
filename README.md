@@ -67,6 +67,11 @@ if you change this, you should also change the configuration for todo-tree or ot
 
 ### ChangeLog
 
+#### 0.1.3
+* can add user defined content in the begin of ``in sepNotes.md``
+* fix the bug that (cannot adjust note pos when attach)
+* remove src and markdown file alignment
+
 #### 0.1.2
 * adjust note line when attach file(file may changed in detach status)
 
@@ -86,7 +91,8 @@ if you change this, you should also change the configuration for todo-tree or ot
 
 
 ### TODO
-* 重新匹配代码和笔记
+* [x] adjust note pos
+* import notes into workspace
 * record note history
 
 Please star :star: it if you like it, Thanks.

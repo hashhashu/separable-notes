@@ -215,10 +215,48 @@ export function getMdPos(srcPath:string,srcPos:number){
     return lineNumber;
 }
 
+export function getMdUserRandomNote():string{
+    let content = fs.readFileSync(Constants.sepNotesFilePath).toString();
+    let lines = splitIntoLines(content);
+    const matchFileStart = /^#\s*[^\[]/
+    const matchFileEnd = /^#\s*\[/
+    let contentUser = '';
+    let fileStart = false;
+    for(let line of lines){
+      if (!fileStart) {
+        if (line.match(matchFileStart)) {
+          fileStart = true;
+          contentUser += addEof(line);
+        }
+      }
+      else{
+        if(line.match(matchFileEnd)){
+          break;
+        }
+        contentUser += addEof(line);
+      }
+    }
+    logger.debug('contentusr:'+contentUser);
+    return contentUser;
+}
+
 export function rowsChanged(change: vscode.TextDocumentContentChangeEvent):number {
   let oriLineCount = change.range.end.line - change.range.start.line + 1;
   let curLineCount = change.text.split('\n').length;
   return curLineCount - oriLineCount;
+}
+// suppose str1 is substring of str2
+export function isEqual(str1:string,str2:string){
+  str1 = str1.trim();
+  str2 = str2.trim();
+  if(str1 == str2 || 
+    ((str1.length != 0) && (str2.length != 0)
+      && (str2.startsWith(str1) || str2.endsWith(str1)))){
+    return true;
+  }
+  else{
+    return false;
+  }
 }
 
 export class RateLimiter {  

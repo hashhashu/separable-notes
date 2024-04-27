@@ -2,7 +2,7 @@
   "name": "separable-notes",
   "displayName": "separable notes",
   "description": "inline Code Note Management",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "engines": {
     "vscode": "^1.42.0"
   },
@@ -118,7 +118,7 @@
           "description": "noteId",
           "default":"sepNotes "
         },
-        "separableNotes.rematch":{
+        "separableNotes.reMatch":{
           "type":"boolean",
           "description": "adjust note line when attach file(file may changed in detach status)",
           "default": true

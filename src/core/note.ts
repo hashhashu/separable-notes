@@ -1,5 +1,5 @@
 import { Constants,NoteMode} from "../constants/constants";
-import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getFileName, getId, cutNoteId, getPrefix, getLineNumber} from '../utils/utils'
+import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getFileName, getId, cutNoteId, getPrefix, getLineNumber, isEqual} from '../utils/utils'
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Configuration } from "../configuration";
@@ -16,7 +16,6 @@ export class NoteFile{
     respondCount: number;
     inProcess: boolean;
     constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,blocks:Array<NoteBlock> = new Array()){
-      logger.debug('note file begin');
       this.path = filePath;
       this.configuration = configuration;
       this.statusbaritem = statusbar;
@@ -26,7 +25,6 @@ export class NoteFile{
       this.inProcess = false;
       this.ids = new Array();
       this.mdChangedLine = new Array();
-      logger.debug('note file end');
     }
 
     setStatusBarItemText(noteMode:NoteMode = this.noteMode){
@@ -101,13 +99,12 @@ export class NoteFile{
           notMatchNum = 0;
           for(let block of this.blocks){
             end = block.codeLine;
-            logger.debug('lastindex:'+lastIndex.toString()+' end:'+end.toString());
             for(let i = lastIndex; i < end ; i++){
               attachedContent += addEof(contentLines[i]);
             }
             lastIndex = end;
             attachedContent += block.note;
-            if(end < contentLines.length && block.codeBelow.trim() != contentLines[end].trim()){
+            if(end < contentLines.length && !isEqual(block.codeBelow,contentLines[end])){
               block.changedLine = 1;
               ++notMatchNum;
             }
@@ -120,14 +117,15 @@ export class NoteFile{
           }
           // need adjust pos
           if(notMatchNum > 0){
+            logger.debug('need rematch--------------');
             if(this.configuration.reMatch){
+              logger.debug('user setting need rematch---------');
               this.adjustNotePos(contentLines);
               // merge block
               attachedContent = '';
               lastIndex = 0;
               for(let block of this.blocks){
                 end = block.codeLine;
-                logger.debug('lastindex:'+lastIndex.toString()+' end:'+end.toString());
                 for(let i = lastIndex; i < end ; i++){
                   attachedContent += addEof(contentLines[i]);
                 }
@@ -155,6 +153,9 @@ export class NoteFile{
           this.noteMode = NoteMode.Attached;
           attached = 1;
         }
+      }
+      else{
+        attached = 1;
       }
       this.inProcess = false;
       logger.debug('attachContent end');
@@ -443,6 +444,7 @@ export class NoteFile{
     }
 
     adjustNotePos(lines:string[]){
+      logger.debug('adjustNotePos start');
       let block:NoteBlock;
       let nextPos;
       let prePos;
@@ -453,7 +455,7 @@ export class NoteFile{
         if(block.changedLine == 1){
           let curLineNumber = block.codeLine;
           if((curLineNumber + accuLines) > 0 && (curLineNumber + accuLines) < lines.length){
-            if(block.codeBelow.trim() == lines[curLineNumber + accuLines].trim()){
+            if(isEqual(block.codeBelow,lines[curLineNumber + accuLines])){
               block.codeLine = curLineNumber + accuLines;
               block.changedLine = 0;
               continue;
@@ -469,14 +471,14 @@ export class NoteFile{
             if (((curLineNumber + i)>=nextPos) && ((curLineNumber - i)<=prePos)) {
               break;
             }
-            if (((curLineNumber - i) > prePos) && block.codeBelow.trim() == lines[curLineNumber - i].trim()) {
+            if (((curLineNumber - i) > prePos) && isEqual(block.codeBelow,lines[curLineNumber - i])) {
               find = true;
               block.changedLine = curLineNumber - i - block.codeLine;
               block.codeLine = curLineNumber - i;
               accuLines += block.changedLine;
               break;
             }
-            if (((curLineNumber + i) < nextPos) && (block.codeBelow.trim() == lines[curLineNumber + i].trim())) {
+            if (((curLineNumber + i) < nextPos) && isEqual(block.codeBelow,lines[curLineNumber + i])) {
               find = true;
               block.changedLine = curLineNumber + i - block.codeLine;
               block.codeLine = curLineNumber + i;
@@ -489,6 +491,7 @@ export class NoteFile{
           }
         }
       }
+      logger.debug('adjustNotePos end');
     }
 
     exportToMdDiff(attachAll:boolean = false){
@@ -501,7 +504,7 @@ export class NoteFile{
             diffNote += 'not matched and stay still \n';
           }
           else{
-            diffNote += 'move '+ (block.changedLine > 0) ? 'up':'down' + Math.abs(block.changedLine).toString()+' lines \n';
+            diffNote += 'move '+ (block.changedLine > 0 ? ' up ':' down ') + Math.abs(block.changedLine).toString()+' lines \n';
           }
           diffNote += block.note;
           diffNote += '```'+getLanguageIdetifier(this.configuration.associations,this.path)+'\n';

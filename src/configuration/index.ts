@@ -32,18 +32,12 @@ function _logLevel(): string {
 }
 
 function _noteId(): string{
-    let noteid = workspace.getConfiguration().get<string>('separableNotes.noteId');
-    if(!noteid){
-        noteid = 'sepNotes ';
-    }
+    let noteid = workspace.getConfiguration().get<string>('separableNotes.noteId','sepNotes ');
     return noteid;
 }
 
 function _encoding(): string{
-    let encoding = workspace.getConfiguration().get<string>('files.encoding');
-    if(!encoding){
-        encoding = 'UTF-8';
-    }
+    let encoding = workspace.getConfiguration().get<string>('files.encoding','UTF-8');
     return encoding;
 }
 
@@ -53,9 +47,6 @@ function _associations():  {[extension: string]:string}{
 }
 
 function _reMatch(): boolean{
-    let reMatch = workspace.getConfiguration().get<boolean>('separableNotes.reMatch');
-    if(!reMatch){
-        reMatch = false;
-    }
+    let reMatch = workspace.getConfiguration().get<boolean>('separableNotes.reMatch',false);
     return reMatch;
 }

@@ -8,7 +8,7 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberDown, getLineNumberUp} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberDown, getLineNumberUp, getMdUserRandomNote} from './utils/utils';
 import * as fs from 'fs';
 
 let configuration: Configuration;
@@ -380,7 +380,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     );
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.syncMdWithSrc, async () => {
-            let content = Constants.sepNotesFileHead;
+            let content = Constants.sepNotesFileHead + getMdUserRandomNote();
             let notAttached = false;
             for(let [_,note] of Notes){
                 if(note.isAttached())
@@ -463,74 +463,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }); 
         }
 	));
-// sepNotes ## src and markdown file alignment
-    extensionContext.subscriptions.push(
-        vscode.window.onDidChangeTextEditorVisibleRanges(event => {
-            if (event && event.textEditor && event.textEditor.document && fs.existsSync(event.textEditor.document.uri.fsPath)) {
-            logger.debug('onDidChangeVisibleTextEditors start');
-            // markdown file visible
-            let editorSepNotes:vscode.TextEditor = null;
-            let editorSrc:vscode.TextEditor = null;
-            for(let editor of vscode.window.visibleTextEditors){
-                logger.debug('visible doc'+editor.document.uri.fsPath);
-                if(editor.document.uri.fsPath.endsWith(Constants.sepNotesFileName)){
-                    editorSepNotes = editor;
-                    logger.debug('sepnots visible');
-                }
-                else if(Notes.has(editor.document.uri.fsPath)){
-                    editorSrc = editor;
-                }
-            } 
-            if(editorSepNotes && editorSrc){
-                let path = event.textEditor.document.uri.fsPath;
-                logger.debug('path change:' + path);
-                // source changed
-                if (!isSepNotesFile(path) && Notes.has(path)) {
-                    // logger.info('come here?');
-                    // let curLine = 0;
-                    // if (event.visibleRanges.length > 0) {
-                    //     let range = event.visibleRanges[0];
-                    //     curLine = Math.floor((range.start.line + range.end.line) / 2);
-                    // }
-                    // let mdLine = getMdPos(path, curLine);
-                    // let mdLineStart = mdLine;
-                    // let mdLineEnd = mdLine;
-                    // if(editorSepNotes.visibleRanges.length > 0){
-                    //     let range = editorSepNotes.visibleRanges[0];
-                    //     let visLength  = Math.floor((range.end.line - range.start.line)/2);
-                    //     mdLineStart = mdLine - visLength;
-                    //     mdLineEnd = mdLine + visLength; 
-                    // }
-                    // logger.info('mdLine:'+mdLine.toString()+' start:'+mdLineStart.toString()+' end:'+mdLineEnd.toString());
-                    // editorSepNotes.revealRange(new vscode.Range(mdLineStart, 0, mdLineEnd, 0));
-                }
-                // markdown changed
-                else if(isSepNotesFile(path)){
-                    let curLine = 0;
-                    if (event.visibleRanges.length > 0) {
-                        let range = event.visibleRanges[0];
-                        curLine = Math.floor((range.start.line + range.end.line) / 2);
-                    }
-                    let path = getSrcFileFromMd(event.textEditor.document,curLine);
-                    let srcLine = getLineNumberUp(event.textEditor.document,curLine);
-                    let srcLineStart = srcLine;
-                    let srcLineEnd = srcLine;
-                    if(path == editorSrc.document.uri.fsPath){
-                        if(editorSrc.visibleRanges.length > 0){
-                            let range = editorSrc.visibleRanges[0];
-                            let visLength  = Math.floor((range.end.line - range.start.line)/2);
-                            srcLineStart = srcLine - visLength;
-                            srcLineEnd = srcLine + visLength; 
-                        }
-                        logger.debug('srcLine:'+srcLine.toString()+' start:'+srcLineStart.toString()+' end:'+srcLineEnd.toString());
-                        editorSrc.revealRange(new vscode.Range(srcLineStart, 0, srcLineEnd, 0));
-                    }
-                }
-            }
-        }
-        })
-    );
-
+    logger.debug('rematch:'+(configuration.reMatch?'true':'false'));
     logger.info(`Extension ${Constants.extensionName} v${Constants.extensionVersion} activated.`);
     return Promise.resolve(true);
 }

@@ -67,6 +67,14 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 
 ### 变更日志
 
+#### 0.1.3
+* can add user defined content in the begin of ``in sepNotes.md``
+* fix the bug that (cannot adjust note pos when attach)
+* remove src and markdown file alignment
+
+#### 0.1.2
+* adjust note line when attach file(file may changed in detach status)
+
 #### 0.1.1
 * sync notes with standalone markdown file for summarize and easy to view  ``in sepNotes.md``
   * this file also record information about file attach status and sync time
@@ -84,6 +92,8 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 
 ### TODO
 * 重新匹配代码和笔记
+* sepNotes文件开头有一块用于随意记录的区域
+* 做一个匹配的事情
 
 如果你喜欢的话，请给它点个星 :star:，谢谢。
 
