@@ -71,6 +71,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * add quick open for other file(`sepNotes_diff.md` `sepNotes_category.md`)
 * add support for reorganizing note in category(shown in `sepNotes_category.md`) 
 * fix sync bug(sync src file with `sepNotes.md`)
+* save needrefresh state
 
 #### 0.1.3
 * can add user defined content in the begin of `in sepNotes.md`

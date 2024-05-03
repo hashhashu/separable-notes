@@ -16,7 +16,7 @@ export class NoteFile{
     respondCount: number;
     inProcess: boolean;
     needRefresh: boolean;
-    constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,blocks:Array<NoteBlock> = new Array()){
+    constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,blocks:Array<NoteBlock> = new Array(),needrefresh:boolean = false){
       this.path = filePath;
       this.configuration = configuration;
       this.statusbaritem = statusbar;
@@ -26,7 +26,7 @@ export class NoteFile{
       this.inProcess = false;
       this.ids = new Array();
       this.mdChangedLine = new Array();
-      this.needRefresh = false;
+      this.needRefresh = needrefresh;
     }
 
     setStatusBarItemText(noteMode:NoteMode = this.noteMode){
@@ -90,7 +90,6 @@ export class NoteFile{
       let attached = 0;
       let notMatchNum = 0;
       this.inProcess = true;
-      this.needRefresh = false;
       if(this.noteMode == NoteMode.Detached){
         if((this.blocks.length > 0)){
           const contentLines = this.getContentLines(document);
@@ -336,11 +335,12 @@ export class NoteFile{
         const matchFileStart = matchFilePathStart(this.path,true);
         const matchFileEnd = matchFilePathEnd(true);
         let keyWord = '';
-        let contentAll = Constants.sepNotesCatDesc;
+        let contentAll = '';
         let contentBlock = '';
         let hasKey = false;
         let inCurFile = false;
         let keywords = new Set();
+        let header = true;
         for(let line of contentLines){
           // new keyword block
           if(line.startsWith(matchCat)){
@@ -350,7 +350,11 @@ export class NoteFile{
             }
             if(contentBlock.trim().length > 0){
               logger.debug('- refreshmdcat -keyword:'+keyWord);
-              contentAll += (matchCat + addEof(keyWord) + contentBlock);
+              if(!header){
+                contentAll += (matchCat + addEof(keyWord));
+              }
+              header = false;
+              contentAll += contentBlock;
             }
             contentBlock = '';
             keyWord = getKeywordFromMd(line);
@@ -379,7 +383,10 @@ export class NoteFile{
           contentBlock += contentCat.get(keyWord);
         }
         if(contentBlock.trim().length > 0){
-          contentAll += (matchCat + addEof(keyWord) + contentBlock);
+          if(!header){
+            contentAll += (matchCat + addEof(keyWord));
+          }
+          contentAll += contentBlock;
         }
         // new add
         for(let [key,value] of contentCat){
@@ -434,6 +441,7 @@ export class NoteFile{
       this.refreshMd(document,mdStatus);
       this.refreshMdCat(document);
       this.mdChangedLine.length = 0;
+      this.needRefresh = false;
     }
 
     private getContentLines(document:vscode.TextDocument = null, path:string = ''):string[]{
@@ -519,6 +527,7 @@ export class NoteFile{
           break;
         }
       }
+      this.needRefresh = true;
     }
 
     isMdLineChanged():boolean{
@@ -624,17 +633,20 @@ export class serializableNoteFile{
     path: string;
     noteMode: NoteMode;
     blocks: Array<NoteBlock>;
+    needRefresh?: boolean;
     constructor(notefile:NoteFile){
       this.path = notefile.path;
       this.noteMode = notefile.noteMode;
       this.blocks = notefile.blocks;
+      this.needRefresh = notefile.needRefresh;
     }
 
     toJSON(): any {  
       return {
         path: this.path,  
         noteMode: this.noteMode, 
-        blocks: this.blocks.map(block => block.toJSON())
+        blocks: this.blocks.map(block => block.toJSON()),
+        needRefresh: this.needRefresh
       };  
     }  
 }

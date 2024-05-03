@@ -38,7 +38,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         fs.writeFileSync(Constants.sepNotesFilePath, Constants.sepNotesFileHead);
     }
     if(!fs.existsSync(Constants.sepNotesCategoryFilePath)){
-        fs.writeFileSync(Constants.sepNotesCategoryFilePath, "");
+        fs.writeFileSync(Constants.sepNotesCategoryFilePath, Constants.sepNotesCatDesc);
     }
 
     let activeEditor = vscode.window.activeTextEditor;
@@ -46,13 +46,16 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     serializedNotes = extensionContext.workspaceState.get(Constants.keyNotes)??new Array<serializableNoteFile>();
     for(let note of serializedNotes){
         if(fs.existsSync(note.path)){
-            Notes.set(note.path,new NoteFile(note.path,note.noteMode,configuration,statusBarItem,note.blocks));
+            Notes.set(note.path,new NoteFile(note.path,note.noteMode,configuration,statusBarItem,note.blocks,(note.needRefresh == null)?false:note.needRefresh));
         }
     }
+    logger.info('workspace state restored');
     for(let [_,note] of Notes){
         if(note.isAttached()){
             attachedFileNum += 1;
-            note.refresh(null,fetchMdStatus());
+            if(note.needRefresh){
+                note.refresh(null,fetchMdStatus());
+            }
         }
         else{
             detachedFileNum += 1;
@@ -61,6 +64,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     ratelimiter = new RateLimiter(1,200);
 
 // sepNotes ## sync markdown with source and vice versa(**test123**)123
+// sepNotes 12312412434
     extensionContext.subscriptions.push(
         workspace.onDidChangeTextDocument((event)=>{
             if (window.activeTextEditor && event.document === window.activeTextEditor.document) {
@@ -81,7 +85,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                             }
                             if(note.needRefresh){
                                 note.refresh(event.document,fetchMdStatus());
-                                note.needRefresh = false;
                             }
                         }
                         //warn modify
@@ -120,6 +123,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                                 }
                                 note.syncSrcWithMd(anno.text,linenumber);
                                 note.updateMdLine(anno.linenumber,rowsChanged(contentChange));
+                                updateStateNote(extensionContext);
                                 logger.info('linenumber:'+linenumber.toString()+' rowschanged:'+rowsChanged(contentChange));
                             }
                         }
@@ -516,7 +520,10 @@ function updateState(textEditor:vscode.TextEditor,extensionContext: ExtensionCon
         ++detachedFileNum;
     }
     Notes.get(path).setStatusBarItemText();
+    updateStateNote(extensionContext);
+}
 
+function updateStateNote(extensionContext: ExtensionContext){
     serializedNotes.length = 0;
     for (let [_, note] of Notes) {
         if(note.shouldSave()){
