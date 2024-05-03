@@ -79,6 +79,28 @@ export function getLineNumber(line:string):number{
   return match ? parseInt(match[0], 10) : -1;
 }
 
+export function getKeyWordsFromSrc(line:string):Array<string>{
+  let matches = new Array();
+  let keyIden = '**';
+  let index = line.indexOf(keyIden);
+  let endIndex = 0;
+  while(index >= 0){
+    endIndex = line.indexOf(keyIden,index+3);
+    if(endIndex >= index){
+      matches.push(line.substring(index+2,endIndex));
+      index = line.indexOf(keyIden,endIndex+3);
+    }
+    else{
+      break;
+    }
+  }  
+  return matches;
+}
+
+export function getKeywordFromMd(line:string):string{
+  return line.substring(2).trim();
+}
+
 export function getLineNumberDown(documment:vscode.TextDocument, startpos:number):number{
   let content = documment.getText();
   let lines = splitIntoLines(content);
@@ -110,8 +132,9 @@ export function getSrcFileFromMd(documment:vscode.TextDocument,startpos:number):
   let ret = '';  
   for(let i=startpos - 1;i>=0;i--){
     let line = lines[i];
-    if(line.startsWith('# [')){
-      const linkRegex = /\[(.*?)\]\((.*?)\)|<(.*?)>/;  
+    if(line.startsWith(matchFilePathEnd())
+      || line.startsWith(matchFilePathEnd(true))){
+      const linkRegex = /\[(.*?)\]\((.*?)\)/;  
       const links = line.match(linkRegex);  
       
       if(links){
@@ -131,12 +154,13 @@ export function getSrcFileFromMd(documment:vscode.TextDocument,startpos:number):
 }
 
 export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number){
+  logger.debug('getAnnoFromMd------------------');
   let content = documment.getText();
   let lines = splitIntoLines(content);
   let ret = '';
-  let start = startpos;
+  let start = startpos - 1;
   let line = '';
-  for(let i=startpos; i>=0 ;i--){
+  for(let i = start; i>=0 ;i--){
     line = lines[i];
     if(line.startsWith('```') || line.startsWith('# [')){
       start = i+1;
@@ -144,7 +168,7 @@ export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number){
     }
   }
   let end = startpos;
-  for(let i=startpos;i<lines.length;i++){
+  for(let i = end;i<lines.length;i++){
     line = lines[i];
     if(line.startsWith('```')){
       end = i - 1;
@@ -154,7 +178,7 @@ export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number){
   for(let i=start;i<=end;i++){
     ret += addEof(lines[i]);
   }
-  logger.debug('getAnnoFromMd------------------');
+  logger.debug('start:'+start.toString()+' end:'+end.toString());
   return {"text":ret,"linenumber":getLineNumber(lines[end+2])};
 }
 
@@ -194,9 +218,8 @@ export function isSepNotesFile(path:string):boolean{
 export function getMdPos(srcPath:string,srcPos:number){
     let content = fs.readFileSync(Constants.sepNotesFilePath).toString();
     let lines = splitIntoLines(content);
-    let fileName = getFileName(srcPath);
-    const matchFileStart = '# ['+ fileName +']'+'(' + srcPath +')';
-    const matchFileEnd = '# [';
+    const matchFileStart = matchFilePathStart(srcPath);
+    const matchFileEnd = matchFilePathEnd();
     let fileStart = false;
     let lineNumber = 0;
     for(let line of lines){
@@ -256,6 +279,27 @@ export function isEqual(str1:string,str2:string){
   }
   else{
     return false;
+  }
+}
+
+export function matchFilePathStart(path:string,isAnno = false){
+  let fileName = getFileName(path);
+  let fileIden = '# ['+ fileName +']'+'(' + path +')' ;
+  if(isAnno){
+    return '<!-- ' + fileIden +' -->';
+  }
+  else{
+    return fileIden;
+  }
+}
+
+export function matchFilePathEnd(isAnno = false){
+  let iden = '# [';
+  if(isAnno){
+    return '<!-- ' + iden;
+  }
+  else{
+    return iden;
   }
 }
 

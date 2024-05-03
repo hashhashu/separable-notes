@@ -7,8 +7,8 @@ separable notes is a VSCode extension that can manage your inline code note, mak
 
 It can be applied to scenarios sucmh as:
 * keep your note private and not committing to the repository that is maintained by many people.
-* outline your code and organize you code note in standalone markdown file.
-* reorganize your note in markdown file(by define @id and @refid, can easily imbed code in arbitrary markdown file)
+* outline your code and organize you code note in standalone markdown file(`sepNotes.md`).
+* Reorganize the content of the notes by category (by defining keyword(**\s**) shown in `sepNotes_category.md`)(or by define @id and @refid, can easily imbed code in arbitrary markdown file)
 
 ![demo1](pic/demo1.PNG)
 
@@ -66,9 +66,14 @@ if you change this, you should also change the configuration for todo-tree or ot
 ```
 
 ### ChangeLog
+#### 0.1.4
+* refresh `sepNotes.md` after attach if line number diffs(note refresh while not match)
+* add quick open for other file(`sepNotes_diff.md` `sepNotes_category.md`)
+* add support for reorganizing note in category(shown in `sepNotes_category.md`) 
+* fix sync bug(sync src file with `sepNotes.md`)
 
 #### 0.1.3
-* can add user defined content in the begin of ``in sepNotes.md``
+* can add user defined content in the begin of `in sepNotes.md`
 * fix the bug that (cannot adjust note pos when attach)
 * remove src and markdown file alignment
 
@@ -76,7 +81,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * adjust note line when attach file(file may changed in detach status)
 
 #### 0.1.1
-* sync notes with standalone markdown file for summarize and easy to view  ``in sepNotes.md``
+* sync notes with standalone markdown file for summarize and easy to view  `in sepNotes.md`
   * this file also record information about file attach status and sync time
   * can easily open this file by clicking on the menu
   * 
@@ -92,6 +97,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 
 ### TODO
 * [x] adjust note pos
+* [x] reorganize note in category
 * import notes into workspace
 * record note history
 

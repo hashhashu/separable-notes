@@ -2,7 +2,7 @@
   "name": "separable-notes",
   "displayName": "separable notes",
   "description": "inline Code Note Management",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "engines": {
     "vscode": "^1.42.0"
   },
@@ -75,7 +75,21 @@
       },
       {
         "command": "separableNotes.openSepNotes",
-        "title": "separableNotes openSepNotes"
+        "title": "openSepNotes"
+      },
+      {
+        "command": "separableNotes.openSepNotesDiff",
+        "title": "openSepNotesDiff"
+      },
+      {
+        "command": "separableNotes.openSepNotesCat",
+        "title": "openSepNotesCat"
+      }
+    ],
+    "submenus": [
+      {
+        "id":"separableNotes.openSepNotes",
+        "label":"openSepNotes"
       }
     ],
     "menus": {
@@ -85,8 +99,22 @@
           "group": "separableNotes@1"
         },
         {
+          "group": "separableNotes@1",
+          "submenu":"separableNotes.openSepNotes"
+        }      
+      ],
+      "separableNotes.openSepNotes":[
+        {
           "command": "separableNotes.openSepNotes",
-          "group": "separableNotes@1"
+          "group": "navigation"
+        },
+        {
+          "command": "separableNotes.openSepNotesDiff",
+          "group": "navigation"
+        },
+        {
+          "command": "separableNotes.openSepNotesCat",
+          "group": "navigation"
         }
       ]
     },

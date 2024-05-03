@@ -4,9 +4,9 @@
 separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔记，并可以使你的笔记可分离
 
 它可以应用于以下场景，例如：
-* 保持你的笔记私密性，不将其提交给由多人维护的存储库。
-* 梳理你的代码，并将你的代码笔记组织到独立的 Markdown 文件中。
-* 在 Markdown 文件中重新组织你的笔记（通过定义 @id 和 @refid，可以轻松将代码嵌入到任意的 Markdown 文件中
+* 保持你的笔记私密性，不将其提交给由多人维护的存储库(可以方便地合并或分离)。
+* 梳理你的代码，并将你的代码笔记组织到独立的 Markdown 文件中(`sepNotes.md`)(以文件目录方式),并且对该文件的修改可以同步到源文件中。
+* 以类别方式重新排列笔记内容（通过定义**\s**格式的关键字，结果显示在`sepNotes_category.md`）（或者通过定义 @id 和 @refid，可以轻松将代码嵌入到任意的 Markdown 文件中
 
 ![demo1](pic/demo1.PNG)
 
@@ -66,6 +66,11 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 
 
 ### 变更日志
+#### 0.1.4
+* refresh `sepNotes.md` after attach if line number diffs(note refresh while not match)
+* add quick open for other file(`sepNotes_diff.md` `sepNotes_category.md`)
+* add support for reorganizing note in category(shown in `sepNotes_category.md`) 
+* fix sync bug(sync src file with `sepNotes.md`)
 
 #### 0.1.3
 * can add user defined content in the begin of ``in sepNotes.md``
