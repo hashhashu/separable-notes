@@ -225,57 +225,57 @@ export class NoteFile{
       return this.inProcess;
     }
 
-    fetchMdFromSrc(document:vscode.TextDocument = null):{"content":string,"contentCat":Map<string,string>}{
+    fetchMdFromSrc(document:vscode.TextDocument = null):{"content":string,"contentByCat":Map<string,string>}{
       logger.debug('fetchMdFromSrc-----------------------------------');
       const contentLines = this.getContentLines(document);
       let below = 0;  //code block max lines below note
       let lineCount = 1;
       let contentExport = '';
-      let contentCatSin = new ContentCat();
-      let contentCat = new Array<ContentCat>();
+      let contentcatblock = new ContentCatBlock();
+      let contentcatblocks = new Array<ContentCatBlock>();
       let tempContent = '';
-      let contentMerged:Map<string,string> = new Map<string,string>();
+      let contentByCat:Map<string,string> = new Map<string,string>();
       for(let line of contentLines){
         // new start
         if(line.includes(this.configuration.noteId)){
           if(below > 0 && below < 3){
-            contentCatSin.content += '```\n';
-            contentCat.push(contentCatSin);
-            contentCatSin = new ContentCat();
+            contentcatblock.content += '```\n';
+            contentcatblocks.push(contentcatblock);
+            contentcatblock = new ContentCatBlock();
           }
           tempContent = cutNoteId(line,this.configuration.noteId);
-          contentCatSin.addKeywords(getKeyWordsFromSrc(tempContent));
-          contentCatSin.content += addEof(tempContent);
+          contentcatblock.addKeywords(getKeyWordsFromSrc(tempContent));
+          contentcatblock.content += addEof(tempContent);
           below = 3;
         }
         else if(below > 0){
           if(below == 3){
-            contentCatSin.content += '```'+getLanguageIdetifier(this.configuration.associations,this.path)+'\n';
+            contentcatblock.content += '```'+getLanguageIdetifier(this.configuration.associations,this.path)+'\n';
           }
-          contentCatSin.content += (lineCount.toString() + '  ' + addEof(line));
+          contentcatblock.content += (lineCount.toString() + '  ' + addEof(line));
           --below;
           if(below == 0){
-            contentCatSin.content += '```\n';
-            contentCat.push(contentCatSin);
-            contentCatSin = new ContentCat();
+            contentcatblock.content += '```\n';
+            contentcatblocks.push(contentcatblock);
+            contentcatblock = new ContentCatBlock();
           }
         }
         ++lineCount;
       }
       if(below > 0 && below < 3){
-        contentCatSin.content += '```\n';
-        contentCat.push(contentCatSin);
-        contentCatSin = new ContentCat();
+        contentcatblock.content += '```\n';
+        contentcatblocks.push(contentcatblock);
+        contentcatblock = new ContentCatBlock();
       }
-      for(let ele of contentCat){
+      for(let ele of contentcatblocks){
         contentExport += ele.content;
         if(ele.hasKeyword()){
           for(let keyword of ele.keywords){
-            if(contentMerged.has(keyword)){
-              contentMerged.set(keyword,contentMerged.get(keyword) + '  \n' + ele.content);
+            if(contentByCat.has(keyword)){
+              contentByCat.set(keyword,contentByCat.get(keyword) + '  \n' + ele.content);
             }
             else{
-              contentMerged.set(keyword,matchFilePathStart(this.path,true) + '  \n' + ele.content);
+              contentByCat.set(keyword,matchFilePathStart(this.path,true) + '  \n' + ele.content);
             }
           }
         }
@@ -284,7 +284,7 @@ export class NoteFile{
         contentExport = matchFilePathStart(this.path) + '  \n' + contentExport + '  \n  \n';
       }
       logger.debug('from:'+Constants.sepNotesFilePath+'  TO:'+this.path);
-      return {"content":contentExport,"contentCat":contentMerged};
+      return {"content":contentExport,"contentByCat":contentByCat};
     }
 
     //`sepNotes.md`
@@ -329,7 +329,7 @@ export class NoteFile{
     refreshMdCat(document:vscode.TextDocument = null){
       if(this.isAttached()){
         logger.debug('refreshMdCat---------------------');
-        let contentCat = this.fetchMdFromSrc(document).contentCat;
+        let contentByCat = this.fetchMdFromSrc(document).contentByCat;
         let contentLines = this.getContentLines(null,Constants.sepNotesCategoryFilePath);
         const matchCat = '# ';
         const matchFileStart = matchFilePathStart(this.path,true);
@@ -345,11 +345,10 @@ export class NoteFile{
           // new keyword block
           if(line.startsWith(matchCat)){
             if(hasKey){
-              contentBlock += contentCat.get(keyWord);
+              contentBlock += contentByCat.get(keyWord);
               hasKey = false;
             }
             if(contentBlock.trim().length > 0){
-              logger.debug('- refreshmdcat -keyword:'+keyWord);
               if(!header){
                 contentAll += (matchCat + addEof(keyWord));
               }
@@ -359,7 +358,7 @@ export class NoteFile{
             contentBlock = '';
             keyWord = getKeywordFromMd(line);
             keywords.add(keyWord);
-            if(contentCat.has(keyWord)){
+            if(contentByCat.has(keyWord)){
               hasKey = true;
             }
             inCurFile = false;
@@ -380,7 +379,7 @@ export class NoteFile{
           }
         }
         if(hasKey){
-          contentBlock += contentCat.get(keyWord);
+          contentBlock += contentByCat.get(keyWord);
         }
         if(contentBlock.trim().length > 0){
           if(!header){
@@ -389,8 +388,7 @@ export class NoteFile{
           contentAll += contentBlock;
         }
         // new add
-        for(let [key,value] of contentCat){
-          logger.debug('keyword_refreshmdcat:'+key);
+        for(let [key,value] of contentByCat){
           if(!keywords.has(key)){
             contentAll += (matchCat + addEof(key) + '  \n' + value);
           }
@@ -675,7 +673,7 @@ class NoteBlock{
   }
 }
 
-class ContentCat{
+class ContentCatBlock{
   keywords: Set<string>;
   content: string;
   constructor(keywordp = new Set<string>(), contentp = ''){

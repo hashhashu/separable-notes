@@ -396,11 +396,24 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     );
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.syncMdWithSrc, async () => {
-            let content = Constants.sepNotesFileHead + getMdUserRandomNote();
+            let contentMd = Constants.sepNotesFileHead + getMdUserRandomNote();
+            let contentMdCat = Constants.sepNotesCatDesc;
+            let contentByCatAll:Map<string,string> = new Map<string,string>();
+            let contentFetchRet:{"content":string,"contentByCat":Map<string,string>};
             let notAttached = false;
             for(let [_,note] of Notes){
-                if(note.isAttached())
-                    content += note.fetchMdFromSrc().content;
+                if(note.isAttached()){
+                    contentFetchRet = note.fetchMdFromSrc();
+                    contentMd += contentFetchRet.content;
+                    for(let [key,value] of contentFetchRet.contentByCat){
+                        if(!contentByCatAll.has(key)){
+                            contentByCatAll.set(key,value);
+                        }
+                        else{
+                            contentByCatAll.set(key,contentByCatAll.get(key) + value);
+                        }
+                    }
+                }
                 else if(note.blocks.length > 0){
                     notAttached = true;
                     break;
@@ -410,8 +423,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 window.showInformationMessage('there are files not attached'); 
             }
             else{
-                fs.writeFileSync(Constants.sepNotesFilePath, content);
-                window.showInformationMessage('sync with file ./vscode/'+Constants.sepNotesFileName+' success');
+                fs.writeFileSync(Constants.sepNotesFilePath, contentMd); 
+                for(let [key,value] of contentByCatAll){
+                    contentMdCat += ('# ' + addEof(key) + '  \n' + value);
+                }
+                fs.writeFileSync(Constants.sepNotesCategoryFilePath, contentMdCat); 
+                window.showInformationMessage('sync with file '+Constants.sepNotesFileName+','+ Constants.sepNotesCategoryFileName +' success');
             }
             updateMdStatus();
         }

@@ -22,7 +22,8 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * separableNotes attachAll
   * 将此工作区中的所有笔记附加
 * separableNotes syncMdWithSrc
-  * 将笔记导出到 Markdown 文件（位于 .vscode/sepNotes.md）
+  * 将笔记导出到 Markdown 文件（位于 `.vscode/sepNotes.md`）
+  * 将笔记以类别的方式重新组织，导出到Markdown文件(位于`sepNotes_category.md`)
   * 在生成的 Markdown 文件中，你可以通过按下 Ctrl 键和（鼠标左键）跳转到源文件
 ##### 菜单命令
 * separableNotes NoteIt
@@ -72,6 +73,7 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * add support for reorganizing note in category(shown in `sepNotes_category.md`) 
 * fix sync bug(sync src file with `sepNotes.md`)
 * save needrefresh state
+* `separableNotes syncMdWithSrc` Commands now can sync `sepNotes_category.md` with src file
 
 #### 0.1.3
 * can add user defined content in the begin of ``in sepNotes.md``
