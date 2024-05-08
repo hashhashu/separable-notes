@@ -27,6 +27,8 @@ After installing separable notes, you will be able to manage your inline code no
   * export notes in markdown file(in `.vscode/sepNotes.md`)
   * exort note by category (in `sepNotes_category.md`)
   * in generated markdown file, you can go to src file by click ctrl+(left button)
+* separableNotes.importNotes
+  * import note from `sepNotes.md` into code(original note will be replaced)
 ##### menu commands
 * separableNotes NoteIt
   * Add Comment or Remove Comment
@@ -74,6 +76,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * fix sync bug(sync src file with `sepNotes.md`)
 * save needrefresh state
 * `separableNotes syncMdWithSrc` Commands now can sync `sepNotes_category.md` with src file
+* add `separableNotes.importNotes` to import notes from `sepNotes.md` into code
 
 #### 0.1.3
 * can add user defined content in the begin of `in sepNotes.md`
@@ -101,7 +104,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 ### TODO
 * [x] adjust note pos
 * [x] reorganize note in category
-* import notes into workspace
+* [x] import notes into workspace
 * record note history
 
 Please star :star: it if you like it, Thanks.

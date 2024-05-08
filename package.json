@@ -74,6 +74,10 @@
         "title": "separableNotes syncMdWithSrc"
       },
       {
+        "command": "separableNotes.importNotes",
+        "title": "separableNotes importNotes"
+      },
+      {
         "command": "separableNotes.openSepNotes",
         "title": "openSepNotes"
       },

@@ -134,20 +134,28 @@ export function getSrcFileFromMd(documment:vscode.TextDocument,startpos:number):
     let line = lines[i];
     if(line.startsWith(matchFilePathEnd())
       || line.startsWith(matchFilePathEnd(true))){
-      const linkRegex = /\[(.*?)\]\((.*?)\)/;  
-      const links = line.match(linkRegex);  
-      
-      if(links){
-        let link = links[0];
-        if (link.startsWith('<') && link.endsWith('>')) {  
-          ret = link.slice(1, -1);  
-        } else {  
-          ret = link.split('](')[1].split(')')[0];  
-        }
+        ret = getSrcFileFromLine(line);
         if(ret.length > 0){
           return ret;
-        } 
-      }
+        }
+    }
+  }
+  return '';
+}
+export function getSrcFileFromLine(line:string){
+  const linkRegex = /\[(.*?)\]\((.*?)\)/;
+  const links = line.match(linkRegex);
+  let ret = ''; 
+
+  if (links) {
+    let link = links[0];
+    if (link.startsWith('<') && link.endsWith('>')) {
+      ret = link.slice(1, -1);
+    } else {
+      ret = link.split('](')[1].split(')')[0];
+    }
+    if (ret.length > 0) {
+      return ret;
     }
   }
   return '';

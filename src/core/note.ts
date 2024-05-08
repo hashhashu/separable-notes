@@ -89,6 +89,8 @@ export class NoteFile{
       logger.debug('attachContent begin'+this.blocks.length.toString()+'  ,'+this.noteMode.toString());
       let attached = 0;
       let notMatchNum = 0;
+      let blockIndex = this.blocks.length;
+      let block:NoteBlock;
       this.inProcess = true;
       if(this.noteMode == NoteMode.Detached){
         if((this.blocks.length > 0)){
@@ -97,8 +99,13 @@ export class NoteFile{
           let lastIndex = 0;
           let end = 0;
           notMatchNum = 0;
-          for(let block of this.blocks){
+          for(let i = 0;i<this.blocks.length;i++){
+            block = this.blocks[i];
             end = block.codeLine;
+            if(end >= contentLines.length){
+              blockIndex = i;
+              break;
+            }
             for(let i = lastIndex; i < end ; i++){
               attachedContent += addEof(contentLines[i]);
             }
@@ -115,6 +122,12 @@ export class NoteFile{
           for(let i = lastIndex; i<contentLines.length ; i++){
             attachedContent += addEof(contentLines[i]);
           }
+          for(let i = blockIndex;i < this.blocks.length;i++){
+            block = this.blocks[i];
+            attachedContent += block.note;
+            block.changedLine = 1;
+            ++notMatchNum;
+          }
           // need adjust pos
           if(notMatchNum > 0){
             logger.debug('need rematch--------------');
@@ -124,16 +137,28 @@ export class NoteFile{
               // merge block
               attachedContent = '';
               lastIndex = 0;
-              for(let block of this.blocks){
+              blockIndex = this.blocks.length;
+              for(let i=0;i<this.blocks.length;i++){
+                block = this.blocks[i];
                 end = block.codeLine;
+                if(end >= contentLines.length){
+                  blockIndex = i;
+                  break;
+                }
                 for(let i = lastIndex; i < end ; i++){
                   attachedContent += addEof(contentLines[i]);
                 }
                 lastIndex = end;
                 attachedContent += block.note;
+                logger.debug('benote:'+block.note)
               }
               for(let i = lastIndex; i<contentLines.length ; i++){
                 attachedContent += addEof(contentLines[i]);
+              }
+              for(let i = blockIndex;i < this.blocks.length;i++){
+                block = this.blocks[i];
+                attachedContent += block.note;
+                logger.debug('afnote:'+block.note)
               }
             }
             this.exportToMdDiff(attachAll);
@@ -460,33 +485,35 @@ export class NoteFile{
     }
 
     syncSrcWithMd(text:string,linenumber:number){
-      logger.debug('syncSrcWithMd:'+linenumber.toString());
-      const contentLines = this.getContentLines();
-      // can consider another way to add anno(now prefix + content)
-      const prefix = getPrefix(contentLines[linenumber - 2],this.configuration.noteId);
-      const annoLines = splitIntoLines(text);
-      let annoConcat ='';
-      for(let line of annoLines){
-        annoConcat += addEof(prefix + line);
-      }
-      let start = linenumber - 2;
-      for(let i = start;i>=0;i--){
-        if(!contentLines[i].includes(this.configuration.noteId)){
-          start = i + 1;
-          break;
+      if(this.isAttached()){
+        logger.debug('syncSrcWithMd:'+linenumber.toString());
+        const contentLines = this.getContentLines();
+        // can consider another way to add anno(now prefix + content)
+        const prefix = getPrefix(contentLines[linenumber - 2],this.configuration.noteId);
+        const annoLines = splitIntoLines(text);
+        let annoConcat ='';
+        for(let line of annoLines){
+          annoConcat += addEof(prefix + line);
         }
+        let start = linenumber - 2;
+        for(let i = start;i>=0;i--){
+          if(!contentLines[i].includes(this.configuration.noteId)){
+            start = i + 1;
+            break;
+          }
+        }
+        let ret = '';
+        for(let i=0;i<start;i++){
+          ret += addEof(contentLines[i]);
+        }
+        ret += annoConcat;
+        logger.debug('syncSrcWithMd:'+annoConcat);
+        for(let i=linenumber - 1;i<contentLines.length;i++){
+          ret += addEof(contentLines[i]);
+        }
+        fs.writeFileSync(this.path, encode(ret, this.configuration.encoding));
+        this.refreshMdCat();
       }
-      let ret = '';
-      for(let i=0;i<start;i++){
-        ret += addEof(contentLines[i]);
-      }
-      ret += annoConcat;
-      logger.debug('syncSrcWithMd:'+annoConcat);
-      for(let i=linenumber - 1;i<contentLines.length;i++){
-        ret += addEof(contentLines[i]);
-      }
-      fs.writeFileSync(this.path, encode(ret, this.configuration.encoding));
-      this.refreshMdCat();
     }
 
     //linenumber:note block first code line 
@@ -557,6 +584,9 @@ export class NoteFile{
         // need adjust
         if(block.changedLine == 1){
           let curLineNumber = block.codeLine;
+          if(curLineNumber >= lines.length){
+            curLineNumber = lines.length - 1;
+          }
           if((curLineNumber + accuLines) > 0 && (curLineNumber + accuLines) < lines.length){
             if(isEqual(block.codeBelow,lines[curLineNumber + accuLines])){
               block.codeLine = curLineNumber + accuLines;
@@ -649,7 +679,7 @@ export class serializableNoteFile{
     }  
 }
 
-class NoteBlock{
+export class NoteBlock{
   codeLine: number;
   note: string;          // note block content
   noteLineCount: number; // note block lines count
