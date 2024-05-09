@@ -1,6 +1,6 @@
 **Read this in other languages: [English](README.md), [中文](README_ZH.md).**
 
-**:exclamation:Before using, please conduct some tests first, and make sure to backup your code and notes promptly.**
+**:exclamation:Before using, please conduct some tests first, and make sure to backup your code and notes promptly.(timeline in vscode can also be used to recover content)**
 
 # separable-notes 
 separable notes is a VSCode extension that can manage your inline code note, make your note separable.
@@ -77,6 +77,9 @@ if you change this, you should also change the configuration for todo-tree or ot
 * save needrefresh state
 * `separableNotes syncMdWithSrc` Commands now can sync `sepNotes_category.md` with src file
 * add `separableNotes.importNotes` to import notes from `sepNotes.md` into code
+* backup `sepNotes.md` before refresh content(backup file is `sepNotes _bak.md`)
+* change root path to `.vscode/sepNotes/`
+* limit file sync speed to avoid typing delay
 
 #### 0.1.3
 * can add user defined content in the begin of `in sepNotes.md`

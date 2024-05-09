@@ -1,5 +1,5 @@
 **其他语言版本: [English](README.md), [中文](README_ZH.md).**  
-**:exclamation:使用前请先做一些测试，代码和笔记请及时备份**
+**:exclamation:使用前请先做一些测试，代码和笔记请及时备份(也可以通过vscode的时间线功能查看恢复内容)**
 # separable-notes 
 separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔记，并可以使你的笔记可分离
 
@@ -77,6 +77,9 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * save needrefresh state
 * `separableNotes syncMdWithSrc` Commands now can sync `sepNotes_category.md` with src file
 * add `separableNotes.importNotes` to import notes from `sepNotes.md` into code
+* backup `sepNotes.md` before refresh content(backup file is `sepNotes _bak.md`)
+* change root path to `.vscode/sepNotes/`
+* limit file sync speed to avoid typing delay 
 
 #### 0.1.3
 * can add user defined content in the begin of ``in sepNotes.md``

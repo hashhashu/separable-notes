@@ -84,50 +84,63 @@ export class NoteFile{
       logger.debug('detachContent end');
       return detached;
     }
-
+   
+    private fetchAttachContent(contentLines:string[],beforeAdjust:boolean = true):{"content":string,"notMatchNum":number}{
+      let attachedContent = '';
+      let blockIndex = this.blocks.length;
+      let block:NoteBlock;
+      let lastIndex = 0;
+      let end = 0;
+      let notMatchNum = 0;
+      this.blocks.sort((a,b) =>  a.codeLine - b.codeLine);
+      for (let i = 0; i < this.blocks.length; i++) {
+        block = this.blocks[i];
+        end = block.codeLine;
+        if (end >= contentLines.length) {
+          blockIndex = i;
+          break;
+        }
+        for (let j = lastIndex; j < end; j++) {
+          attachedContent += addEof(contentLines[j]);
+        }
+        lastIndex = end;
+        attachedContent += block.note;
+        if(beforeAdjust){
+          if (end < contentLines.length && !isEqual(block.codeBelow, contentLines[end])) {
+            block.changedLine = 1;
+            ++notMatchNum;
+          }
+          else {
+            block.changedLine = 0;
+          }
+        }
+      }
+      for (let i = lastIndex; i < contentLines.length; i++) {
+        attachedContent += addEof(contentLines[i]);
+      }
+      for (let i = blockIndex; i < this.blocks.length; i++) {
+        block = this.blocks[i];
+        attachedContent += block.note;
+        if(beforeAdjust){
+          block.changedLine = 1;
+          ++notMatchNum;
+        }
+      }
+      return {"content":attachedContent,"notMatchNum":notMatchNum};
+    }
+     
     attachContent(attachAll:boolean = false,document:vscode.TextDocument = null){
       logger.debug('attachContent begin'+this.blocks.length.toString()+'  ,'+this.noteMode.toString());
       let attached = 0;
       let notMatchNum = 0;
-      let blockIndex = this.blocks.length;
-      let block:NoteBlock;
       this.inProcess = true;
       if(this.noteMode == NoteMode.Detached){
         if((this.blocks.length > 0)){
           const contentLines = this.getContentLines(document);
           let attachedContent = '';
-          let lastIndex = 0;
-          let end = 0;
-          notMatchNum = 0;
-          for(let i = 0;i<this.blocks.length;i++){
-            block = this.blocks[i];
-            end = block.codeLine;
-            if(end >= contentLines.length){
-              blockIndex = i;
-              break;
-            }
-            for(let i = lastIndex; i < end ; i++){
-              attachedContent += addEof(contentLines[i]);
-            }
-            lastIndex = end;
-            attachedContent += block.note;
-            if(end < contentLines.length && !isEqual(block.codeBelow,contentLines[end])){
-              block.changedLine = 1;
-              ++notMatchNum;
-            }
-            else{
-              block.changedLine = 0;
-            }
-          }
-          for(let i = lastIndex; i<contentLines.length ; i++){
-            attachedContent += addEof(contentLines[i]);
-          }
-          for(let i = blockIndex;i < this.blocks.length;i++){
-            block = this.blocks[i];
-            attachedContent += block.note;
-            block.changedLine = 1;
-            ++notMatchNum;
-          }
+          let fetchAttachContentRet = this.fetchAttachContent(contentLines);
+          notMatchNum = fetchAttachContentRet.notMatchNum;
+          attachedContent = fetchAttachContentRet.content;
           // need adjust pos
           if(notMatchNum > 0){
             logger.debug('need rematch--------------');
@@ -135,31 +148,7 @@ export class NoteFile{
               logger.debug('user setting need rematch---------');
               this.adjustNotePos(contentLines);
               // merge block
-              attachedContent = '';
-              lastIndex = 0;
-              blockIndex = this.blocks.length;
-              for(let i=0;i<this.blocks.length;i++){
-                block = this.blocks[i];
-                end = block.codeLine;
-                if(end >= contentLines.length){
-                  blockIndex = i;
-                  break;
-                }
-                for(let i = lastIndex; i < end ; i++){
-                  attachedContent += addEof(contentLines[i]);
-                }
-                lastIndex = end;
-                attachedContent += block.note;
-                logger.debug('benote:'+block.note)
-              }
-              for(let i = lastIndex; i<contentLines.length ; i++){
-                attachedContent += addEof(contentLines[i]);
-              }
-              for(let i = blockIndex;i < this.blocks.length;i++){
-                block = this.blocks[i];
-                attachedContent += block.note;
-                logger.debug('afnote:'+block.note)
-              }
+              attachedContent = this.fetchAttachContent(contentLines,false).content;
             }
             this.exportToMdDiff(attachAll);
           }
@@ -346,6 +335,7 @@ export class NoteFile{
         if(!fileEnd){
           contentAll += this.fetchMdFromSrc(document).content;
         }
+        fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
         fs.writeFileSync(Constants.sepNotesFilePath, contentAll);
       }
     }    

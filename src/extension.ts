@@ -20,6 +20,7 @@ let serializedNotes :Array<serializableNoteFile> = new Array<serializableNoteFil
 let statusBarItem: vscode.StatusBarItem;
 let inAll = false;
 let ratelimiter:RateLimiter;
+let ratelimiterSep:RateLimiter;
 
 export async function activate(extensionContext: ExtensionContext): Promise<boolean> {
     logger.info(
@@ -35,7 +36,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     statusBarItem.show();
 
     if(!fs.existsSync(Constants.sepNotesFilePath)){
-        fs.writeFileSync(Constants.sepNotesFilePath, Constants.sepNotesFileHead);
+        if(fs.existsSync(Constants.sepNotesFileOriPath)){
+            fs.copyFileSync(Constants.sepNotesFileOriPath,Constants.sepNotesFilePath);
+        }
+        else{
+            fs.writeFileSync(Constants.sepNotesFilePath, Constants.sepNotesFileHead);
+        }
     }
     if(!fs.existsSync(Constants.sepNotesCategoryFilePath)){
         fs.writeFileSync(Constants.sepNotesCategoryFilePath, Constants.sepNotesCatDesc);
@@ -61,8 +67,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             detachedFileNum += 1;
         }
     }
-    ratelimiter = new RateLimiter(1,200);
-
+    ratelimiter = new RateLimiter(1,1000);
+    ratelimiterSep = new RateLimiter(1,1000);
+    
 // sepNotes ## sync markdown with source and vice versa(**test123**)123
 // sepNotes 12312412434
     extensionContext.subscriptions.push(
@@ -101,53 +108,47 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                                     if(ratelimiter.isAllowed()){
                                         note.refresh(event.document,fetchMdStatus());
                                     }
-                                },500);
+                                },1200);
+                            }
+                        }
+                    }
+                    function syncSrcWithMdAll(){
+                        for(let contentChange of event.contentChanges){
+                            logger.debug(contentChange.text);
+                            logger.debug(contentChange.rangeLength.toString());
+                            let startpos = contentChange.range.start.line;
+                            let srcPath = getSrcFileFromMd(event.document, startpos);
+                            if (fs.existsSync(srcPath)) {
+                                let note = Notes.get(srcPath);
+                                if (note && note.isAttached()) {
+                                    logger.debug('startpos:' + startpos.toString());
+                                    let anno = getAnnoFromMd(event.document, startpos);
+                                    logger.debug('text:' + anno.text + ' linenumber:' + anno.linenumber.toString());
+                                    let linenumber = anno.linenumber;
+                                    if (note.isMdLineChanged()) {
+                                        linenumber = note.getMdLine(linenumber);
+                                    }
+                                    note.syncSrcWithMd(anno.text, linenumber);
+                                    note.updateMdLine(anno.linenumber, rowsChanged(contentChange));
+                                    logger.info('linenumber:' + linenumber.toString() + ' rowschanged:' + rowsChanged(contentChange));
+                                }
+                                else {
+                                    window.showWarningMessage('file:' + srcPath + ' is not attached, changes won\'t sync with src file');
+                                }
                             }
                         }
                     }
                     // sync source with markdown
                     if(isSepNotesFile(path) && !inAll){
-                        for(let contentChange of event.contentChanges){
-                            logger.debug(contentChange.text);
-                            logger.debug(contentChange.rangeLength.toString());
-                            let startpos = contentChange.range.start.line;
-                            let srcPath = getSrcFileFromMd(event.document,startpos);
-                            let note = Notes.get(srcPath);
-                            if(note && note.isAttached()){
-                                if(ratelimiter.isAllowed()){
-                                    logger.debug('startpos:'+startpos.toString());
-                                    let anno = getAnnoFromMd(event.document,startpos);
-                                    logger.debug('text:'+anno.text+' linenumber:'+anno.linenumber.toString());
-                                    let linenumber = anno.linenumber;
-                                    if(note.isMdLineChanged()){
-                                        linenumber = note.getMdLine(linenumber);
-                                    }
-                                    note.syncSrcWithMd(anno.text,linenumber);
-                                    note.updateMdLine(anno.linenumber,rowsChanged(contentChange));
-                                    updateStateNote(extensionContext);
-                                    logger.info('linenumber:'+linenumber.toString()+' rowschanged:'+rowsChanged(contentChange));
+                        if(ratelimiterSep.isAllowed()){
+                            syncSrcWithMdAll();
+                        }
+                        else{
+                            setTimeout(function () {
+                                if (ratelimiterSep.isAllowed()) {
+                                    syncSrcWithMdAll();
                                 }
-                                else{
-                                    setTimeout(function(){
-                                        if(ratelimiter.isAllowed()){
-                                            logger.debug('startpos:'+startpos.toString());
-                                            let anno = getAnnoFromMd(event.document,startpos);
-                                            logger.debug('text:'+anno.text+' linenumber:'+anno.linenumber.toString());
-                                            let linenumber = anno.linenumber;
-                                            if(note.isMdLineChanged()){
-                                                linenumber = note.getMdLine(linenumber);
-                                            }
-                                            note.syncSrcWithMd(anno.text,linenumber);
-                                            note.updateMdLine(anno.linenumber,rowsChanged(contentChange));
-                                            updateStateNote(extensionContext);
-                                            logger.info('linenumber:'+linenumber.toString()+' rowschanged:'+rowsChanged(contentChange));
-                                        }
-                                    },500);
-                                }
-                            }
-                            else{
-                                window.showWarningMessage('file:'+srcPath+' is not attached, changes won\'t sync with src file');
-                            }
+                            }, 1200);
                         }
                     }
                 }
@@ -170,7 +171,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             if (typeof textEditor === "undefined") {
                 return;
             }
-            updateState(textEditor,extensionContext);
+            // updateState(textEditor,extensionContext);
         })
     );
     
@@ -249,7 +250,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         let status = note.ModeSwitch(selected,activeEditor.document);
                         attachedFileNum += status;
                         detachedFileNum -= status;
-                        updateState(activeEditor,extensionContext);
+                        // updateState(activeEditor,extensionContext);
                         updateMdStatus();
                         if(note.isAttached()){
                             note.refresh(null,fetchMdStatus());
@@ -282,7 +283,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     }
                 }
                 activeEditor = vscode.window.activeTextEditor;
-                updateState(activeEditor,extensionContext);
+                // updateState(activeEditor,extensionContext);
                 window.showInformationMessage('atach all finished');
                 updateMdStatus();
                 if(hasDiff){
@@ -308,7 +309,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 }
             }
             activeEditor = vscode.window.activeTextEditor;
-            updateState(activeEditor, extensionContext);
+            // updateState(activeEditor, extensionContext);
             window.showInformationMessage('detach all finished');
             updateMdStatus();
             inAll = false;
@@ -324,7 +325,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.noteIt, async () => {
             activeEditor = vscode.window.activeTextEditor;
-            updateState(activeEditor,extensionContext);
             let path = activeEditor.document.uri.fsPath;
             if(Notes.get(path).isAttached()){
                 let start = activeEditor.selection.start.line;
@@ -377,7 +377,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             else{
                 window.showInformationMessage('please attach it first before add note');
             }
-            updateState(activeEditor,extensionContext);
+            // updateState(activeEditor,extensionContext);
         }
 	));
 // sepNotes ### hover for inline code
@@ -423,6 +423,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     );
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.syncMdWithSrc, async () => {
+            fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
             let contentMd = Constants.sepNotesFileHead + getMdUserRandomNote();
             let contentMdCat = Constants.sepNotesCatDesc;
             let contentByCatAll:Map<string,string> = new Map<string,string>();
@@ -610,7 +611,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 activeEditor = vscode.window.activeTextEditor;
                 window.showInformationMessage('atach all finished');
                 updateMdStatus();
-                updateState(activeEditor,extensionContext);
+                // updateState(activeEditor,extensionContext);
                 if(hasDiff){
                     vscode.window.showWarningMessage('codes have changed, please see the diff in ' + Constants.sepNotesDiffFileName);
                 }
@@ -624,11 +625,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         if(activeEditor){
             updateState(activeEditor,extensionContext);
         }
-        else{
-            setTimeout(showAttachStatus,500);
-        }
     }
-    setTimeout(showAttachStatus,500);
+    setInterval(showAttachStatus,1000);
 
     logger.debug('rematch:'+(configuration.reMatch?'true':'false'));
     logger.info(`Extension ${Constants.extensionName} v${Constants.extensionVersion} activated.`);
