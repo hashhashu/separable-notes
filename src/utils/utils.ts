@@ -190,7 +190,17 @@ export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number){
   return {"text":ret,"linenumber":getLineNumber(lines[end+2])};
 }
 
-
+export function getMatchLineCount(documment:vscode.TextDocument,matchText:string):number{
+  let content = documment.getText();
+  let lines = splitIntoLines(content);
+  let count = 0;
+  for(let line of lines){
+    if(isEqual(matchText,line)){
+      ++count;
+    }
+  }
+  return count;
+}
 
 export function getId(line:string,idOrRefer:boolean = true,identifier:string=''):string|null{
   let regex;
@@ -228,17 +238,30 @@ export function getMdPos(srcPath:string,srcPos:number){
     let lines = splitIntoLines(content);
     const matchFileStart = matchFilePathStart(srcPath);
     const matchFileEnd = matchFilePathEnd();
+    const matchCodeStart = '```';
+    let inCode = false;
     let fileStart = false;
     let lineNumber = 0;
     for(let line of lines){
       if (!fileStart) {
         if (line.startsWith(matchFileStart)) {
           fileStart = true;
+          inCode = false;
+        }
+      }
+      else if(!inCode){
+        if(line.startsWith(matchCodeStart)){
+          inCode = true;
         }
       }
       else {
-        if((getLineNumber(line) >= srcPos) || line.startsWith(matchFileEnd)) {
-          break;
+        if(line.startsWith(matchCodeStart)){
+          inCode = false;
+        }
+        else{
+          if((getLineNumber(line) >= srcPos) || line.startsWith(matchFileEnd)) {
+            break;
+          }
         }
       }
       ++lineNumber;

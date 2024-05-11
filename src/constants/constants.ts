@@ -57,6 +57,7 @@ export namespace Commands {
     export const openSepNotesDiff = 'separableNotes.openSepNotesDiff';
     export const openSepNotesCat = 'separableNotes.openSepNotesCat';
     export const importNotes = 'separableNotes.importNotes';
+    export const syncPos = 'separableNotes.syncPos';
 }
 // sepNotes **hello**
 export enum NoteMode{  Detached = 0,     Attached = 1}

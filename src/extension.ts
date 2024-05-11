@@ -8,7 +8,7 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberDown, getLineNumberUp, getMdUserRandomNote, getKeyWordsFromSrc,decode, matchFilePathEnd, getSrcFileFromLine} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, getKeyWordsFromSrc,decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount} from './utils/utils';
 import * as fs from 'fs';
 
 let configuration: Configuration;
@@ -329,6 +329,19 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             if(Notes.get(path).isAttached()){
                 let start = activeEditor.selection.start.line;
                 let end = activeEditor.selection.end.line + 1;
+                // info about code below postion precise
+                if(end < activeEditor.document.lineCount){
+                    let codeBelow = activeEditor.document.lineAt(end).text;
+                    if(codeBelow.trim().length == 0){
+                        window.showInformationMessage('code below is empty line');
+                    }
+                    else{
+                       let count = getMatchLineCount(activeEditor.document,codeBelow); 
+                       if(count > 1){
+                            window.showInformationMessage(`code below appears ${count} times in doc, the position can be adjusted appropriately`);
+                       }  
+                    }
+                }
                 let range = new vscode.Range(start,0,end,0);
                 let content = activeEditor.document.getText(range);
                 let lines = splitIntoLines(content);
@@ -619,6 +632,56 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }
         }
 	));
+
+	extensionContext.subscriptions.push(
+		commands.registerCommand(Commands.syncPos, async () => {
+            logger.debug('syncPos start');
+            if(!activeEditor){
+                return;
+            }
+            let editorSepNotes:vscode.TextEditor = null;
+            let editorSrc:vscode.TextEditor = null;
+            for(let editor of vscode.window.visibleTextEditors){
+                if(editor.document.uri.fsPath.endsWith(Constants.sepNotesFileName)){
+                    editorSepNotes = editor;
+                }
+                else if(Notes.has(editor.document.uri.fsPath)){
+                    editorSrc = editor;
+                }
+            } 
+            if(editorSepNotes && editorSrc){
+                let path = editorSrc.document.uri.fsPath;
+                if (Notes.has(path)) {
+                    let curLine = 0;
+                    if (editorSrc.visibleRanges.length > 0) {
+                        let range = editorSrc.visibleRanges[0];
+                        logger.debug('src start:'+range.start.line.toString()+' end:'+range.end.line.toString());
+                        curLine = Math.floor((range.start.line + range.end.line) / 2);
+                    }
+                    let mdLine = getMdPos(path, curLine);
+                    let mdLineStart = mdLine;
+                    let mdLineEnd = mdLine;
+                    if(editorSepNotes.visibleRanges.length > 0){
+                        let range = editorSepNotes.visibleRanges[0];
+                        let visLength  = Math.floor((range.end.line - range.start.line)/2);
+                        mdLineStart = mdLine - visLength;
+                        mdLineEnd = mdLine + visLength; 
+                    }
+                    logger.info('mdLine:'+mdLine.toString()+' start:'+mdLineStart.toString()+' end:'+mdLineEnd.toString());
+                    editorSepNotes.revealRange(new vscode.Range(mdLineStart, 0, mdLineEnd, 0));
+                }
+                else if(!Notes.has(path) || !Notes.get(path).isAttached()){
+                    vscode.window.showInformationMessage(path+' is not attached');
+                }
+                else{
+                    vscode.window.showInformationMessage(Constants.sepNotesFileName+' is not visible');
+                }
+            }
+            else{
+                vscode.window.showInformationMessage('src file or sepNotes file is not visible');
+            }
+        }
+    ));
 
     function showAttachStatus(){
         let activeEditor = vscode.window.activeTextEditor;

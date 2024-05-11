@@ -29,6 +29,8 @@ After installing separable notes, you will be able to manage your inline code no
   * in generated markdown file, you can go to src file by click ctrl+(left button)
 * separableNotes.importNotes
   * import note from `sepNotes.md` into code(original note will be replaced)
+* separableNotes.syncPos
+  * sync `sepNotes.md` pos with src file(tow file need to be visible)
 ##### menu commands
 * separableNotes NoteIt
   * Add Comment or Remove Comment
@@ -80,6 +82,8 @@ if you change this, you should also change the configuration for todo-tree or ot
 * backup `sepNotes.md` before refresh content(backup file is `sepNotes _bak.md`)
 * change root path to `.vscode/sepNotes/`
 * limit file sync speed to avoid typing delay
+* add hint when note position is not appropriate(code below note is important when rematch is needed)
+* add `separableNotes.syncPos` to sync `sepNotes.md` pos with src file(tow file need to be visible)
 
 #### 0.1.3
 * can add user defined content in the begin of `in sepNotes.md`

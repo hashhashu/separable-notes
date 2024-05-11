@@ -27,6 +27,8 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
   * 在生成的 Markdown 文件中，你可以通过按下 Ctrl 键和（鼠标左键）跳转到源文件
 * separableNotes.importNotes
   * 将笔记从文件`sepNotes.md`导入到代码中，原来的笔记会被替换
+* separableNotes.syncPos
+  * 根据源文件同步 `sepNotes.md`文件的位置(两个文件都需要可见)
 ##### 菜单命令
 * separableNotes NoteIt
   * 添加注释 或 取消注释
@@ -80,6 +82,8 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * backup `sepNotes.md` before refresh content(backup file is `sepNotes _bak.md`)
 * change root path to `.vscode/sepNotes/`
 * limit file sync speed to avoid typing delay 
+* add hint when note position is not appropriate(code below note is important when rematch is needed)
+* add `separableNotes.syncPos` to sync `sepNotes.md` pos with src file(tow file need to be visible)
 
 #### 0.1.3
 * can add user defined content in the begin of ``in sepNotes.md``
@@ -108,6 +112,8 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * 重新匹配代码和笔记
 * sepNotes文件开头有一块用于随意记录的区域
 * 做一个匹配的事情
+* 加个命令用于显示sepnotes文件的位置
+* 检测当前是否是比较合适的位置
 
 如果你喜欢的话，请给它点个星 :star:，谢谢。
 
