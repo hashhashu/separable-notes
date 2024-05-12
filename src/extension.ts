@@ -8,7 +8,7 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, getKeyWordsFromSrc,decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, getKeyWordsFromSrc,decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount, getLineNumberDown} from './utils/utils';
 import * as fs from 'fs';
 
 let configuration: Configuration;
@@ -636,49 +636,86 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.syncPos, async () => {
             logger.debug('syncPos start');
+            activeEditor = vscode.window.activeTextEditor;
             if(!activeEditor){
                 return;
             }
             let editorSepNotes:vscode.TextEditor = null;
             let editorSrc:vscode.TextEditor = null;
-            for(let editor of vscode.window.visibleTextEditors){
-                if(editor.document.uri.fsPath.endsWith(Constants.sepNotesFileName)){
-                    editorSepNotes = editor;
-                }
-                else if(Notes.has(editor.document.uri.fsPath)){
-                    editorSrc = editor;
-                }
-            } 
-            if(editorSepNotes && editorSrc){
-                let path = editorSrc.document.uri.fsPath;
-                if (Notes.has(path)) {
-                    let curLine = 0;
-                    if (editorSrc.visibleRanges.length > 0) {
-                        let range = editorSrc.visibleRanges[0];
-                        logger.debug('src start:'+range.start.line.toString()+' end:'+range.end.line.toString());
-                        curLine = Math.floor((range.start.line + range.end.line) / 2);
+            // markdown
+            if(isSepNotesFile(activeEditor.document.uri.fsPath)){
+                editorSepNotes = activeEditor;
+                let curLine = 0;
+                let range = editorSepNotes.selection;
+                curLine = Math.floor((range.start.line + range.end.line) / 2);
+                let path = getSrcFileFromMd(editorSepNotes.document, curLine);
+                for(let editor of vscode.window.visibleTextEditors){
+                    if(editor.document.uri.fsPath == path){
+                        editorSrc = editor;
+                        break;
                     }
-                    let mdLine = getMdPos(path, curLine);
-                    let mdLineStart = mdLine;
-                    let mdLineEnd = mdLine;
-                    if(editorSepNotes.visibleRanges.length > 0){
-                        let range = editorSepNotes.visibleRanges[0];
-                        let visLength  = Math.floor((range.end.line - range.start.line)/2);
-                        mdLineStart = mdLine - visLength;
-                        mdLineEnd = mdLine + visLength; 
-                    }
-                    logger.info('mdLine:'+mdLine.toString()+' start:'+mdLineStart.toString()+' end:'+mdLineEnd.toString());
-                    editorSepNotes.revealRange(new vscode.Range(mdLineStart, 0, mdLineEnd, 0));
                 }
-                else if(!Notes.has(path) || !Notes.get(path).isAttached()){
-                    vscode.window.showInformationMessage(path+' is not attached');
+                if(!editorSrc){
+                    vscode.window.showInformationMessage(path+' not visible');
                 }
                 else{
-                    vscode.window.showInformationMessage(Constants.sepNotesFileName+' is not visible');
+                    let srcLine = getLineNumberDown(editorSepNotes.document, curLine);
+                    if(srcLine == -1){
+                        srcLine = getLineNumberUp(editorSepNotes.document,curLine);
+                    }
+                    if(srcLine <= 0){
+                        vscode.window.showInformationMessage('cannot fetch src line');
+                    }
+                    else{
+                        let srcLineStart = srcLine;
+                        let srcLineEnd = srcLine;
+                        if (editorSrc.visibleRanges.length > 0) {
+                            let range = editorSrc.visibleRanges[0];
+                            let visLength = Math.floor((range.end.line - range.start.line) / 2);
+                            srcLineStart = srcLine - visLength;
+                            srcLineEnd = srcLine + visLength;
+                        }
+                        logger.debug('srcLine:' + srcLine.toString() + ' start:' + srcLineStart.toString() + ' end:' + srcLineEnd.toString());
+                        editorSrc.revealRange(new vscode.Range(srcLineStart, 0, srcLineEnd, 0));
+                    }
                 }
             }
+            // src
             else{
-                vscode.window.showInformationMessage('src file or sepNotes file is not visible');
+                editorSrc = activeEditor;
+                for(let editor of vscode.window.visibleTextEditors){
+                    if(editor.document.uri.fsPath.endsWith(Constants.sepNotesFileName)){
+                        editorSepNotes = editor;
+                        break;
+                    }
+                }
+                if(!editorSepNotes){
+                    vscode.window.showInformationMessage(Constants.sepNotesFileName+' is not visible');
+                }
+                else{
+                    let path = editorSrc.document.uri.fsPath;
+                    if (Notes.has(path)) {
+                        let curLine = 0;
+                        let range = editorSrc.selection;
+                        logger.debug('src start:'+range.start.line.toString()+' end:'+range.end.line.toString());
+                        curLine = Math.floor((range.start.line + range.end.line) / 2);
+
+                        let mdLine = getMdPos(path, curLine);
+                        let mdLineStart = mdLine;
+                        let mdLineEnd = mdLine;
+                        if(editorSepNotes.visibleRanges.length > 0){
+                            let range = editorSepNotes.visibleRanges[0];
+                            let visLength  = Math.floor((range.end.line - range.start.line)/2);
+                            mdLineStart = mdLine - visLength;
+                            mdLineEnd = mdLine + visLength; 
+                        }
+                        logger.info('mdLine:'+mdLine.toString()+' start:'+mdLineStart.toString()+' end:'+mdLineEnd.toString());
+                        editorSepNotes.revealRange(new vscode.Range(mdLineStart, 0, mdLineEnd, 0));
+                    }
+                    else if(!Notes.has(path) || !Notes.get(path).isAttached()){
+                        vscode.window.showInformationMessage(path+' is not attached');
+                    }
+                }
             }
         }
     ));

@@ -88,6 +88,10 @@
       {
         "command": "separableNotes.openSepNotesCat",
         "title": "openSepNotesCat"
+      },
+      {
+        "command": "separableNotes.syncPos",
+        "title": "separableNotes syncPos"
       }
     ],
     "submenus": [
@@ -105,7 +109,11 @@
         {
           "group": "separableNotes@1",
           "submenu":"separableNotes.openSepNotes"
-        }      
+        },
+        {
+          "command":"separableNotes.syncPos",
+          "group": "separableNotes@1"
+        }
       ],
       "separableNotes.openSepNotes":[
         {

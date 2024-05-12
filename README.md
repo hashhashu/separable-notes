@@ -29,13 +29,14 @@ After installing separable notes, you will be able to manage your inline code no
   * in generated markdown file, you can go to src file by click ctrl+(left button)
 * separableNotes.importNotes
   * import note from `sepNotes.md` into code(original note will be replaced)
-* separableNotes.syncPos
-  * sync `sepNotes.md` pos with src file(tow file need to be visible)
+
 ##### menu commands
 * separableNotes NoteIt
   * Add Comment or Remove Comment
 * separableNotes openSepNotes
   * for quick open sepNotes file
+* separableNotes.syncPos
+  * sync `sepNotes.md` pos with src file and vice versa(tow file need to be visible)
 
 ##### about src file and sepNotes file sync
 * when you edit src file, content can be synced with sepNotes file and vice versa.

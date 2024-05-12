@@ -104,10 +104,30 @@ export function getKeywordFromMd(line:string):string{
 export function getLineNumberDown(documment:vscode.TextDocument, startpos:number):number{
   let content = documment.getText();
   let lines = splitIntoLines(content);
+  let matchFileEnd = matchFilePathEnd();
+  let line = '';
+  let ret = -1;
   for(let i=startpos;i<lines.length;i++){
-    let line = lines[i];
-    if(line.startsWith('```')){
-      return getLineNumber(lines[i+1]);
+    line = lines[i];
+    // code block end
+    if(line.trim() == '```'){
+      ret = getLineNumber(lines[i - 1]);
+      if (ret > 0) {
+        return ret;
+      }
+    }
+    // code block start
+    else if(line.startsWith('```')){
+      if((i+1)<lines.length){
+        ret = getLineNumber(lines[i+1]);
+        if(ret > 0){
+          return ret;
+        }
+      }
+    }
+    // file end
+    else if(line.startsWith(matchFileEnd)){
+      break;
     }
   }
   return -1;
@@ -116,11 +136,30 @@ export function getLineNumberDown(documment:vscode.TextDocument, startpos:number
 export function getLineNumberUp(documment:vscode.TextDocument,startpos:number){
   let content = documment.getText();
   let lines = splitIntoLines(content);
+  let matchFileEnd = matchFilePathEnd();
   let line = '';
+  let ret = -1;
   for(let i=startpos-1; i>=0 ;i--){
     line = lines[i];
-    if(line.startsWith('```')){
-      return getLineNumber(lines[i+1]);
+    // code block end
+    if(line.trim() == '```'){
+      if((i-1) > 0){
+        ret = getLineNumber(lines[i-1]);
+        if(ret > 0){
+          return ret;
+        }
+      }
+    }
+    // code block start
+    else if(line.startsWith('```')){
+      ret = getLineNumber(lines[i+1]);
+      if(ret > 0){
+        return ret;
+      }
+    }
+    // file end
+    else if(line.startsWith(matchFileEnd)){
+      break;
     }
   }
   return -1;
