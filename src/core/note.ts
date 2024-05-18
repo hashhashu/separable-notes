@@ -179,6 +179,12 @@ export class NoteFile{
     ModeSwitch(selected:string,document:vscode.TextDocument = null):number{
       logger.debug('ModeSwitch begin');
       let status = 0;
+      // if(document.getText().includes(this.configuration.noteId)){
+      //   this.noteMode = NoteMode.Attached;
+      // }
+      // else{
+      //   this.noteMode = NoteMode.Detached;
+      // }
       if(selected != Constants.NoteModeItems[this.noteMode]){
         if(selected == Constants.NoteModeItems[NoteMode.Attached]){
           status = this.attachContent(false,document).attached;
@@ -663,7 +669,7 @@ export class serializableNoteFile{
       return {
         path: this.path,  
         noteMode: this.noteMode, 
-        blocks: this.blocks.map(block => block.toJSON()),
+        blocks: this.blocks,
         needRefresh: this.needRefresh
       };  
     }  

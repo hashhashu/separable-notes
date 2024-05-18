@@ -84,7 +84,8 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * change root path to `.vscode/sepNotes/`
 * limit file sync speed to avoid typing delay 
 * add hint when note position is not appropriate(code below note is important when rematch is needed)
-* add `separableNotes.syncPos` to sync `sepNotes.md` pos with src file(tow file need to be visible)
+* add `separableNotes.syncPos` to sync `sepNotes.md` pos with src file and vice versa(tow file need to be visible)
+* fix save state bug(`e.toJSON is not a function`)
 
 #### 0.1.3
 * can add user defined content in the begin of ``in sepNotes.md``

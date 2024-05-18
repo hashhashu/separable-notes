@@ -21,6 +21,7 @@ let statusBarItem: vscode.StatusBarItem;
 let inAll = false;
 let ratelimiter:RateLimiter;
 let ratelimiterSep:RateLimiter;
+let ratelimiterUpdate:RateLimiter;
 
 export async function activate(extensionContext: ExtensionContext): Promise<boolean> {
     logger.info(
@@ -69,6 +70,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     }
     ratelimiter = new RateLimiter(1,1000);
     ratelimiterSep = new RateLimiter(1,1000);
+    ratelimiterUpdate = new RateLimiter(1,2000);
     
 // sepNotes ## sync markdown with source and vice versa(**test123**)123
 // sepNotes 12312412434
@@ -130,6 +132,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                                     }
                                     note.syncSrcWithMd(anno.text, linenumber);
                                     note.updateMdLine(anno.linenumber, rowsChanged(contentChange));
+                                    updateStateNote(extensionContext);
                                     logger.info('linenumber:' + linenumber.toString() + ' rowschanged:' + rowsChanged(contentChange));
                                 }
                                 else {
@@ -171,7 +174,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             if (typeof textEditor === "undefined") {
                 return;
             }
-            // updateState(textEditor,extensionContext);
+            updateState(textEditor,extensionContext);
         })
     );
     
@@ -250,7 +253,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         let status = note.ModeSwitch(selected,activeEditor.document);
                         attachedFileNum += status;
                         detachedFileNum -= status;
-                        // updateState(activeEditor,extensionContext);
+                        updateState(activeEditor,extensionContext);
                         updateMdStatus();
                         if(note.isAttached()){
                             note.refresh(null,fetchMdStatus());
@@ -283,7 +286,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     }
                 }
                 activeEditor = vscode.window.activeTextEditor;
-                // updateState(activeEditor,extensionContext);
+                updateState(activeEditor,extensionContext);
                 window.showInformationMessage('atach all finished');
                 updateMdStatus();
                 if(hasDiff){
@@ -309,7 +312,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 }
             }
             activeEditor = vscode.window.activeTextEditor;
-            // updateState(activeEditor, extensionContext);
+            updateState(activeEditor, extensionContext);
             window.showInformationMessage('detach all finished');
             updateMdStatus();
             inAll = false;
@@ -390,7 +393,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             else{
                 window.showInformationMessage('please attach it first before add note');
             }
-            // updateState(activeEditor,extensionContext);
+            updateState(activeEditor,extensionContext);
         }
 	));
 // sepNotes ### hover for inline code
@@ -624,7 +627,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 activeEditor = vscode.window.activeTextEditor;
                 window.showInformationMessage('atach all finished');
                 updateMdStatus();
-                // updateState(activeEditor,extensionContext);
+                updateState(activeEditor,extensionContext);
                 if(hasDiff){
                     vscode.window.showWarningMessage('codes have changed, please see the diff in ' + Constants.sepNotesDiffFileName);
                 }
@@ -726,7 +729,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             updateState(activeEditor,extensionContext);
         }
     }
-    setInterval(showAttachStatus,1000);
+    setTimeout(showAttachStatus,3000);
 
     logger.debug('rematch:'+(configuration.reMatch?'true':'false'));
     logger.info(`Extension ${Constants.extensionName} v${Constants.extensionVersion} activated.`);
@@ -740,7 +743,7 @@ export function deactivate() {
     activatables = new Array();
 }
 
-function updateState(textEditor:vscode.TextEditor,extensionContext: ExtensionContext){
+function updateStateWrap(textEditor:vscode.TextEditor,extensionContext: ExtensionContext){
     if (!textEditor) {
         return;
     }
@@ -754,6 +757,19 @@ function updateState(textEditor:vscode.TextEditor,extensionContext: ExtensionCon
     }
     Notes.get(path).setStatusBarItemText();
     updateStateNote(extensionContext);
+}
+
+function updateState(textEditor:vscode.TextEditor,extensionContext: ExtensionContext){
+    if(ratelimiterUpdate.isAllowed()){
+        updateStateWrap(textEditor,extensionContext);
+    }
+    else{
+        setTimeout(function(){
+            if(ratelimiterUpdate.isAllowed()){
+                updateStateWrap(textEditor,extensionContext);
+            }
+        },2200);
+    }
 }
 
 function updateStateNote(extensionContext: ExtensionContext){

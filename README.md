@@ -36,7 +36,7 @@ After installing separable notes, you will be able to manage your inline code no
 * separableNotes openSepNotes
   * for quick open sepNotes file
 * separableNotes.syncPos
-  * sync `sepNotes.md` pos with src file and vice versa(tow file need to be visible)
+  * sync `sepNotes.md` pos with src file and vice versa(both file need to be visible)
 
 ##### about src file and sepNotes file sync
 * when you edit src file, content can be synced with sepNotes file and vice versa.
@@ -84,7 +84,8 @@ if you change this, you should also change the configuration for todo-tree or ot
 * change root path to `.vscode/sepNotes/`
 * limit file sync speed to avoid typing delay
 * add hint when note position is not appropriate(code below note is important when rematch is needed)
-* add `separableNotes.syncPos` to sync `sepNotes.md` pos with src file(tow file need to be visible)
+* add `separableNotes.syncPos` to sync `sepNotes.md` pos with src file and vice versa(tow file need to be visible)
+* fix save state bug(`e.toJSON is not a function`)
 
 #### 0.1.3
 * can add user defined content in the begin of `in sepNotes.md`
