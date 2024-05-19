@@ -78,6 +78,7 @@ export class NoteFile{
         }
         this.noteMode = NoteMode.Detached;
         detached = 1;
+        logger.debug('detachContent writefile:'+this.path);
         fs.writeFileSync(this.path, encode(detachedContent, this.configuration.encoding));
       }
       this.inProcess = false;
@@ -161,6 +162,7 @@ export class NoteFile{
           this.blocks.length = 0; //clear info
           this.noteMode = NoteMode.Attached;
           attached = 1;
+          logger.debug('attachContent writefile:'+this.path);
           fs.writeFileSync(this.path,encode(attachedContent,this.configuration.encoding));
         }
         else if(!attachAll){
@@ -342,6 +344,7 @@ export class NoteFile{
           contentAll += this.fetchMdFromSrc(document).content;
         }
         fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
+        logger.debug('refreshMd writefile:'+Constants.sepNotesFilePath);
         fs.writeFileSync(Constants.sepNotesFilePath, contentAll);
       }
     }    
@@ -414,6 +417,7 @@ export class NoteFile{
             contentAll += (matchCat + addEof(key) + '  \n' + value);
           }
         }
+        logger.debug('refreshMdCat writefile:'+Constants.sepNotesCategoryFilePath);
         fs.writeFileSync(Constants.sepNotesCategoryFilePath, contentAll);
       }
     }
@@ -507,6 +511,7 @@ export class NoteFile{
         for(let i=linenumber - 1;i<contentLines.length;i++){
           ret += addEof(contentLines[i]);
         }
+        logger.debug('syncSrcWithMd writefile:'+this.path);
         fs.writeFileSync(this.path, encode(ret, this.configuration.encoding));
         this.refreshMdCat();
       }
@@ -645,6 +650,7 @@ export class NoteFile{
       }
       diffNote = matchFilePathStart(this.path) + '  \n' + diffNote + '  \n  \n';
       if (!attachAll) {
+        logger.debug('exportToMdDiff writefile:'+Constants.sepNotesDiffFilePath);
         fs.writeFileSync(Constants.sepNotesDiffFilePath, diffNote);
         vscode.window.showWarningMessage('codes have changed, please see the diff in ' + Constants.sepNotesDiffFileName);
       }

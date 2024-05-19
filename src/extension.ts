@@ -41,10 +41,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             fs.copyFileSync(Constants.sepNotesFileOriPath,Constants.sepNotesFilePath);
         }
         else{
+            logger.debug('activate writefile:'+Constants.sepNotesFilePath);
             fs.writeFileSync(Constants.sepNotesFilePath, Constants.sepNotesFileHead);
         }
     }
     if(!fs.existsSync(Constants.sepNotesCategoryFilePath)){
+        logger.debug('activate writefile:'+Constants.sepNotesCategoryFilePath);
         fs.writeFileSync(Constants.sepNotesCategoryFilePath, Constants.sepNotesCatDesc);
     }
 
@@ -133,7 +135,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                                     note.syncSrcWithMd(anno.text, linenumber);
                                     note.updateMdLine(anno.linenumber, rowsChanged(contentChange));
                                     updateStateNote(extensionContext);
-                                    logger.info('linenumber:' + linenumber.toString() + ' rowschanged:' + rowsChanged(contentChange));
+                                    logger.debug('linenumber:' + linenumber.toString() + ' rowschanged:' + rowsChanged(contentChange));
                                 }
                                 else {
                                     window.showWarningMessage('file:' + srcPath + ' is not attached, changes won\'t sync with src file');
@@ -199,7 +201,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 			window.showInformationMessage('Hello World from tiger! well well ');
             let str = '你好啊**呼呼**哈哈哈**hello**';
             let matches = getKeyWordsFromSrc(str);
-            logger.info(matches);
+            logger.debug(matches);
             // let path = activeEditor.document.uri.fsPath;
             // extensionContext.workspaceState.update(Constants.keyNotes,null);
             // let aa = await vscode.languages.getLanguages();
@@ -272,6 +274,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 attachedFileNum = 0;
                 detachedFileNum = 0;
                 //clear diff info
+                logger.debug('attachAll writefile:'+Constants.sepNotesDiffFilePath);
                 fs.writeFileSync(Constants.sepNotesDiffFilePath,'');
                 for(let [_,note] of Notes){
                     if(note.notFinished()){
@@ -467,10 +470,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 window.showInformationMessage('there are files not attached'); 
             }
             else{
+                logger.debug('syncMdWithSrc writefile:'+Constants.sepNotesFilePath);
                 fs.writeFileSync(Constants.sepNotesFilePath, contentMd); 
                 for(let [key,value] of contentByCatAll){
                     contentMdCat += ('# ' + addEof(key) + '  \n' + value);
                 }
+                logger.debug('syncMdWithSrc writefile:'+Constants.sepNotesCategoryFilePath);
                 fs.writeFileSync(Constants.sepNotesCategoryFilePath, contentMdCat); 
                 window.showInformationMessage('sync with file '+Constants.sepNotesFileName+','+ Constants.sepNotesCategoryFileName +' success');
             }
@@ -616,6 +621,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 }
                 // like attach all-------
                 //clear diff info
+                logger.debug('importNotes writefile:'+Constants.sepNotesDiffFilePath);
                 fs.writeFileSync(Constants.sepNotesDiffFilePath,'');
                 for(let [_,note] of Notes){
                     ret = note.attachContent(true);
@@ -712,7 +718,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                             mdLineStart = mdLine - visLength;
                             mdLineEnd = mdLine + visLength; 
                         }
-                        logger.info('mdLine:'+mdLine.toString()+' start:'+mdLineStart.toString()+' end:'+mdLineEnd.toString());
+                        logger.debug('mdLine:'+mdLine.toString()+' start:'+mdLineStart.toString()+' end:'+mdLineEnd.toString());
                         editorSepNotes.revealRange(new vscode.Range(mdLineStart, 0, mdLineEnd, 0));
                     }
                     else if(!Notes.has(path) || !Notes.get(path).isAttached()){
