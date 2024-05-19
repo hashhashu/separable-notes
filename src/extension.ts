@@ -59,17 +59,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }
     }
     logger.info('workspace state restored');
-    for(let [_,note] of Notes){
-        if(note.isAttached()){
-            attachedFileNum += 1;
-            if(note.needRefresh){
-                note.refresh(null,fetchMdStatus());
-            }
-        }
-        else{
-            detachedFileNum += 1;
-        }
-    }
+
     ratelimiter = new RateLimiter(1,1000);
     ratelimiterSep = new RateLimiter(1,1000);
     ratelimiterUpdate = new RateLimiter(1,2000);
@@ -118,10 +108,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     }
                     function syncSrcWithMdAll(){
                         for(let contentChange of event.contentChanges){
-                            logger.debug(contentChange.text);
-                            logger.debug(contentChange.rangeLength.toString());
                             let startpos = contentChange.range.start.line;
                             let srcPath = getSrcFileFromMd(event.document, startpos);
+                            logger.debug('startpos:'+startpos.toString()+' srcpath:'+srcPath+' endpos:'+contentChange.range.end.line.toString());
                             if (fs.existsSync(srcPath)) {
                                 let note = Notes.get(srcPath);
                                 if (note && note.isAttached()) {
@@ -733,6 +722,17 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         let activeEditor = vscode.window.activeTextEditor;
         if(activeEditor){
             updateState(activeEditor,extensionContext);
+            for(let [_,note] of Notes){
+                if(note.isAttached()){
+                    attachedFileNum += 1;
+                    if(note.needRefresh){
+                        note.refresh(null,fetchMdStatus());
+                    }
+                }
+                else{
+                    detachedFileNum += 1;
+                }
+            }
         }
     }
     setTimeout(showAttachStatus,3000);

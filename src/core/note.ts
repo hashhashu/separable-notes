@@ -495,8 +495,8 @@ export class NoteFile{
         for(let line of annoLines){
           annoConcat += addEof(prefix + line);
         }
-        let start = linenumber - 2;
-        for(let i = start;i>=0;i--){
+        let start = 0;
+        for(let i = (linenumber - 2);i >= 0;i--){
           if(!contentLines[i].includes(this.configuration.noteId)){
             start = i + 1;
             break;
@@ -508,7 +508,14 @@ export class NoteFile{
         }
         ret += annoConcat;
         logger.debug('syncSrcWithMd:'+annoConcat);
-        for(let i=linenumber - 1;i<contentLines.length;i++){
+        start = linenumber - 1;
+        for(let i = (linenumber -1);i<contentLines.length;i++){
+          if(!contentLines[i].includes(this.configuration.noteId)){
+            start = i;
+            break;
+          }
+        }
+        for(let i=start;i<contentLines.length;i++){
           ret += addEof(contentLines[i]);
         }
         logger.debug('syncSrcWithMd writefile:'+this.path);
