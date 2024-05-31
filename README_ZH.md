@@ -1,5 +1,6 @@
 **其他语言版本: [English](README.md), [中文](README_ZH.md).**  
 **:exclamation:使用前请先做一些测试，代码和笔记请及时备份(也可以通过vscode的时间线功能查看恢复内容)**
+可以在[知乎](https://zhuanlan.zhihu.com/p/699890862)上查看详细的使用说明
 # separable-notes 
 separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔记，并可以使你的笔记可分离
 

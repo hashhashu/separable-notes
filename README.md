@@ -1,7 +1,8 @@
 **Read this in other languages: [English](README.md), [中文](README_ZH.md).**
 
 **:exclamation:Before using, please conduct some tests first, and make sure to backup your code and notes promptly.(timeline in vscode can also be used to recover content)**
-
+ 
+see [medium](https://medium.com/@hurlyes/separable-notes-inline-code-note-vscode-plugin-4c78dbbd14ad) for more detailed instruction.
 # separable-notes 
 separable notes is a VSCode extension that can manage your inline code note, make your note separable.
 
@@ -115,7 +116,9 @@ if you change this, you should also change the configuration for todo-tree or ot
 * [x] reorganize note in category
 * [x] import notes into workspace
 * record note history
-
+* detach的时候访问能正常
+* 考虑文件被占用更新失败的情况
+* 未attach自动改变
 Please star :star: it if you like it, Thanks.
 
 Thanks to [todo-tree](https://github.com/Gruntfuggly/todo-tree)
