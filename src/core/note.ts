@@ -1,5 +1,5 @@
 import { Constants,NoteMode} from "../constants/constants";
-import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, cutNoteId, getPrefix, getLineNumber, isEqual, getKeyWordsFromSrc, matchFilePathStart, matchFilePathEnd, getKeywordFromMd} from '../utils/utils'
+import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, cutNoteId, getPrefix, getLineNumber, isEqual, getKeyWordsFromSrc, matchFilePathStart, matchFilePathEnd, getKeywordFromMd, writeFile} from '../utils/utils'
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Configuration } from "../configuration";
@@ -76,10 +76,16 @@ export class NoteFile{
         else{
           this.respondCount = 2;
         }
-        this.noteMode = NoteMode.Detached;
-        detached = 1;
-        logger.debug('detachContent writefile:'+this.path);
-        fs.writeFileSync(this.path, encode(detachedContent, this.configuration.encoding));
+        try{
+          logger.debug('detachContent writefile:'+this.path);
+          fs.writeFileSync(this.path, encode(detachedContent, this.configuration.encoding));
+          this.noteMode = NoteMode.Detached;
+          detached = 1;
+        }catch(error){
+          logger.error('something wrong when detach file');
+          vscode.window.showErrorMessage('something wrong when detach file:'+this.path);
+          this.blocks.length = 0;
+        }
       }
       this.inProcess = false;
       logger.debug('detachContent end');
@@ -159,11 +165,16 @@ export class NoteFile{
           else{
             this.respondCount = 2;
           }
-          this.blocks.length = 0; //clear info
-          this.noteMode = NoteMode.Attached;
-          attached = 1;
-          logger.debug('attachContent writefile:'+this.path);
-          fs.writeFileSync(this.path,encode(attachedContent,this.configuration.encoding));
+          try{
+            logger.debug('attachContent writefile:'+this.path);
+            fs.writeFileSync(this.path,encode(attachedContent,this.configuration.encoding));
+            this.blocks.length = 0; //clear info
+            this.noteMode = NoteMode.Attached;
+            attached = 1;
+          }catch(error){
+            logger.error('something wrong when atach file');
+            vscode.window.showErrorMessage('something wrong when atach file '+this.path);
+          }          
         }
         else if(!attachAll){
           this.noteMode = NoteMode.Attached;
@@ -203,15 +214,15 @@ export class NoteFile{
       return this.noteMode != NoteMode.Detached;
     }
 
-    shouldWarn():boolean{
+    canNoteIt():boolean{
       if((this.blocks.length > 0) && (this.noteMode == NoteMode.Detached)){
-        return true;
-      }
-      else{
         return false;
       }
+      else{
+        return true;
+      }
     }
-    shouldSave():boolean{
+    haveNote():boolean{
       if((this.blocks.length > 0) || (this.noteMode == NoteMode.Attached)){
         return true;
       }
@@ -344,8 +355,7 @@ export class NoteFile{
           contentAll += this.fetchMdFromSrc(document).content;
         }
         fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
-        logger.debug('refreshMd writefile:'+Constants.sepNotesFilePath);
-        fs.writeFileSync(Constants.sepNotesFilePath, contentAll);
+        writeFile(Constants.sepNotesFilePath, contentAll);
       }
     }    
 
@@ -417,8 +427,7 @@ export class NoteFile{
             contentAll += (matchCat + addEof(key) + '  \n' + value);
           }
         }
-        logger.debug('refreshMdCat writefile:'+Constants.sepNotesCategoryFilePath);
-        fs.writeFileSync(Constants.sepNotesCategoryFilePath, contentAll);
+        writeFile(Constants.sepNotesCategoryFilePath, contentAll);
       }
     }
     refreshId(document:vscode.TextDocument = null){
@@ -518,9 +527,14 @@ export class NoteFile{
         for(let i=start;i<contentLines.length;i++){
           ret += addEof(contentLines[i]);
         }
-        logger.debug('syncSrcWithMd writefile:'+this.path);
-        fs.writeFileSync(this.path, encode(ret, this.configuration.encoding));
-        this.refreshMdCat();
+        try{
+          logger.debug('syncSrcWithMd writefile:'+this.path);
+          fs.writeFileSync(this.path, encode(ret, this.configuration.encoding));
+          this.refreshMdCat();
+        }catch(error){
+          logger.error('something wrong when syncSrcWithMd writefile');
+          vscode.window.showErrorMessage('something wrong when syncSrcWithMd writefile '+this.path);
+        }
       }
     }
 
@@ -658,8 +672,13 @@ export class NoteFile{
       diffNote = matchFilePathStart(this.path) + '  \n' + diffNote + '  \n  \n';
       if (!attachAll) {
         logger.debug('exportToMdDiff writefile:'+Constants.sepNotesDiffFilePath);
-        fs.writeFileSync(Constants.sepNotesDiffFilePath, diffNote);
-        vscode.window.showWarningMessage('codes have changed, please see the diff in ' + Constants.sepNotesDiffFileName);
+        try{
+          fs.writeFileSync(Constants.sepNotesDiffFilePath, diffNote);
+          vscode.window.showWarningMessage('codes have changed, please see the diff in ' + Constants.sepNotesDiffFileName);
+        }catch(error){
+          logger.error('something wrong when exportToMdDiff writefile');
+          vscode.window.showErrorMessage('something wrong when exportToMdDiff writefile');
+        }
       }
       else {
         fs.appendFileSync(Constants.sepNotesDiffFilePath, diffNote);

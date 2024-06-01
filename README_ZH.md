@@ -73,6 +73,10 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 
 
 ### 变更日志
+#### 0.1.5
+* attach action is not needed anymore when adding first note 
+* handle situation when src file cannot write
+
 #### 0.1.4
 * refresh `sepNotes.md` after attach if line number diffs(note refresh while not match)
 * add quick open for other file(`sepNotes_diff.md` `sepNotes_category.md`)

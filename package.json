@@ -1,8 +1,8 @@
 {
   "name": "separable-notes",
   "displayName": "separable notes",
-  "description": "inline Code Note Management",
-  "version": "0.1.4",
+  "description": "Inline Code Note Management",
+  "version": "0.1.5",
   "engines": {
     "vscode": "^1.42.0"
   },

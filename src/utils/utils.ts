@@ -373,6 +373,16 @@ export function matchFilePathEnd(isAnno = false){
   }
 }
 
+export function writeFile(path:string,content:string){
+  try{
+    logger.debug('write file: '+path);
+    fs.writeFileSync(path,content);
+  }catch(error){
+    logger.error('write file error');
+    vscode.window.showErrorMessage('write file error '+path);
+  }
+}
+
 export class RateLimiter {  
   private tokens: number;  
   private lastRefillTime: number;  

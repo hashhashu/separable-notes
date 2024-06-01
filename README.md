@@ -1,7 +1,8 @@
 **Read this in other languages: [English](README.md), [中文](README_ZH.md).**
 
 **:exclamation:Before using, please conduct some tests first, and make sure to backup your code and notes promptly.(timeline in vscode can also be used to recover content)**
- 
+
+
 see [medium](https://medium.com/@hurlyes/separable-notes-inline-code-note-vscode-plugin-4c78dbbd14ad) for more detailed instruction.
 # separable-notes 
 separable notes is a VSCode extension that can manage your inline code note, make your note separable.
@@ -73,6 +74,10 @@ if you change this, you should also change the configuration for todo-tree or ot
 ```
 
 ### ChangeLog
+#### 0.1.5
+* attach action is not needed anymore when adding first note 
+* handle situation when src file cannot write
+
 #### 0.1.4
 * refresh `sepNotes.md` after attach if line number diffs(note refresh while not match)
 * add quick open for other file(`sepNotes_diff.md` `sepNotes_category.md`)

@@ -8,7 +8,7 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, getKeyWordsFromSrc,decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount, getLineNumberDown} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, getKeyWordsFromSrc,decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile} from './utils/utils';
 import * as fs from 'fs';
 
 let configuration: Configuration;
@@ -41,13 +41,11 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             fs.copyFileSync(Constants.sepNotesFileOriPath,Constants.sepNotesFilePath);
         }
         else{
-            logger.debug('activate writefile:'+Constants.sepNotesFilePath);
-            fs.writeFileSync(Constants.sepNotesFilePath, Constants.sepNotesFileHead);
+            writeFile(Constants.sepNotesFilePath, Constants.sepNotesFileHead);
         }
     }
     if(!fs.existsSync(Constants.sepNotesCategoryFilePath)){
-        logger.debug('activate writefile:'+Constants.sepNotesCategoryFilePath);
-        fs.writeFileSync(Constants.sepNotesCategoryFilePath, Constants.sepNotesCatDesc);
+        writeFile(Constants.sepNotesCategoryFilePath, Constants.sepNotesCatDesc);
     }
 
     let activeEditor = vscode.window.activeTextEditor;
@@ -89,7 +87,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                             }
                         }
                         //warn modify
-                        else if(note.shouldWarn()){
+                        else if(!note.canNoteIt()){
                             window.showWarningMessage('if you want to modify this file, please attach it first');
                         }
                         // sync markdown with source
@@ -257,14 +255,14 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.attachAll, async () => {
             if(!inAll){
+                logger.debug('attachAll-------------------------');
                 inAll = true;
                 let ret;
                 let hasDiff = false;
                 attachedFileNum = 0;
                 detachedFileNum = 0;
                 //clear diff info
-                logger.debug('attachAll writefile:'+Constants.sepNotesDiffFilePath);
-                fs.writeFileSync(Constants.sepNotesDiffFilePath,'');
+                writeFile(Constants.sepNotesDiffFilePath,'');
                 for(let [_,note] of Notes){
                     if(note.notFinished()){
                         window.showInformationMessage('not finished yet');
@@ -311,17 +309,19 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }
     }
 
-//sepNotes ### add comment and remove comment
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.detachAll, async () => {
             detachAll();
         }
 	));
+// sepNotes ### add comment and remove comment
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.noteIt, async () => {
             activeEditor = vscode.window.activeTextEditor;
             let path = activeEditor.document.uri.fsPath;
-            if(Notes.get(path).isAttached()){
+            let note = Notes.get(path);
+            if(note.canNoteIt()){
+                note.noteMode = NoteMode.Attached;
                 let start = activeEditor.selection.start.line;
                 let end = activeEditor.selection.end.line + 1;
                 // info about code below postion precise
@@ -431,6 +431,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     );
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.syncMdWithSrc, async () => {
+            logger.debug('syncMdWithSrc----------------------');
             fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
             let contentMd = Constants.sepNotesFileHead + getMdUserRandomNote();
             let contentMdCat = Constants.sepNotesCatDesc;
@@ -459,13 +460,11 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 window.showInformationMessage('there are files not attached'); 
             }
             else{
-                logger.debug('syncMdWithSrc writefile:'+Constants.sepNotesFilePath);
-                fs.writeFileSync(Constants.sepNotesFilePath, contentMd); 
+                writeFile(Constants.sepNotesFilePath, contentMd); 
                 for(let [key,value] of contentByCatAll){
                     contentMdCat += ('# ' + addEof(key) + '  \n' + value);
                 }
-                logger.debug('syncMdWithSrc writefile:'+Constants.sepNotesCategoryFilePath);
-                fs.writeFileSync(Constants.sepNotesCategoryFilePath, contentMdCat); 
+                writeFile(Constants.sepNotesCategoryFilePath, contentMdCat); 
                 window.showInformationMessage('sync with file '+Constants.sepNotesFileName+','+ Constants.sepNotesCategoryFileName +' success');
             }
             updateMdStatus();
@@ -554,6 +553,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.importNotes, async () => {
             if(!inAll){
+                logger.debug('importNotes---------------');
                 detachAll();
                 inAll = true;
                 let ret;
@@ -610,8 +610,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 }
                 // like attach all-------
                 //clear diff info
-                logger.debug('importNotes writefile:'+Constants.sepNotesDiffFilePath);
-                fs.writeFileSync(Constants.sepNotesDiffFilePath,'');
+                writeFile(Constants.sepNotesDiffFilePath,'');
                 for(let [_,note] of Notes){
                     ret = note.attachContent(true);
                     attachedFileNum += ret.attached;
@@ -781,7 +780,7 @@ function updateState(textEditor:vscode.TextEditor,extensionContext: ExtensionCon
 function updateStateNote(extensionContext: ExtensionContext){
     serializedNotes.length = 0;
     for (let [_, note] of Notes) {
-        if(note.shouldSave()){
+        if(note.haveNote()){
             serializedNotes.push(new serializableNoteFile(note));
         }
     }
@@ -810,7 +809,7 @@ function updateMdStatus(){
     lines[1] = status;
     content = lines.join('\n');
     logger.debug('updateMdStatus:'+status);
-    fs.writeFileSync(Constants.sepNotesFilePath,content);
+    writeFile(Constants.sepNotesFilePath,content);
 }
 
 
