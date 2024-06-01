@@ -77,6 +77,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 #### 0.1.5
 * attach action is not needed anymore when adding first note 
 * handle situation when src file cannot write
+* `sepNotes.md` can jump to src file in detach mode 
 
 #### 0.1.4
 * refresh `sepNotes.md` after attach if line number diffs(note refresh while not match)
@@ -121,9 +122,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * [x] reorganize note in category
 * [x] import notes into workspace
 * record note history
-* detach的时候访问能正常
-* 考虑文件被占用更新失败的情况
-* 未attach自动改变
+
 Please star :star: it if you like it, Thanks.
 
 Thanks to [todo-tree](https://github.com/Gruntfuggly/todo-tree)

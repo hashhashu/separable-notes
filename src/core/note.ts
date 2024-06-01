@@ -595,6 +595,20 @@ export class NoteFile{
       return 0;
     }
 
+    getDetachedLine(linenumber:number){
+      if(!this.isAttached()){
+        let noteLines = 0;
+        for(let block of this.blocks){
+          if((block.codeLine + block.noteLineCount + noteLines + 1) > linenumber){
+            break;
+          }
+          noteLines += block.noteLineCount;
+        }
+        return linenumber - noteLines;
+      }
+      return linenumber; 
+    }
+
     adjustNotePos(lines:string[]){
       logger.debug('adjustNotePos start');
       let block:NoteBlock;

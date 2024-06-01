@@ -486,6 +486,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     lineNumber = note.getMdLine(blockLineNumber);
                     logger.debug('lineNumber:'+lineNumber);
                 }
+                if(!note.isAttached()){
+                    lineNumber = note.getDetachedLine(lineNumber);
+                }
                 return new vscode.Location(vscode.Uri.file(filePath), new vscode.Position(lineNumber - 1, position.character - 2 - lineNumber.toString().length));
             }
         }
