@@ -272,6 +272,17 @@ export function isSepNotesFile(path:string):boolean{
   }
 }
 
+export function canAttachFile(path:string):boolean{
+  if(path.endsWith(Constants.sepNotesFileName) 
+    || path.endsWith(Constants.sepNotesCategoryFileName)
+    || path.endsWith(Constants.sepNotesDiffFileName)){
+    return false;
+  }
+  else{
+    return true;
+  }
+}
+
 export function getMdPos(srcPath:string,srcPos:number){
     let content = fs.readFileSync(Constants.sepNotesFilePath).toString();
     let lines = splitIntoLines(content);

@@ -8,7 +8,7 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, getKeyWordsFromSrc,decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, getKeyWordsFromSrc,decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile} from './utils/utils';
 import * as fs from 'fs';
 
 let configuration: Configuration;
@@ -220,8 +220,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             if(!fs.existsSync(path)){
                 return;
             }
-            if(isSepNotesFile(path)){
-                vscode.window.showInformationMessage('cannot attach '+Constants.sepNotesFileName);
+            if(!canAttachFile(path)){
+                vscode.window.showInformationMessage('cannot attach '+path);
                 return;
             }
             if(!Notes.has(path)){
@@ -320,7 +320,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             activeEditor = vscode.window.activeTextEditor;
             let path = activeEditor.document.uri.fsPath;
             let note = Notes.get(path);
-            if(note.canNoteIt()){
+            if(note.canNoteIt() && canAttachFile(note.path)){
                 note.noteMode = NoteMode.Attached;
                 let start = activeEditor.selection.start.line;
                 let end = activeEditor.selection.end.line + 1;

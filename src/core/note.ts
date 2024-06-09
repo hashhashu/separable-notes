@@ -1,5 +1,5 @@
 import { Constants,NoteMode} from "../constants/constants";
-import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, cutNoteId, getPrefix, getLineNumber, isEqual, getKeyWordsFromSrc, matchFilePathStart, matchFilePathEnd, getKeywordFromMd, writeFile} from '../utils/utils'
+import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, cutNoteId, getPrefix, getLineNumber, isEqual, getKeyWordsFromSrc, matchFilePathStart, matchFilePathEnd, getKeywordFromMd, writeFile, canAttachFile} from '../utils/utils'
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Configuration } from "../configuration";
@@ -223,7 +223,7 @@ export class NoteFile{
       }
     }
     haveNote():boolean{
-      if((this.blocks.length > 0) || (this.noteMode == NoteMode.Attached)){
+      if(((this.blocks.length > 0) || (this.noteMode == NoteMode.Attached)) && canAttachFile(this.path)){
         return true;
       }
       else{
