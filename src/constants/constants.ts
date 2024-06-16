@@ -40,7 +40,7 @@ export namespace Constants {
     export const sepNotesFileHeadStatus = `attachedFileNum:#attachedFileNum    detachedFileNum:#detachedFileNum    refreshTime:#Time  `;
     export const sepNotesFileHead = sepNotesFileHeadFix +'\n' + sepNotesFileHeadStatus +'\n' + '-->  \n  \n';
     export const sepNotesUserNote = '# userContent\n  ';
-    export const sepNotesCatDesc = sepNotesFileHeadFix + '  \n' + 'notes can be categorized as keyword(**\s**) ' + '-->  \n  \n';
+    export const sepNotesCatDesc = sepNotesFileHeadFix + '  \n' + 'notes can be categorized as keyword(**xxx**)  can be ordered using @order(xxx)' + '-->  \n  \n';
 
     export const keyNotes = 'separableNotes.notesKey';
 }
@@ -61,3 +61,4 @@ export namespace Commands {
 }
 // sepNotes **hello**
 export enum NoteMode{  Detached = 0,     Attached = 1}
+export enum MdType{ None = 0, sepNotes = 1, sepNotesCat = 2 }

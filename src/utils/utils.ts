@@ -126,7 +126,8 @@ export function getLineNumberDown(documment:vscode.TextDocument, startpos:number
       }
     }
     // file end
-    else if(line.startsWith(matchFileEnd)){
+    else if(line.startsWith(matchFileEnd)
+          || line.startsWith(matchFilePathEnd(true))){
       break;
     }
   }
@@ -158,7 +159,8 @@ export function getLineNumberUp(documment:vscode.TextDocument,startpos:number){
       }
     }
     // file end
-    else if(line.startsWith(matchFileEnd)){
+    else if(line.startsWith(matchFileEnd)
+           || line.startsWith(matchFilePathEnd(true))){
       break;
     }
   }
@@ -209,7 +211,9 @@ export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number){
   let line = '';
   for(let i = start; i>=0 ;i--){
     line = lines[i];
-    if(line.startsWith('```') || line.startsWith('# [')){
+    if(line.startsWith('```') 
+      || line.startsWith(matchFilePathEnd()) 
+      || line.startsWith(matchFilePathEnd(true))){
       start = i+1;
       break;
     }
@@ -272,9 +276,28 @@ export function isSepNotesFile(path:string):boolean{
   }
 }
 
+export function isSepNotesCatFile(path:string):boolean{
+  if(path.endsWith(Constants.sepNotesCategoryFileName)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
+export function canSync(path:string):boolean{
+  if(isSepNotesFile(path)
+    || isSepNotesCatFile(path)){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
 export function canAttachFile(path:string):boolean{
-  if(path.endsWith(Constants.sepNotesFileName) 
-    || path.endsWith(Constants.sepNotesCategoryFileName)
+  if(isSepNotesFile(path)
+    || isSepNotesCatFile(path)
     || path.endsWith(Constants.sepNotesDiffFileName)){
     return false;
   }
@@ -382,6 +405,62 @@ export function matchFilePathEnd(isAnno = false){
   else{
     return iden;
   }
+}
+
+function splitIntoBlocks(contentBlock:string):Array<string>{
+  const contentLines = splitIntoLines(contentBlock);
+  let matchFileStart = matchFilePathEnd(true);
+  let blocks = new Array<string>();
+  let block = '';
+  for(let line of contentLines){
+    if(line.startsWith(matchFileStart)){
+      if(block.trim().length > 0){
+        blocks.push(block);
+      }
+      block = addEof(line);
+    }
+    else{
+      block += addEof(line);
+    }
+  }
+  if(block.trim().length > 0){
+    blocks.push(block);
+  }
+  return blocks;
+}
+
+function fetchOrder(block:string):number{
+  let ret = 100000;
+  let matchAnnoStart = matchFilePathEnd(true);
+  let matchAnnoEnd = '```';
+  let inAnno = false;
+  const contentLines = splitIntoLines(block);
+  for(let line of contentLines){
+    if(!inAnno){
+      if(line.startsWith(matchAnnoStart)){
+        inAnno = true;
+      }
+    }
+    else{
+      if(line.startsWith(matchAnnoEnd)){
+        return ret;
+      }
+      else{
+        const regex = /@order\s*\((\d+)\)/;   
+        const match = line.match(regex);  
+        if(match && match.length > 1){
+          return parseInt(match[1],10);
+        }
+      }
+    }
+  }
+  return ret;
+}
+
+export function sortContentBlock(contentBlock:string):string{
+  let blocks = splitIntoBlocks(contentBlock);
+  blocks.sort((a,b)=>  fetchOrder(a) - fetchOrder(b));
+  return blocks.join('');
 }
 
 export function writeFile(path:string,content:string){

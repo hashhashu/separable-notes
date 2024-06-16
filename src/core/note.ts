@@ -1,5 +1,5 @@
-import { Constants,NoteMode} from "../constants/constants";
-import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, cutNoteId, getPrefix, getLineNumber, isEqual, getKeyWordsFromSrc, matchFilePathStart, matchFilePathEnd, getKeywordFromMd, writeFile, canAttachFile} from '../utils/utils'
+import { Constants,MdType,NoteMode} from "../constants/constants";
+import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, cutNoteId, getPrefix, getLineNumber, isEqual, getKeyWordsFromSrc, matchFilePathStart, matchFilePathEnd, getKeywordFromMd, writeFile, canAttachFile, sortContentBlock} from '../utils/utils'
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Configuration } from "../configuration";
@@ -16,6 +16,7 @@ export class NoteFile{
     respondCount: number;
     inProcess: boolean;
     needRefresh: boolean;
+    mdChangeType: MdType;
     constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,blocks:Array<NoteBlock> = new Array(),needrefresh:boolean = false){
       this.path = filePath;
       this.configuration = configuration;
@@ -27,6 +28,7 @@ export class NoteFile{
       this.ids = new Array();
       this.mdChangedLine = new Array();
       this.needRefresh = needrefresh;
+      this.mdChangeType = MdType.None;
     }
 
     setStatusBarItemText(noteMode:NoteMode = this.noteMode){
@@ -93,6 +95,7 @@ export class NoteFile{
     }
    
     private fetchAttachContent(contentLines:string[],beforeAdjust:boolean = true):{"content":string,"notMatchNum":number}{
+      logger.debug('fetchAttachContent start--------------------');
       let attachedContent = '';
       let blockIndex = this.blocks.length;
       let block:NoteBlock;
@@ -133,6 +136,7 @@ export class NoteFile{
           ++notMatchNum;
         }
       }
+      logger.debug('fetchAttachContent end--------------------');
       return {"content":attachedContent,"notMatchNum":notMatchNum};
     }
      
@@ -259,7 +263,7 @@ export class NoteFile{
     }
 
     fetchMdFromSrc(document:vscode.TextDocument = null):{"content":string,"contentByCat":Map<string,string>}{
-      logger.debug('fetchMdFromSrc-----------------------------------');
+      logger.debug('fetchMdFromSrc----start-------------------------------');
       const contentLines = this.getContentLines(document);
       let below = 0;  //code block max lines below note
       let lineCount = 1;
@@ -305,7 +309,7 @@ export class NoteFile{
         if(ele.hasKeyword()){
           for(let keyword of ele.keywords){
             if(contentByCat.has(keyword)){
-              contentByCat.set(keyword,contentByCat.get(keyword) + '  \n' + ele.content);
+              contentByCat.set(keyword,contentByCat.get(keyword) + '  \n' + matchFilePathStart(this.path,true) +'  \n' + ele.content);
             }
             else{
               contentByCat.set(keyword,matchFilePathStart(this.path,true) + '  \n' + ele.content);
@@ -317,15 +321,18 @@ export class NoteFile{
         contentExport = matchFilePathStart(this.path) + '  \n' + contentExport + '  \n  \n';
       }
       logger.debug('from:'+Constants.sepNotesFilePath+'  TO:'+this.path);
+      logger.debug('fetchMdFromSrc----end-------------------------------');
       return {"content":contentExport,"contentByCat":contentByCat};
     }
 
     //`sepNotes.md`
-    refreshMd(document:vscode.TextDocument = null, mdStatus:string){
+    refreshMd(document:vscode.TextDocument = null, mdStatus:string = ''){
       if(this.isAttached()){
-        logger.debug('refreshMd---------------------');
+        logger.debug('refreshMd----start-----------------');
         let contentLines = this.getContentLines(null,Constants.sepNotesFilePath);
-        contentLines[1] = mdStatus;
+        if(mdStatus != ''){
+          contentLines[1] = mdStatus;
+        }
         let contentAll = '';
         const matchFileStart = matchFilePathStart(this.path);
         const matchFileEnd = matchFilePathEnd();
@@ -356,13 +363,17 @@ export class NoteFile{
         }
         fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
         writeFile(Constants.sepNotesFilePath, contentAll);
+        if(this.mdChangeType == MdType.sepNotes){
+          this.mdChangedLine.length = 0;
+        }
+        logger.debug('refreshMd---end------------------');
       }
     }    
 
     // `sepNotes_category.md`
     refreshMdCat(document:vscode.TextDocument = null){
       if(this.isAttached()){
-        logger.debug('refreshMdCat---------------------');
+        logger.debug('refreshMdCat  start-------------------');
         let contentByCat = this.fetchMdFromSrc(document).contentByCat;
         let contentLines = this.getContentLines(null,Constants.sepNotesCategoryFilePath);
         const matchCat = '# ';
@@ -371,30 +382,26 @@ export class NoteFile{
         let keyWord = '';
         let contentAll = '';
         let contentBlock = '';
-        let hasKey = false;
         let inCurFile = false;
         let keywords = new Set();
         let header = true;
         for(let line of contentLines){
           // new keyword block
           if(line.startsWith(matchCat)){
-            if(hasKey){
+            // gather prev block content
+            if(contentByCat.has(keyWord)){
               contentBlock += contentByCat.get(keyWord);
-              hasKey = false;
             }
             if(contentBlock.trim().length > 0){
               if(!header){
                 contentAll += (matchCat + addEof(keyWord));
               }
               header = false;
-              contentAll += contentBlock;
+              contentAll += sortContentBlock(contentBlock);
             }
             contentBlock = '';
             keyWord = getKeywordFromMd(line);
             keywords.add(keyWord);
-            if(contentByCat.has(keyWord)){
-              hasKey = true;
-            }
             inCurFile = false;
           }
           else{
@@ -406,28 +413,33 @@ export class NoteFile{
                 contentBlock += addEof(line);
               }
             }
-            else if(line.startsWith(matchFileEnd)){
+            else if(line.startsWith(matchFileEnd)
+                    && !line.startsWith(matchFileStart)){
               inCurFile = false;
               contentBlock += addEof(line);
             }
           }
         }
-        if(hasKey){
+        if(contentByCat.has(keyWord)){
           contentBlock += contentByCat.get(keyWord);
         }
         if(contentBlock.trim().length > 0){
           if(!header){
             contentAll += (matchCat + addEof(keyWord));
           }
-          contentAll += contentBlock;
+          contentAll += sortContentBlock(contentBlock);
         }
         // new add
         for(let [key,value] of contentByCat){
           if(!keywords.has(key)){
-            contentAll += (matchCat + addEof(key) + '  \n' + value);
+            contentAll += (matchCat + addEof(key) + '  \n' + sortContentBlock(value));
           }
         }
         writeFile(Constants.sepNotesCategoryFilePath, contentAll);
+        if(this.mdChangeType == MdType.sepNotesCat){
+          this.mdChangedLine.length = 0;
+        }
+        logger.debug('refreshMdCat  end-------------------');
       }
     }
     refreshId(document:vscode.TextDocument = null){
@@ -472,7 +484,6 @@ export class NoteFile{
       this.refreshId(document);
       this.refreshMd(document,mdStatus);
       this.refreshMdCat(document);
-      this.mdChangedLine.length = 0;
       this.needRefresh = false;
     }
 
@@ -493,9 +504,9 @@ export class NoteFile{
       return splitIntoLines(content);
     }
 
-    syncSrcWithMd(text:string,linenumber:number){
+    syncSrcWithMd(text:string,linenumber:number,mdType:MdType){
       if(this.isAttached()){
-        logger.debug('syncSrcWithMd:'+linenumber.toString());
+        logger.debug('syncSrcWithMd: start'+linenumber.toString());
         const contentLines = this.getContentLines();
         // can consider another way to add anno(now prefix + content)
         const prefix = getPrefix(contentLines[linenumber - 2],this.configuration.noteId);
@@ -530,55 +541,80 @@ export class NoteFile{
         try{
           logger.debug('syncSrcWithMd writefile:'+this.path);
           fs.writeFileSync(this.path, encode(ret, this.configuration.encoding));
-          this.refreshMdCat();
+          if(mdType == MdType.sepNotes){
+            this.refreshMdCat();
+          }
+          else{
+            this.refreshMd();
+          }
         }catch(error){
           logger.error('something wrong when syncSrcWithMd writefile');
           vscode.window.showErrorMessage('something wrong when syncSrcWithMd writefile '+this.path);
         }
+        logger.debug('syncSrcWithMd: end'+linenumber.toString());
       }
     }
 
     //linenumber:note block first code line 
     //changedLine: note block move lines 
-    updateMdLine(linenumber:number, changedLine:number){
-      if(this.mdChangedLine.length == 0){
-        const contentLines = this.getContentLines(null,Constants.sepNotesFilePath);
-        const matchFileStart = matchFilePathStart(this.path);
-        const matchFileEnd = '# [';
-        let fileStart = false;
-        let fileEnd = false;
-        for (let i=0;i<contentLines.length;i++) {
-          let line = contentLines[i];
-          if (!fileStart) {
-            if (line.startsWith(matchFileStart)) {
-              fileStart = true;
+    updateMdLine(linenumber:number, changedLine:number, mdType:MdType){
+      if(changedLine != 0){
+        logger.debug('updateMdLine start----------------');
+        if(mdType != this.mdChangeType){
+          this.mdChangedLine.length = 0;
+        }
+        if(this.mdChangedLine.length == 0){
+          this.mdChangeType = mdType;
+          let contentLines;
+          let matchFileStart;
+          let matchFileEnd;
+          if(mdType == MdType.sepNotes){
+            contentLines = this.getContentLines(null,Constants.sepNotesFilePath);
+            matchFileStart = matchFilePathStart(this.path);
+            matchFileEnd = matchFilePathEnd();
+          }
+          else{
+            contentLines = this.getContentLines(null,Constants.sepNotesCategoryFilePath);
+            matchFileStart = matchFilePathStart(this.path,true);
+            matchFileEnd = matchFilePathEnd(true);
+          }
+          let fileStart = false;
+          for (let i=0;i<contentLines.length;i++) {
+            let line = contentLines[i];
+            if (!fileStart) {
+              if (line.startsWith(matchFileStart)) {
+                fileStart = true;
+              }
+            }
+            else {
+              if (line.startsWith(matchFileEnd) && !line.startsWith(matchFileStart)) {
+                fileStart = false;
+                if(mdType == MdType.sepNotes)
+                  break;
+              }
+              else if(line.startsWith('```'+getLanguageIdetifier(this.configuration.associations,this.path))
+                  && (i+1) < (contentLines.length)){
+                let lineprefix = getLineNumber(contentLines[i+1]);
+                let noteblock = new NoteBlock(lineprefix,'',1);
+                this.mdChangedLine.push(noteblock)  
+              }
             }
           }
-          else if (!fileEnd) {
-            if (line.startsWith(matchFileEnd)) {
-              fileEnd = true;
-              break;
-            }
-            else if(line.startsWith('```'+getLanguageIdetifier(this.configuration.associations,this.path))
-                 && (i+1) < (contentLines.length)){
-              let lineprefix = getLineNumber(contentLines[i+1]);
-              let noteblock = new NoteBlock(lineprefix,'',1);
-              this.mdChangedLine.push(noteblock)  
-            }
+          this.mdChangedLine.sort((a,b)=> a.codeLine - b.codeLine);
+        }
+        for (let block of this.mdChangedLine) {
+          if (block.codeLine == linenumber) {
+            block.changedLine += changedLine;
+            break;
           }
         }
+        this.needRefresh = true;
+        logger.debug('updateMdLine end----------------');
       }
-      for (let block of this.mdChangedLine) {
-        if (block.codeLine == linenumber) {
-          block.changedLine += changedLine;
-          break;
-        }
-      }
-      this.needRefresh = true;
     }
 
-    isMdLineChanged():boolean{
-      return this.mdChangedLine.length != 0;
+    isMdLineChanged(mdType:MdType):boolean{
+      return this.mdChangedLine.length != 0 && mdType == this.mdChangeType;
     }
 
     // linenumber: block first code line
@@ -664,6 +700,7 @@ export class NoteFile{
     }
 
     exportToMdDiff(attachAll:boolean = false){
+      logger.debug('exportToMdDiff start-------------');
       let diffNote = '';
       let accuLines = 0;
       this.needRefresh = true;
@@ -697,6 +734,7 @@ export class NoteFile{
       else {
         fs.appendFileSync(Constants.sepNotesDiffFilePath, diffNote);
       }
+      logger.debug('exportToMdDiff end-------------');
     }
 }
 export class serializableNoteFile{

@@ -78,6 +78,9 @@ if you change this, you should also change the configuration for todo-tree or ot
 * attach action is not needed anymore when adding first note 
 * handle situation when src file cannot write
 * `sepNotes.md` can jump to src file in detach mode 
+* `sepNotes_category.md` now support edit and changes will also sync with other files
+* can use `@order` to sort note in `sepNotes_category.md` 
+* `separableNotes.syncPos` now support `sepNotes_category.md`(from `sepNotes_category.md` to src file)
 
 #### 0.1.4
 * refresh `sepNotes.md` after attach if line number diffs(note refresh while not match)
@@ -121,7 +124,12 @@ if you change this, you should also change the configuration for todo-tree or ot
 * [x] adjust note pos
 * [x] reorganize note in category
 * [x] import notes into workspace
+* support block level note(such as /* */)
 * record note history
+* [x] order note
+* keyword can be defined
+* note block like jupyter notebook
+* log time about every step
 
 Please star :star: it if you like it, Thanks.
 

@@ -1,14 +1,14 @@
 import {ExtensionContext,commands,workspace,window } from 'vscode';
 import * as vscode from 'vscode';
 import { logger } from "./logging/logger";
-import { Constants, NoteMode } from "./constants/constants";
+import { Constants, MdType, NoteMode } from "./constants/constants";
 import { getConfiguration, Configuration } from "./configuration";
 import { Activatable } from "./activatable";
 import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, getKeyWordsFromSrc,decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, getKeyWordsFromSrc,decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, sortContentBlock, canSync, isSepNotesCatFile} from './utils/utils';
 import * as fs from 'fs';
 
 let configuration: Configuration;
@@ -112,15 +112,22 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                             if (fs.existsSync(srcPath)) {
                                 let note = Notes.get(srcPath);
                                 if (note && note.isAttached()) {
+                                    let mdType;
+                                    if(isSepNotesFile(event.document.uri.fsPath)){
+                                        mdType = MdType.sepNotes;
+                                    }
+                                    else{
+                                        mdType = MdType.sepNotesCat;
+                                    }
                                     logger.debug('startpos:' + startpos.toString());
                                     let anno = getAnnoFromMd(event.document, startpos);
                                     logger.debug('text:' + anno.text + ' linenumber:' + anno.linenumber.toString());
                                     let linenumber = anno.linenumber;
-                                    if (note.isMdLineChanged()) {
+                                    if (note.isMdLineChanged(mdType)) {
                                         linenumber = note.getMdLine(linenumber);
                                     }
-                                    note.syncSrcWithMd(anno.text, linenumber);
-                                    note.updateMdLine(anno.linenumber, rowsChanged(contentChange));
+                                    note.syncSrcWithMd(anno.text, linenumber,mdType);
+                                    note.updateMdLine(anno.linenumber, rowsChanged(contentChange), mdType);
                                     updateStateNote(extensionContext);
                                     logger.debug('linenumber:' + linenumber.toString() + ' rowschanged:' + rowsChanged(contentChange));
                                 }
@@ -131,7 +138,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         }
                     }
                     // sync source with markdown
-                    if(isSepNotesFile(path) && !inAll){
+                    if(canSync(path) && !inAll){
                         if(ratelimiterSep.isAllowed()){
                             syncSrcWithMdAll();
                         }
@@ -208,8 +215,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             // logger.info(JSON.stringify(configuration.associations));
 		}));
       
-// sepNotes ### mode switch(**test12**)
-// sepNotes test  for it
+// sepNotes ### mode switch(**test123**) @order(12)
+// sepNotes test  for itabc
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.NoteModeSwitch, async () => {
             activeEditor = vscode.window.activeTextEditor;
@@ -462,7 +469,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             else{
                 writeFile(Constants.sepNotesFilePath, contentMd); 
                 for(let [key,value] of contentByCatAll){
-                    contentMdCat += ('# ' + addEof(key) + '  \n' + value);
+                    contentMdCat += ('# ' + addEof(key) + '  \n' + sortContentBlock(value));
                 }
                 writeFile(Constants.sepNotesCategoryFilePath, contentMdCat); 
                 window.showInformationMessage('sync with file '+Constants.sepNotesFileName+','+ Constants.sepNotesCategoryFileName +' success');
@@ -480,7 +487,14 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             filePath = getSrcFileFromMd(document,line.lineNumber);
             if((filePath != '') && fs.existsSync(filePath)){
                 let note = Notes.get(filePath);
-                if(note && isSepNotesFile(document.fileName) && note.isMdLineChanged()){
+                let mdType;
+                if (isSepNotesFile(document.uri.fsPath)) {
+                    mdType = MdType.sepNotes;
+                }
+                else {
+                    mdType = MdType.sepNotesCat;
+                }
+                if(note && note.isMdLineChanged(mdType)){
                     let blockLineNumber = getLineNumberUp(document,line.lineNumber);
                     logger.debug('blockLineNumber:'+blockLineNumber.toString());
                     lineNumber = note.getMdLine(blockLineNumber);
@@ -643,7 +657,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             let editorSepNotes:vscode.TextEditor = null;
             let editorSrc:vscode.TextEditor = null;
             // markdown
-            if(isSepNotesFile(activeEditor.document.uri.fsPath)){
+            if(canSync(activeEditor.document.uri.fsPath)){
                 editorSepNotes = activeEditor;
                 let curLine = 0;
                 let range = editorSepNotes.selection;
