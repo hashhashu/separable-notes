@@ -446,10 +446,10 @@ function fetchOrder(block:string):number{
         return ret;
       }
       else{
-        const regex = /@order\s*\((\d+)\)/;   
+        const regex = /@order\s*\((\d+(\.\d+)?)\)/;   
         const match = line.match(regex);  
         if(match && match.length > 1){
-          return parseInt(match[1],10);
+          return parseFloat(match[1]);
         }
       }
     }
