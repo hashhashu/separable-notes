@@ -81,6 +81,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * `sepNotes_category.md` now support edit and changes will also sync with other files
 * can use `@order` to sort note in `sepNotes_category.md` 
 * `separableNotes.syncPos` now support `sepNotes_category.md`(from `sepNotes_category.md` to src file)
+* modify edit sync in  `sepNotes_category.md` and `sepNotes.md`
 
 #### 0.1.4
 * refresh `sepNotes.md` after attach if line number diffs(note refresh while not match)
@@ -129,7 +130,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * [x] order note
 * keyword can be defined
 * note block like jupyter notebook
-* log time about every step
+* [x] log time second about every step
 
 Please star :star: it if you like it, Thanks.
 

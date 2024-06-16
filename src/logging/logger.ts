@@ -51,8 +51,12 @@ class Logger {
     }
 
     private log(msg: string, level: Level) {
-        const time = new Date().toLocaleTimeString();
-        msg = `[${time}][${Constants.extensionName}][${level}] ${msg}`;
+        let now = new Date();  
+        let hours = String(now.getHours()).padStart(2, '0');  
+        let minutes = String(now.getMinutes()).padStart(2, '0');  
+        let seconds = String(now.getSeconds()).padStart(2, '0');  
+        let milliseconds = String(now.getMilliseconds()).padStart(3, '0'); 
+        msg = `[${hours}:${minutes}:${seconds}.${milliseconds}][${Constants.extensionName}][${level}] ${msg}`;
         switch(level) {
             case Level.ERROR: console.error(msg); break;
             case Level.WARN: console.warn(msg); break;

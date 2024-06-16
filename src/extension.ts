@@ -22,6 +22,7 @@ let inAll = false;
 let ratelimiter:RateLimiter;
 let ratelimiterSep:RateLimiter;
 let ratelimiterUpdate:RateLimiter;
+let mdLineChangeCount = 0;
 
 export async function activate(extensionContext: ExtensionContext): Promise<boolean> {
     logger.info(
@@ -106,9 +107,13 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     }
                     function syncSrcWithMdAll(){
                         for(let contentChange of event.contentChanges){
+                            mdLineChangeCount -= rowsChanged(contentChange);
+                        }
+                        for(let contentChange of event.contentChanges){
                             let startpos = contentChange.range.start.line;
                             let srcPath = getSrcFileFromMd(event.document, startpos);
-                            logger.debug('startpos:'+startpos.toString()+' srcpath:'+srcPath+' endpos:'+contentChange.range.end.line.toString());
+                            logger.debug('changetext:'+contentChange.text);
+                            logger.debug('startpos:'+startpos.toString()+' srcpath:'+srcPath+' endpos:'+contentChange.range.end.line.toString()+' mdLineChangeCount:'+mdLineChangeCount.toString());
                             if (fs.existsSync(srcPath)) {
                                 let note = Notes.get(srcPath);
                                 if (note && note.isAttached()) {
@@ -127,7 +132,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                                         linenumber = note.getMdLine(linenumber);
                                     }
                                     note.syncSrcWithMd(anno.text, linenumber,mdType);
-                                    note.updateMdLine(anno.linenumber, rowsChanged(contentChange), mdType);
+                                    note.updateMdLine(anno.linenumber, rowsChanged(contentChange) + mdLineChangeCount, mdType);
                                     updateStateNote(extensionContext);
                                     logger.debug('linenumber:' + linenumber.toString() + ' rowschanged:' + rowsChanged(contentChange));
                                 }
@@ -136,9 +141,13 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                                 }
                             }
                         }
+                        mdLineChangeCount = 0;
                     }
                     // sync source with markdown
                     if(canSync(path) && !inAll){
+                        for(let contentChange of event.contentChanges){
+                            mdLineChangeCount += rowsChanged(contentChange);
+                        }
                         if(ratelimiterSep.isAllowed()){
                             syncSrcWithMdAll();
                         }

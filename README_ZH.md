@@ -81,6 +81,7 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * `sepNotes_category.md` now support edit and changes will also sync with other files
 * can use `@order` to sort note in `sepNotes_category.md` 
 * `separableNotes.syncPos` now support `sepNotes_category.md`(from `sepNotes_category.md` to src file)
+* modify edit sync in  `sepNotes_category.md` and `sepNotes.md`
 
 #### 0.1.4
 * refresh `sepNotes.md` after attach if line number diffs(note refresh while not match)

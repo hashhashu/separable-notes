@@ -628,7 +628,7 @@ export class NoteFile{
           accuLines += block.changedLine;
         }
       }
-      return 0;
+      return linenumber;
     }
 
     getDetachedLine(linenumber:number){
