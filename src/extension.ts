@@ -8,8 +8,9 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, getKeyWordsFromSrc,decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, sortContentBlock, canSync, isSepNotesCatFile} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync} from './utils/utils';
 import * as fs from 'fs';
+import { NestedTag } from './core/tag';
 
 let configuration: Configuration;
 let activatables: Array<Activatable> = new Array();
@@ -63,8 +64,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     ratelimiterSep = new RateLimiter(1,1000);
     ratelimiterUpdate = new RateLimiter(1,2000);
     
-// sepNotes ## sync markdown with source and vice versa(**test123**)123
-// sepNotes 12312412434
+// sepNotes sync markdown #abcd/aba/def  with source and vice versa(**test123**)123 @order(13) 
+// sepNotes 12312412434 #abcd/abafeccdeff2345212/cde **123** #ddef/d #hhhcde/abc  
     extensionContext.subscriptions.push(
         workspace.onDidChangeTextDocument((event)=>{
             if (window.activeTextEditor && event.document === window.activeTextEditor.document) {
@@ -202,9 +203,10 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.test, async () => {
 			window.showInformationMessage('Hello World from tiger! well well ');
-            let str = '你好啊**呼呼**哈哈哈**hello**';
-            let matches = getKeyWordsFromSrc(str);
+            let str = '你好啊#呼呼 #12ab/哈哈哈/ **hello**';
+            let matches = NestedTag.fetchTag(str);
             logger.debug(matches);
+            logger.debug(NestedTag.fetchOutLineTag('# 123'));
             // let path = activeEditor.document.uri.fsPath;
             // extensionContext.workspaceState.update(Constants.keyNotes,null);
             // let aa = await vscode.languages.getLanguages();
@@ -224,7 +226,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             // logger.info(JSON.stringify(configuration.associations));
 		}));
       
-// sepNotes ### mode switch(**test123**) @order(12)
+// sepNotes ### mode switch(**test123**) @label(test123) @order(12.2) #abcd/cdb 
 // sepNotes test  for itabc
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.NoteModeSwitch, async () => {
@@ -453,7 +455,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             let contentMdCat = Constants.sepNotesCatDesc;
             let contentByCatAll:Map<string,string> = new Map<string,string>();
             let contentFetchRet:{"content":string,"contentByCat":Map<string,string>};
+            let sortedCat:Array<string>;
             let notAttached = false;
+            let lastNestedTag = new NestedTag();
             for(let [_,note] of Notes){
                 if(note.isAttached()){
                     contentFetchRet = note.fetchMdFromSrc();
@@ -476,9 +480,15 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 window.showInformationMessage('there are files not attached'); 
             }
             else{
-                writeFile(Constants.sepNotesFilePath, contentMd); 
-                for(let [key,value] of contentByCatAll){
-                    contentMdCat += ('# ' + addEof(key) + '  \n' + sortContentBlock(value));
+                writeFile(Constants.sepNotesFilePath, contentMd);
+                sortedCat = Array.from(contentByCatAll.keys());
+                sortedCat.sort((a,b)=>NestedTag.compareNestedTag(a,b));
+                for(let tag of sortedCat){
+                    for(let outline of lastNestedTag.needAddOutLine(tag)){
+                        contentMdCat += addEof(outline);
+                    }
+                    contentMdCat += contentByCatAll.get(tag);
+                    lastNestedTag.setTags(tag);
                 }
                 writeFile(Constants.sepNotesCategoryFilePath, contentMdCat); 
                 window.showInformationMessage('sync with file '+Constants.sepNotesFileName+','+ Constants.sepNotesCategoryFileName +' success');

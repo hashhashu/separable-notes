@@ -79,24 +79,6 @@ export function getLineNumber(line:string):number{
   return match ? parseInt(match[0], 10) : -1;
 }
 
-export function getKeyWordsFromSrc(line:string):Array<string>{
-  let matches = new Array();
-  let keyIden = '**';
-  let index = line.indexOf(keyIden);
-  let endIndex = 0;
-  while(index >= 0){
-    endIndex = line.indexOf(keyIden,index+3);
-    if(endIndex >= index){
-      matches.push(line.substring(index+2,endIndex));
-      index = line.indexOf(keyIden,endIndex+3);
-    }
-    else{
-      break;
-    }
-  }  
-  return matches;
-}
-
 export function getKeywordFromMd(line:string):string{
   return line.substring(2).trim();
 }
@@ -263,6 +245,10 @@ export function cutNoteId(line:string,noteId:string):string{
   return line.substring(line.indexOf(noteId)+noteId.length).trimLeft();
 }
 
+export function cutOutlineMarker(line:string):string{
+  return line.replace(/#+ /,'');
+}
+
 export function getPrefix(line:string,noteId:string):string{
   return line.substring(0,line.indexOf(noteId)+noteId.length);
 }
@@ -407,62 +393,6 @@ export function matchFilePathEnd(isAnno = false){
   }
 }
 
-function splitIntoBlocks(contentBlock:string):Array<string>{
-  const contentLines = splitIntoLines(contentBlock);
-  let matchFileStart = matchFilePathEnd(true);
-  let blocks = new Array<string>();
-  let block = '';
-  for(let line of contentLines){
-    if(line.startsWith(matchFileStart)){
-      if(block.trim().length > 0){
-        blocks.push(block);
-      }
-      block = addEof(line);
-    }
-    else{
-      block += addEof(line);
-    }
-  }
-  if(block.trim().length > 0){
-    blocks.push(block);
-  }
-  return blocks;
-}
-
-function fetchOrder(block:string):number{
-  let ret = 100000;
-  let matchAnnoStart = matchFilePathEnd(true);
-  let matchAnnoEnd = '```';
-  let inAnno = false;
-  const contentLines = splitIntoLines(block);
-  for(let line of contentLines){
-    if(!inAnno){
-      if(line.startsWith(matchAnnoStart)){
-        inAnno = true;
-      }
-    }
-    else{
-      if(line.startsWith(matchAnnoEnd)){
-        return ret;
-      }
-      else{
-        const regex = /@order\s*\((\d+(\.\d+)?)\)/;   
-        const match = line.match(regex);  
-        if(match && match.length > 1){
-          return parseFloat(match[1]);
-        }
-      }
-    }
-  }
-  return ret;
-}
-
-export function sortContentBlock(contentBlock:string):string{
-  let blocks = splitIntoBlocks(contentBlock);
-  blocks.sort((a,b)=>  fetchOrder(a) - fetchOrder(b));
-  return blocks.join('');
-}
-
 export function writeFile(path:string,content:string){
   try{
     logger.debug('write file: '+path);
@@ -471,6 +401,13 @@ export function writeFile(path:string,content:string){
     logger.error('write file error');
     vscode.window.showErrorMessage('write file error '+path);
   }
+}
+
+export function getMax(a:number,b:number):number{
+  return a > b? a:b;
+}
+export function getMin(a:number,b:number):number{
+  return a < b? a:b;
 }
 
 export class RateLimiter {  

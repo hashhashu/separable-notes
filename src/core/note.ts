@@ -1,9 +1,10 @@
 import { Constants,MdType,NoteMode} from "../constants/constants";
-import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, cutNoteId, getPrefix, getLineNumber, isEqual, getKeyWordsFromSrc, matchFilePathStart, matchFilePathEnd, getKeywordFromMd, writeFile, canAttachFile, sortContentBlock} from '../utils/utils'
+import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, cutNoteId, getPrefix, getLineNumber, isEqual, matchFilePathStart, matchFilePathEnd, writeFile, canAttachFile, cutOutlineMarker} from '../utils/utils'
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Configuration } from "../configuration";
 import { logger } from "../logging/logger";
+import { NestedTag} from "./tag";
 
 export class NoteFile{
     path: string;
@@ -280,8 +281,8 @@ export class NoteFile{
             contentcatblocks.push(contentcatblock);
             contentcatblock = new ContentCatBlock();
           }
-          tempContent = cutNoteId(line,this.configuration.noteId);
-          contentcatblock.addKeywords(getKeyWordsFromSrc(tempContent));
+          tempContent = cutOutlineMarker(cutNoteId(line,this.configuration.noteId));
+          contentcatblock.addKeywords(NestedTag.fetchTag(tempContent));
           contentcatblock.content += addEof(tempContent);
           below = 3;
         }
@@ -325,6 +326,7 @@ export class NoteFile{
       return {"content":contentExport,"contentByCat":contentByCat};
     }
 
+// sepNotes #abcd/1:dbc
     //`sepNotes.md`
     refreshMd(document:vscode.TextDocument = null, mdStatus:string = ''){
       if(this.isAttached()){
@@ -374,69 +376,98 @@ export class NoteFile{
     refreshMdCat(document:vscode.TextDocument = null){
       if(this.isAttached()){
         logger.debug('refreshMdCat  start-------------------');
-        let contentByCat = this.fetchMdFromSrc(document).contentByCat;
-        let contentLines = this.getContentLines(null,Constants.sepNotesCategoryFilePath);
-        const matchCat = '# ';
-        const matchFileStart = matchFilePathStart(this.path,true);
+        let ret = this.fetchMdFromSrc(document);
+        let contentByCat = ret.contentByCat;
+        let sortedCat = Array.from(contentByCat.keys());
+        sortedCat.sort((a, b) => NestedTag.compareNestedTag(a, b));
+        let contentLines = this.getContentLines(null, Constants.sepNotesCategoryFilePath);
+        const matchFileStart = matchFilePathStart(this.path, true);
         const matchFileEnd = matchFilePathEnd(true);
-        let keyWord = '';
         let contentAll = '';
         let contentBlock = '';
         let inCurFile = false;
-        let keywords = new Set();
-        let header = true;
-        for(let line of contentLines){
-          // new keyword block
-          if(line.startsWith(matchCat)){
-            // gather prev block content
-            if(contentByCat.has(keyWord)){
-              contentBlock += contentByCat.get(keyWord);
+        let tagStart = false;
+        let catIndex = 0;
+        let lastNestedTag = new NestedTag();
+        let curNestedTag = new NestedTag();
+        let lastRecordTag = new NestedTag();
+        for (let line of contentLines) {
+          if (!tagStart) {
+            if (!NestedTag.hasOutline(line)) {
+              contentAll += addEof(line);
+              continue;
             }
-            if(contentBlock.trim().length > 0){
-              if(!header){
-                contentAll += (matchCat + addEof(keyWord));
-              }
-              header = false;
-              contentAll += sortContentBlock(contentBlock);
+            else {
+              tagStart = true;
             }
+          }
+          curNestedTag.update(line);
+          // common leaf node
+          if (lastNestedTag.leafNode(line)
+            && contentBlock.trim().length > 0) {
+            logger.debug('leaf node lastrecordtag:' + lastRecordTag.tags.join('/') + ' lastnestedtag:' + lastNestedTag.tags.join('/'));
+            for (let outline of lastRecordTag.needAddOutLineTag(lastNestedTag)) {
+              contentAll += addEof(outline);
+            }
+            contentAll += contentBlock;
+            lastRecordTag.copyTag(lastNestedTag);
             contentBlock = '';
-            keyWord = getKeywordFromMd(line);
-            keywords.add(keyWord);
             inCurFile = false;
           }
-          else{
-            if(!inCurFile){
-              if(line.startsWith(matchFileStart)){
+          // need add leaf node
+          if (NestedTag.hasOutline(line) &&
+            catIndex < sortedCat.length &&
+            curNestedTag.compareString(sortedCat[catIndex]) > 0) {
+            logger.debug('new add leaf node lastrecordtag:' + lastRecordTag.tags.join('/') + ' lastnestedtag:' + lastNestedTag.tags.join('/') + ' sortedCat:' + sortedCat[catIndex]);
+            // outline
+            for (let outline of lastRecordTag.needAddOutLine(sortedCat[catIndex])) {
+              contentAll += addEof(outline);
+            }
+            // content
+            contentAll += contentByCat.get(sortedCat[catIndex]);
+
+            lastRecordTag.setTags(sortedCat[catIndex]);
+            lastNestedTag.copyTag(lastRecordTag);
+            curNestedTag.copyTag(lastNestedTag);
+            curNestedTag.update(line);
+            ++catIndex
+          }
+          else if (!NestedTag.hasOutline(line)) {
+            if (!inCurFile) {
+              if (line.startsWith(matchFileStart)) {
                 inCurFile = true;
               }
-              else{
+              else {
                 contentBlock += addEof(line);
               }
             }
-            else if(line.startsWith(matchFileEnd)
-                    && !line.startsWith(matchFileStart)){
+            else if (line.startsWith(matchFileEnd)
+              && !line.startsWith(matchFileStart)) {
               inCurFile = false;
               contentBlock += addEof(line);
             }
           }
+          lastNestedTag.copyTag(curNestedTag);
         }
-        if(contentByCat.has(keyWord)){
-          contentBlock += contentByCat.get(keyWord);
-        }
-        if(contentBlock.trim().length > 0){
-          if(!header){
-            contentAll += (matchCat + addEof(keyWord));
+        if (contentBlock.trim().length > 0) {
+          for (let outline of lastRecordTag.needAddOutLineTag(lastNestedTag)) {
+            contentAll += addEof(outline);
           }
-          contentAll += sortContentBlock(contentBlock);
+          contentAll += contentBlock;
+          lastRecordTag.copyTag(lastNestedTag);
         }
-        // new add
-        for(let [key,value] of contentByCat){
-          if(!keywords.has(key)){
-            contentAll += (matchCat + addEof(key) + '  \n' + sortContentBlock(value));
+        while (catIndex < sortedCat.length) {
+          // outline
+          for (let outline of lastRecordTag.needAddOutLine(sortedCat[catIndex])) {
+            contentAll += addEof(outline);
           }
+          // content
+          contentAll += contentByCat.get(sortedCat[catIndex]);
+          lastRecordTag.setTags(sortedCat[catIndex]);
+          ++catIndex;
         }
         writeFile(Constants.sepNotesCategoryFilePath, contentAll);
-        if(this.mdChangeType == MdType.sepNotesCat){
+        if (this.mdChangeType == MdType.sepNotesCat) {
           this.mdChangedLine.length = 0;
         }
         logger.debug('refreshMdCat  end-------------------');

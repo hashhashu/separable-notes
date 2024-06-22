@@ -81,8 +81,9 @@ if you change this, you should also change the configuration for todo-tree or ot
 * `sepNotes_category.md` now support edit and changes will also sync with other files
 * can use `@order` to sort note in `sepNotes_category.md` 
 * `separableNotes.syncPos` now support `sepNotes_category.md`(from `sepNotes_category.md` to src file)
-* modify edit sync in  `sepNotes_category.md` and `sepNotes.md`
+* optimize edit sync(while change line) in  `sepNotes_category.md` and `sepNotes.md`
 * `@order`support decimal number(such as `@order(1.2)`)
+* remove `**s**` to reorganizing note in category and add **netsted tags** as `#s/a` to categorize 
 
 #### 0.1.4
 * refresh `sepNotes.md` after attach if line number diffs(note refresh while not match)
@@ -132,6 +133,14 @@ if you change this, you should also change the configuration for todo-tree or ot
 * keyword can be defined
 * note block like jupyter notebook
 * [x] log time second about every step
+* support describe category in `sepNotes_category.md`
+* support auto lable order in `sepNotes_category.md`
+* optimize refresh mechanism 
+* netsted tags like obsidian
+* syncpos optimize(行数对应，不一定要在中间，有一个明显的渲染指示)
+* syncpos 增加双击响应事件
+* when refresh should check if it's newest
+* 在独立的文件中定义顺序
 
 Please star :star: it if you like it, Thanks.
 

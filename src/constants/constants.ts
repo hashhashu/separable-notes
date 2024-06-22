@@ -40,7 +40,7 @@ export namespace Constants {
     export const sepNotesFileHeadStatus = `attachedFileNum:#attachedFileNum    detachedFileNum:#detachedFileNum    refreshTime:#Time  `;
     export const sepNotesFileHead = sepNotesFileHeadFix +'\n' + sepNotesFileHeadStatus +'\n' + '-->  \n  \n';
     export const sepNotesUserNote = '# userContent\n  ';
-    export const sepNotesCatDesc = sepNotesFileHeadFix + '  \n' + 'notes can be categorized as keyword(**xxx**)  can be ordered using @order(xxx.xx)(support decimal number)' + '-->  \n  \n';
+    export const sepNotesCatDesc = sepNotesFileHeadFix + '  \n' + 'notes can be categorized as (#xxx/abc) like other nested tags, order can be defined like `#1:abc`  )' + '-->  \n  \n';
 
     export const keyNotes = 'separableNotes.notesKey';
 }

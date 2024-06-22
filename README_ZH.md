@@ -83,6 +83,7 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * `separableNotes.syncPos` now support `sepNotes_category.md`(from `sepNotes_category.md` to src file)
 * modify edit sync in  `sepNotes_category.md` and `sepNotes.md`
 * `@order`support decimal number(such as `@order(1.2)`)
+* remove `**s**` to reorganizing note in category and add **netsted tags** as `#s/a` to categorize 
 
 #### 0.1.4
 * refresh `sepNotes.md` after attach if line number diffs(note refresh while not match)
