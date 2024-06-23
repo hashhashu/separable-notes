@@ -132,9 +132,14 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                                     if (note.isMdLineChanged(mdType)) {
                                         linenumber = note.getMdLine(linenumber);
                                     }
-                                    note.syncSrcWithMd(anno.text, linenumber,mdType);
-                                    note.updateMdLine(anno.linenumber, rowsChanged(contentChange) + mdLineChangeCount, mdType);
-                                    updateStateNote(extensionContext);
+                                    if(note.isMatch(linenumber,anno.codeBelow)){
+                                        note.syncSrcWithMd(anno.text, linenumber,mdType);
+                                        note.updateMdLine(anno.linenumber, rowsChanged(contentChange) + mdLineChangeCount, mdType);
+                                        updateStateNote(extensionContext);
+                                    }
+                                    else{
+                                        window.showWarningMessage('src file is not matched, need to refresh first');
+                                    }
                                     logger.debug('linenumber:' + linenumber.toString() + ' rowschanged:' + rowsChanged(contentChange));
                                 }
                                 else {

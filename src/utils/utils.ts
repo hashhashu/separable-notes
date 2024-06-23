@@ -79,6 +79,16 @@ export function getLineNumber(line:string):number{
   return match ? parseInt(match[0], 10) : -1;
 }
 
+export function removeLineNumber(line:string):string{
+  let number = getLineNumber(line);
+  if(number >= 0){
+    return line.substring(number.toString().length + 2);
+  }
+  else{
+    return line;
+  }
+}
+
 export function getKeywordFromMd(line:string):string{
   return line.substring(2).trim();
 }
@@ -218,7 +228,7 @@ export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number){
     
   }
   logger.debug('start:'+start.toString()+' end:'+end.toString());
-  return {"text":ret,"linenumber":getLineNumber(lines[end+2])};
+  return {"text":ret,"linenumber":getLineNumber(lines[end+2]),"codeBelow":removeLineNumber(lines[end+2])};
 }
 
 export function getMatchLineCount(documment:vscode.TextDocument,matchText:string):number{

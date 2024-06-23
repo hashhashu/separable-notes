@@ -766,6 +766,15 @@ export class NoteFile{
       }
       logger.debug('exportToMdDiff end-------------');
     }
+
+    isMatch(lineNumber:number,code:string):boolean{
+      if(this.getContentLines()[lineNumber-1].trim() != code.trim()){
+        return false;
+      }
+      else{
+        return true;
+      }
+    }
 }
 export class serializableNoteFile{
     path: string;

@@ -85,6 +85,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * `@order`support decimal number(such as `@order(1.2)`)
 * remove `**s**` to reorganizing note in category and add **netsted tags** as `#s/a` to categorize 
 * add `$` for note outliner `###` in `sepNotes_category.md` to avoid conflict
+* add warn when edit `sepNotes.md` or `sepNotes_category.md` and src file is not matched
 
 #### 0.1.4
 * refresh `sepNotes.md` after attach if line number diffs(note refresh while not match)
@@ -133,16 +134,17 @@ if you change this, you should also change the configuration for todo-tree or ot
 * [x] order note
 * keyword can be defined
 * note block like jupyter notebook
-* [x] log time second about every step
+* [x] log time microsecond about every step
 * support describe category in `sepNotes_category.md`
 * support auto lable order in `sepNotes_category.md`
 * optimize refresh mechanism 
-* netsted tags like obsidian
+* [x] netsted tags like other notes app(such as obsidian)
 * syncpos optimize(行数对应，不一定要在中间，有一个明显的渲染指示)
 * syncpos 增加双击响应事件
 * when refresh should check if it's newest
 * 在独立的文件中定义顺序
 * auto complete for nested tags
+* 优化sepnotes里的编辑体验
 
 Please star :star: it if you like it, Thanks.
 
