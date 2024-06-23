@@ -209,7 +209,13 @@ export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number){
     }
   }
   for(let i=start;i<=end;i++){
-    ret += addEof(lines[i]);
+    if(isSepNotesCatFile(documment.uri.fsPath)){
+      ret += addEof(recoverOutlineMarker(lines[i]));
+    }
+    else{
+      ret += addEof(lines[i]);
+    }
+    
   }
   logger.debug('start:'+start.toString()+' end:'+end.toString());
   return {"text":ret,"linenumber":getLineNumber(lines[end+2])};
@@ -245,8 +251,30 @@ export function cutNoteId(line:string,noteId:string):string{
   return line.substring(line.indexOf(noteId)+noteId.length).trimLeft();
 }
 
-export function cutOutlineMarker(line:string):string{
-  return line.replace(/#+ /,'');
+export function removeOutlineMarker(line:string):string{
+  const regex = /^\s*#+\s+/;   
+  const match = line.match(regex);
+  if(match){
+    return line.replace(/^(\s*#+)(.*)/,(match, prefix, suffix) => {
+      return prefix + '$' + suffix;  
+    }); 
+  }
+  else{
+    return line;
+  }  
+}
+
+export function recoverOutlineMarker(line:string):string{
+  const regex = /^\s*#+\$\s+/;   
+  const match = line.match(regex);
+  if(match){
+    return line.replace(/^(\s*#+\$)(.*)/, (match, prefix, suffix) => {
+      return prefix.substring(0,prefix.length - 1) + suffix;  
+    });
+  }
+  else{
+    return line;
+  }  
 }
 
 export function getPrefix(line:string,noteId:string):string{

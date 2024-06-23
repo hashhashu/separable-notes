@@ -8,7 +8,7 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, removeOutlineMarker, recoverOutlineMarker} from './utils/utils';
 import * as fs from 'fs';
 import { NestedTag } from './core/tag';
 
@@ -484,6 +484,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 sortedCat = Array.from(contentByCatAll.keys());
                 sortedCat.sort((a,b)=>NestedTag.compareNestedTag(a,b));
                 for(let tag of sortedCat){
+                    logger.debug('lastNestedTag:'+lastNestedTag.tags.join('/')+' tag:'+tag);
                     for(let outline of lastNestedTag.needAddOutLine(tag)){
                         contentMdCat += addEof(outline);
                     }

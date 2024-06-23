@@ -1,5 +1,5 @@
 import { Constants,MdType,NoteMode} from "../constants/constants";
-import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, cutNoteId, getPrefix, getLineNumber, isEqual, matchFilePathStart, matchFilePathEnd, writeFile, canAttachFile, cutOutlineMarker} from '../utils/utils'
+import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, cutNoteId, getPrefix, getLineNumber, isEqual, matchFilePathStart, matchFilePathEnd, writeFile, canAttachFile, removeOutlineMarker} from '../utils/utils'
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Configuration } from "../configuration";
@@ -277,23 +277,22 @@ export class NoteFile{
         // new start
         if(line.includes(this.configuration.noteId)){
           if(below > 0 && below < 3){
-            contentcatblock.content += '```\n';
+            contentcatblock.addCodeEnd();
             contentcatblocks.push(contentcatblock);
             contentcatblock = new ContentCatBlock();
           }
-          tempContent = cutOutlineMarker(cutNoteId(line,this.configuration.noteId));
-          contentcatblock.addKeywords(NestedTag.fetchTag(tempContent));
-          contentcatblock.content += addEof(tempContent);
+          tempContent = cutNoteId(line,this.configuration.noteId);
+          contentcatblock.addNote(tempContent);
           below = 3;
         }
         else if(below > 0){
           if(below == 3){
-            contentcatblock.content += '```'+getLanguageIdetifier(this.configuration.associations,this.path)+'\n';
+            contentcatblock.addCodeBegin(getLanguageIdetifier(this.configuration.associations,this.path));
           }
-          contentcatblock.content += (lineCount.toString() + '  ' + addEof(line));
+          contentcatblock.addCode(lineCount, line);
           --below;
           if(below == 0){
-            contentcatblock.content += '```\n';
+            contentcatblock.addCodeEnd();
             contentcatblocks.push(contentcatblock);
             contentcatblock = new ContentCatBlock();
           }
@@ -301,19 +300,19 @@ export class NoteFile{
         ++lineCount;
       }
       if(below > 0 && below < 3){
-        contentcatblock.content += '```\n';
+        contentcatblock.addCodeEnd();
         contentcatblocks.push(contentcatblock);
         contentcatblock = new ContentCatBlock();
       }
       for(let ele of contentcatblocks){
         contentExport += ele.content;
         if(ele.hasKeyword()){
-          for(let keyword of ele.keywords){
+          for(let keyword of ele.tags){
             if(contentByCat.has(keyword)){
-              contentByCat.set(keyword,contentByCat.get(keyword) + '  \n' + matchFilePathStart(this.path,true) +'  \n' + ele.content);
+              contentByCat.set(keyword,contentByCat.get(keyword) + '  \n' + matchFilePathStart(this.path,true) +'  \n' + ele.contentCat);
             }
             else{
-              contentByCat.set(keyword,matchFilePathStart(this.path,true) + '  \n' + ele.content);
+              contentByCat.set(keyword,matchFilePathStart(this.path,true) + '  \n' + ele.contentCat);
             }
           }
         }
@@ -815,18 +814,40 @@ export class NoteBlock{
 }
 
 class ContentCatBlock{
-  keywords: Set<string>;
+  tags: Set<string>;
   content: string;
-  constructor(keywordp = new Set<string>(), contentp = ''){
-    this.keywords = keywordp;
+  contentCat: string;
+  constructor(keywordp = new Set<string>(), contentp = '', contentCatp = ''){
+    this.tags = keywordp;
     this.content = contentp;
+    this.contentCat = contentCatp;
   }
-  addKeywords(eles:Array<string>){
+  addNote(contentP:string){
+    this.content += addEof(contentP);
+    this.contentCat += addEof(removeOutlineMarker(contentP));
+    this.addKeywords(NestedTag.fetchTag(contentP));
+  }
+  addCodeBegin(identifier:string){
+    let contentp = '```'+identifier+'\n';
+    this.content += contentp;
+    this.contentCat += contentp;
+  }
+  addCode(lineCount:number,line:string){
+    let contentp = lineCount.toString() + '  ' + addEof(line); 
+    this.content += contentp;
+    this.contentCat += contentp;
+  }
+  addCodeEnd(){
+    let contentp = '```\n';
+    this.content += contentp;
+    this.contentCat += contentp;
+  }
+  private addKeywords(eles:Array<string>){
     for(let ele of eles){
-      this.keywords.add(ele);
+      this.tags.add(ele);
     }
   }
   hasKeyword(){
-    return this.keywords.size > 0;
+    return this.tags.size > 0;
   }
 }

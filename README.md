@@ -84,6 +84,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * optimize edit sync(while change line) in  `sepNotes_category.md` and `sepNotes.md`
 * `@order`support decimal number(such as `@order(1.2)`)
 * remove `**s**` to reorganizing note in category and add **netsted tags** as `#s/a` to categorize 
+* add `$` for note outliner `###` in `sepNotes_category.md` to avoid conflict
 
 #### 0.1.4
 * refresh `sepNotes.md` after attach if line number diffs(note refresh while not match)
@@ -141,6 +142,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * syncpos 增加双击响应事件
 * when refresh should check if it's newest
 * 在独立的文件中定义顺序
+* auto complete for nested tags
 
 Please star :star: it if you like it, Thanks.
 
