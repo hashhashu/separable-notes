@@ -113,6 +113,10 @@
         {
           "command":"separableNotes.syncPos",
           "group": "separableNotes@1"
+        },
+        {
+          "command":"separableNotes.syncMdWithSrc",
+          "group": "separableNotes@1"
         }
       ],
       "separableNotes.openSepNotes":[

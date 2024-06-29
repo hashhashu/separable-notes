@@ -86,6 +86,7 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * remove `**s**` to reorganizing note in category and add **netsted tags** as `#s/a` to categorize 
 * add `$` for note outliner `###` in `sepNotes_category.md` to avoid conflict
 * add warn when edit `sepNotes.md` or `sepNotes_category.md` and src file is not matched
+* add `syncMdWithSrc` command into menu command and tag identify optimize
 
 #### 0.1.4
 * refresh `sepNotes.md` after attach if line number diffs(note refresh while not match)

@@ -118,7 +118,7 @@ export class NestedTag{
     }
 
     static fetchTag(line:string):Array<string>{
-        const regex = /#([^\s#]+)/g;   
+        const regex = /(?:^|\s)#([^\s#]+)/g;   
         const match = line.match(regex);  
         return match? match :new Array<string>();
     }
