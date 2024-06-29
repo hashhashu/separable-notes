@@ -3,7 +3,7 @@ import { getMin } from "../utils/utils";
 export class NestedTag{
     tags:Array<string>;
     constructor(tag:string = ''){
-        this.tags = tag.substring(1).split('/');
+        this.tags = tag.split('/');
     }
 
     compareTag(nestedTag2:NestedTag):number{
@@ -93,7 +93,7 @@ export class NestedTag{
     }
 
     setTags(tags:string){
-        this.tags = tags.substring(1).split('/');
+        this.tags = tags.split('/');
     }
 
     copyTag(tags:NestedTag){
@@ -119,8 +119,12 @@ export class NestedTag{
 
     static fetchTag(line:string):Array<string>{
         const regex = /(?:^|\s)#([^\s#]+)/g;   
-        const match = line.match(regex);  
-        return match? match :new Array<string>();
+        let match;
+        let tags:Array<string> = new Array<string>();
+        while((match = regex.exec(line))!=null){    
+            tags.push(match[1]);
+        }  
+        return tags;
     }
 
     static removeTagNumber(tag:string):string{
