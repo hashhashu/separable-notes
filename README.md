@@ -10,7 +10,7 @@ separable notes is a VSCode extension that can manage your inline code note, mak
 It can be applied to scenarios sucmh as:
 * keep your note private and not committing to the repository that is maintained by many people.
 * outline your code and organize you code note in standalone markdown file(`sepNotes.md`).
-* Reorganize the content of the notes by category (by defining keyword(**\s**) shown in `sepNotes_category.md`)(or by define @id and @refid, can easily imbed code in arbitrary markdown file)
+* Reorganize the content of the notes by category (by defining tag(#xxx/abc) shown in `sepNotes_category.md`)
 
 ![demo1](pic/demo1.PNG)
 
@@ -74,6 +74,8 @@ if you change this, you should also change the configuration for todo-tree or ot
 ```
 
 ### ChangeLog
+#### 0.1.6
+* relative path is used instead of original absolute path to make it more portable
 #### 0.1.5
 * attach action is not needed anymore when adding first note 
 * handle situation when src file cannot write
@@ -148,6 +150,8 @@ if you change this, you should also change the configuration for todo-tree or ot
 * 优化sepnotes里的编辑体验
 * sepnotes 加入刷新按钮 或者 快捷命令
 * [x] tag identify optimize
+* use relative path
+* 利用vscode的 CodeLens 显示 detach后的内容
 
 Please star :star: it if you like it, Thanks.
 

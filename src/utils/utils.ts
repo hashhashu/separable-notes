@@ -188,6 +188,7 @@ export function getSrcFileFromLine(line:string){
       ret = link.split('](')[1].split(')')[0];
     }
     if (ret.length > 0) {
+      ret = path.join(Constants.workspaceFolder,ret);
       return ret;
     }
   }
@@ -410,9 +411,11 @@ export function isEqual(str1:string,str2:string){
   }
 }
 
-export function matchFilePathStart(path:string,isAnno = false){
-  let fileName = getFileName(path);
-  let fileIden = '# ['+ fileName +']'+'(' + path +')' ;
+export function matchFilePathStart(patha:string,isAnno = false){
+  let fileName = getFileName(patha);
+  patha = patha.replace(/\\/g,'\\\\',);
+  patha = path.relative(Constants.workspaceFolder,patha);
+  let fileIden = '# ['+ fileName +']'+'(' + patha +')' ;
   if(isAnno){
     return '<!-- ' + fileIden +' -->';
   }
