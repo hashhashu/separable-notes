@@ -498,6 +498,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     lastNestedTag.setTags(tag);
                 }
                 writeFile(Constants.sepNotesCategoryFilePath, contentMdCat); 
+                for(let [_,note] of Notes){
+                    note.clearCache();
+                }
                 window.showInformationMessage('sync with file '+Constants.sepNotesFileName+','+ Constants.sepNotesCategoryFileName +' success');
             }
             updateMdStatus();

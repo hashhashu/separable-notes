@@ -328,7 +328,7 @@ export class NoteFile{
       return {"content":contentExport,"contentByCat":contentByCat};
     }
 
-// sepNotes #abcd/1:dbc 
+// sepNotes #abcd/1:dbc
 // sepNotes 12312
     //`sepNotes.md`
     refreshMd(document:vscode.TextDocument = null, mdStatus:string = ''){
@@ -518,6 +518,11 @@ export class NoteFile{
       this.refreshId(document);
       this.refreshMd(document,mdStatus);
       this.refreshMdCat(document);
+      this.needRefresh = false;
+    }
+
+    clearCache(){
+      this.mdChangedLine.length = 0;
       this.needRefresh = false;
     }
 

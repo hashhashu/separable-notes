@@ -161,16 +161,16 @@ export function getSrcFileFromMd(documment:vscode.TextDocument,startpos:number):
   let notCrossTag = isSepNotesCatFile(documment.uri.fsPath);
   let lines = splitIntoLines(content);
   let ret = '';  
-  for(let i=startpos - 1;i>=0;i--){
+  for(let i=startpos;i>=0;i--){
     let line = lines[i];
+    if(notCrossTag && Constants.glineIdentity.isTagOutLine(line)){
+      break;
+    }
     if(Constants.glineIdentity.isFileStart(line)){
         ret = getSrcFileFromLine(line);
         if(ret.length > 0){
           return ret;
         }
-    }
-    else if(notCrossTag && Constants.glineIdentity.isTagOutLine(line)){
-      break;
     }
   }
   return '';
