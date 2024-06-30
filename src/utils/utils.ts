@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import path from "path";
 import { Constants } from '../constants/constants';
 import * as fs from 'fs'; 
+import { LineIdentity } from '../core/LineIdentity';
 
 export function randomString(length: number, extended: boolean = false) {
     let text = "";
@@ -96,7 +97,6 @@ export function getKeywordFromMd(line:string):string{
 export function getLineNumberDown(documment:vscode.TextDocument, startpos:number):number{
   let content = documment.getText();
   let lines = splitIntoLines(content);
-  let matchFileEnd = matchFilePathEnd();
   let line = '';
   let ret = -1;
   for(let i=startpos;i<lines.length;i++){
@@ -118,8 +118,7 @@ export function getLineNumberDown(documment:vscode.TextDocument, startpos:number
       }
     }
     // file end
-    else if(line.startsWith(matchFileEnd)
-          || line.startsWith(matchFilePathEnd(true))){
+    else if(Constants.glineIdentity.isFileStart(line)){
       break;
     }
   }
@@ -129,7 +128,6 @@ export function getLineNumberDown(documment:vscode.TextDocument, startpos:number
 export function getLineNumberUp(documment:vscode.TextDocument,startpos:number){
   let content = documment.getText();
   let lines = splitIntoLines(content);
-  let matchFileEnd = matchFilePathEnd();
   let line = '';
   let ret = -1;
   for(let i=startpos-1; i>=0 ;i--){
@@ -151,8 +149,7 @@ export function getLineNumberUp(documment:vscode.TextDocument,startpos:number){
       }
     }
     // file end
-    else if(line.startsWith(matchFileEnd)
-           || line.startsWith(matchFilePathEnd(true))){
+    else if(Constants.glineIdentity.isFileStart(line)){
       break;
     }
   }
@@ -161,16 +158,19 @@ export function getLineNumberUp(documment:vscode.TextDocument,startpos:number){
 
 export function getSrcFileFromMd(documment:vscode.TextDocument,startpos:number): string {  
   let content = documment.getText();
+  let notCrossTag = isSepNotesCatFile(documment.uri.fsPath);
   let lines = splitIntoLines(content);
   let ret = '';  
   for(let i=startpos - 1;i>=0;i--){
     let line = lines[i];
-    if(line.startsWith(matchFilePathEnd())
-      || line.startsWith(matchFilePathEnd(true))){
+    if(Constants.glineIdentity.isFileStart(line)){
         ret = getSrcFileFromLine(line);
         if(ret.length > 0){
           return ret;
         }
+    }
+    else if(notCrossTag && Constants.glineIdentity.isTagOutLine(line)){
+      break;
     }
   }
   return '';
@@ -204,9 +204,8 @@ export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number){
   let line = '';
   for(let i = start; i>=0 ;i--){
     line = lines[i];
-    if(line.startsWith('```') 
-      || line.startsWith(matchFilePathEnd()) 
-      || line.startsWith(matchFilePathEnd(true))){
+    if(Constants.glineIdentity.isCodeStart(line) 
+      || Constants.glineIdentity.isFileStart(line)){
       start = i+1;
       break;
     }
@@ -334,30 +333,28 @@ export function canAttachFile(path:string):boolean{
 export function getMdPos(srcPath:string,srcPos:number){
     let content = fs.readFileSync(Constants.sepNotesFilePath).toString();
     let lines = splitIntoLines(content);
-    const matchFileStart = matchFilePathStart(srcPath);
-    const matchFileEnd = matchFilePathEnd();
-    const matchCodeStart = '```';
+    let lineIdentity = new LineIdentity(srcPath);
     let inCode = false;
     let fileStart = false;
     let lineNumber = 0;
     for(let line of lines){
       if (!fileStart) {
-        if (line.startsWith(matchFileStart)) {
+        if (lineIdentity.isCurFileStart(line)) {
           fileStart = true;
           inCode = false;
         }
       }
       else if(!inCode){
-        if(line.startsWith(matchCodeStart)){
+        if(lineIdentity.isCodeStart(line)){
           inCode = true;
         }
       }
       else {
-        if(line.startsWith(matchCodeStart)){
+        if(lineIdentity.isCodeEnd(line)){
           inCode = false;
         }
         else{
-          if((getLineNumber(line) >= srcPos) || line.startsWith(matchFileEnd)) {
+          if((getLineNumber(line) >= srcPos) || lineIdentity.isFileStart(line)) {
             break;
           }
         }
@@ -408,29 +405,6 @@ export function isEqual(str1:string,str2:string){
   }
   else{
     return false;
-  }
-}
-
-export function matchFilePathStart(patha:string,isAnno = false){
-  let fileName = getFileName(patha);
-  patha = patha.replace(/\\/g,'\\\\',);
-  patha = path.relative(Constants.workspaceFolder,patha);
-  let fileIden = '# ['+ fileName +']'+'(' + patha +')' ;
-  if(isAnno){
-    return '<!-- ' + fileIden +' -->';
-  }
-  else{
-    return fileIden;
-  }
-}
-
-export function matchFilePathEnd(isAnno = false){
-  let iden = '# [';
-  if(isAnno){
-    return '<!-- ' + iden;
-  }
-  else{
-    return iden;
   }
 }
 

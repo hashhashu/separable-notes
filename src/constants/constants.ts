@@ -4,6 +4,7 @@ import fs from 'fs';
 import * as mkdir from 'make-dir';
 import path from 'path';
 import * as vscode from 'vscode'
+import { LineIdentity } from '../core/LineIdentity';
 
 export namespace Constants {
     /* extension */
@@ -43,6 +44,8 @@ export namespace Constants {
     export const sepNotesCatDesc = sepNotesFileHeadFix + '  \n' + 'notes can be categorized as (#xxx/abc) like other nested tags, order can be defined like `#1:abc`  )' + '-->  \n  \n';
 
     export const keyNotes = 'separableNotes.notesKey';
+
+    export const glineIdentity = new LineIdentity();
 }
 
 export namespace Commands {

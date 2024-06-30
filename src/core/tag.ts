@@ -100,6 +100,10 @@ export class NestedTag{
         this.tags = tags.tags.slice();
     }
 
+    getFullTag(){
+        return this.tags.join('/');
+    }
+
     static compareNestedTag(a:string, b:string):number{
         let c = new NestedTag(a);
         return c.compareString(b);
@@ -129,10 +133,6 @@ export class NestedTag{
 
     static removeTagNumber(tag:string):string{
         return tag.substring(tag.indexOf(':')+1);
-    }
-
-    static hasOutline(line:string):boolean{
-        return NestedTag.fetchOutLine(line).length > 0;
     }
 
 }

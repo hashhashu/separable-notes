@@ -1,10 +1,11 @@
 import { Constants,MdType,NoteMode} from "../constants/constants";
-import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, cutNoteId, getPrefix, getLineNumber, isEqual, matchFilePathStart, matchFilePathEnd, writeFile, canAttachFile, removeOutlineMarker} from '../utils/utils'
+import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, cutNoteId, getPrefix, getLineNumber, isEqual, writeFile, canAttachFile, removeOutlineMarker} from '../utils/utils'
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Configuration } from "../configuration";
 import { logger } from "../logging/logger";
 import { NestedTag} from "./tag";
+import { LineIdentity } from "./LineIdentity";
 
 export class NoteFile{
     path: string;
@@ -18,6 +19,7 @@ export class NoteFile{
     inProcess: boolean;
     needRefresh: boolean;
     mdChangeType: MdType;
+    lineIdentity: LineIdentity;
     constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,blocks:Array<NoteBlock> = new Array(),needrefresh:boolean = false){
       this.path = filePath;
       this.configuration = configuration;
@@ -30,6 +32,7 @@ export class NoteFile{
       this.mdChangedLine = new Array();
       this.needRefresh = needrefresh;
       this.mdChangeType = MdType.None;
+      this.lineIdentity = new LineIdentity(this.path);
     }
 
     setStatusBarItemText(noteMode:NoteMode = this.noteMode){
@@ -309,23 +312,24 @@ export class NoteFile{
         if(ele.hasKeyword()){
           for(let keyword of ele.tags){
             if(contentByCat.has(keyword)){
-              contentByCat.set(keyword,contentByCat.get(keyword) + '  \n' + matchFilePathStart(this.path,true) +'  \n' + ele.contentCat);
+              contentByCat.set(keyword,contentByCat.get(keyword) + '  \n' + this.lineIdentity.curFileStartAnno +'  \n' + ele.contentCat);
             }
             else{
-              contentByCat.set(keyword,matchFilePathStart(this.path,true) + '  \n' + ele.contentCat);
+              contentByCat.set(keyword,this.lineIdentity.curFileStartAnno + '  \n' + ele.contentCat);
             }
           }
         }
       }
       if(contentExport.length > 0){
-        contentExport = matchFilePathStart(this.path) + '  \n' + contentExport + '  \n  \n';
+        contentExport = this.lineIdentity.curFileStart + '  \n' + contentExport + '  \n  \n';
       }
       logger.debug('from:'+Constants.sepNotesFilePath+'  TO:'+this.path);
       logger.debug('fetchMdFromSrc----end-------------------------------');
       return {"content":contentExport,"contentByCat":contentByCat};
     }
 
-// sepNotes #abcd/1:dbc
+// sepNotes #abcd/1:dbc 
+// sepNotes 12312
     //`sepNotes.md`
     refreshMd(document:vscode.TextDocument = null, mdStatus:string = ''){
       if(this.isAttached()){
@@ -335,13 +339,11 @@ export class NoteFile{
           contentLines[1] = mdStatus;
         }
         let contentAll = '';
-        const matchFileStart = matchFilePathStart(this.path);
-        const matchFileEnd = matchFilePathEnd();
         let fileStart = false;
         let fileEnd = false;
         for(let line of contentLines){
           if(!fileStart){
-            if(line.startsWith(matchFileStart)){
+            if(this.lineIdentity.isCurFileStart(line)){
               fileStart = true;
             }
             else{
@@ -349,7 +351,7 @@ export class NoteFile{
             }
           }
           else if(!fileEnd){
-            if(line.startsWith(matchFileEnd)){
+            if(this.lineIdentity.isOtherFileStart(line)){
               fileEnd = true;
               contentAll += this.fetchMdFromSrc(document).content;
               contentAll += addEof(line);
@@ -380,8 +382,6 @@ export class NoteFile{
         let sortedCat = Array.from(contentByCat.keys());
         sortedCat.sort((a, b) => NestedTag.compareNestedTag(a, b));
         let contentLines = this.getContentLines(null, Constants.sepNotesCategoryFilePath);
-        const matchFileStart = matchFilePathStart(this.path, true);
-        const matchFileEnd = matchFilePathEnd(true);
         let contentAll = '';
         let contentBlock = '';
         let inCurFile = false;
@@ -392,7 +392,7 @@ export class NoteFile{
         let lastRecordTag = new NestedTag();
         for (let line of contentLines) {
           if (!tagStart) {
-            if (!NestedTag.hasOutline(line)) {
+            if (!Constants.glineIdentity.isTagOutLine(line)) {
               contentAll += addEof(line);
               continue;
             }
@@ -405,6 +405,7 @@ export class NoteFile{
           if (lastNestedTag.leafNode(line)
             && contentBlock.trim().length > 0) {
             logger.debug('leaf node lastrecordtag:' + lastRecordTag.tags.join('/') + ' lastnestedtag:' + lastNestedTag.tags.join('/'));
+            // leaf node maybe disappearing
             for (let outline of lastRecordTag.needAddOutLineTag(lastNestedTag)) {
               contentAll += addEof(outline);
             }
@@ -414,7 +415,7 @@ export class NoteFile{
             inCurFile = false;
           }
           // need add leaf node
-          if (NestedTag.hasOutline(line) &&
+          if (Constants.glineIdentity.isTagOutLine(line) &&
             catIndex < sortedCat.length &&
             curNestedTag.compareString(sortedCat[catIndex]) > 0) {
             logger.debug('new add leaf node lastrecordtag:' + lastRecordTag.tags.join('/') + ' lastnestedtag:' + lastNestedTag.tags.join('/') + ' sortedCat:' + sortedCat[catIndex]);
@@ -431,23 +432,24 @@ export class NoteFile{
             curNestedTag.update(line);
             ++catIndex
           }
-          else if (!NestedTag.hasOutline(line)) {
+          // fill contentBlock
+          else if (!Constants.glineIdentity.isTagOutLine(line)) {
             if (!inCurFile) {
-              if (line.startsWith(matchFileStart)) {
+              if (this.lineIdentity.isCurFileStart(line)) {
                 inCurFile = true;
               }
               else {
                 contentBlock += addEof(line);
               }
             }
-            else if (line.startsWith(matchFileEnd)
-              && !line.startsWith(matchFileStart)) {
+            else if (this.lineIdentity.isOtherFileStart(line)) {
               inCurFile = false;
               contentBlock += addEof(line);
             }
           }
           lastNestedTag.copyTag(curNestedTag);
         }
+        // add the rest of contentBlock
         if (contentBlock.trim().length > 0) {
           for (let outline of lastRecordTag.needAddOutLineTag(lastNestedTag)) {
             contentAll += addEof(outline);
@@ -455,6 +457,7 @@ export class NoteFile{
           contentAll += contentBlock;
           lastRecordTag.copyTag(lastNestedTag);
         }
+        //add the rest of sortedCat
         while (catIndex < sortedCat.length) {
           // outline
           for (let outline of lastRecordTag.needAddOutLine(sortedCat[catIndex])) {
@@ -472,6 +475,7 @@ export class NoteFile{
         logger.debug('refreshMdCat  end-------------------');
       }
     }
+
     refreshId(document:vscode.TextDocument = null){
       if(this.isAttached()){
         this.ids.length = 0;
@@ -596,28 +600,22 @@ export class NoteFile{
         if(this.mdChangedLine.length == 0){
           this.mdChangeType = mdType;
           let contentLines;
-          let matchFileStart;
-          let matchFileEnd;
           if(mdType == MdType.sepNotes){
             contentLines = this.getContentLines(null,Constants.sepNotesFilePath);
-            matchFileStart = matchFilePathStart(this.path);
-            matchFileEnd = matchFilePathEnd();
           }
           else{
             contentLines = this.getContentLines(null,Constants.sepNotesCategoryFilePath);
-            matchFileStart = matchFilePathStart(this.path,true);
-            matchFileEnd = matchFilePathEnd(true);
           }
           let fileStart = false;
           for (let i=0;i<contentLines.length;i++) {
             let line = contentLines[i];
             if (!fileStart) {
-              if (line.startsWith(matchFileStart)) {
+              if (this.lineIdentity.isCurFileStart(line)) {
                 fileStart = true;
               }
             }
             else {
-              if (line.startsWith(matchFileEnd) && !line.startsWith(matchFileStart)) {
+              if (this.lineIdentity.isOtherFileStart(line)) {
                 fileStart = false;
                 if(mdType == MdType.sepNotes)
                   break;
@@ -750,7 +748,7 @@ export class NoteFile{
           diffNote += '```\n';  
         }
       }
-      diffNote = matchFilePathStart(this.path) + '  \n' + diffNote + '  \n  \n';
+      diffNote = this.lineIdentity.curFileStart + '  \n' + diffNote + '  \n  \n';
       if (!attachAll) {
         logger.debug('exportToMdDiff writefile:'+Constants.sepNotesDiffFilePath);
         try{

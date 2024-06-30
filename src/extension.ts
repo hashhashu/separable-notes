@@ -8,9 +8,10 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, decode, matchFilePathEnd, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, removeOutlineMarker, recoverOutlineMarker} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, decode, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, isSepNotesCatFile} from './utils/utils';
 import * as fs from 'fs';
 import { NestedTag } from './core/tag';
+import { NotesCat } from './core/notesCat';
 
 let configuration: Configuration;
 let activatables: Array<Activatable> = new Array();
@@ -458,7 +459,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
             let contentMd = Constants.sepNotesFileHead + getMdUserRandomNote();
             let contentMdCat = Constants.sepNotesCatDesc;
-            let contentByCatAll:Map<string,string> = new Map<string,string>();
+            let contentByCatAll:Map<string,string> = NotesCat.fetchDesc();
             let contentFetchRet:{"content":string,"contentByCat":Map<string,string>};
             let sortedCat:Array<string>;
             let notAttached = false;
@@ -604,8 +605,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 detachedFileNum = 0;
                 Notes.clear();
                 let contentLines = splitIntoLines(decode(fs.readFileSync(Constants.sepNotesFilePath),'UTF-8'));
-                let matchFileStart = matchFilePathEnd();
-                let matchCodeStart = '```';
                 let srcPath;
                 let note:NoteFile;
                 let block:NoteBlock;
@@ -616,7 +615,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 let lineCount = 0;
                 // read `sepNotes.md`
                 for(let line of contentLines){
-                    if(line.startsWith(matchFileStart)){
+                    if(Constants.glineIdentity.isFileStart(line)){
                         srcPath = getSrcFileFromLine(line);
                         note = new NoteFile(srcPath,NoteMode.Detached,configuration,statusBarItem);
                         Notes.set(srcPath,note);
@@ -624,7 +623,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         inCode = false;
                     }
                     else if(fileStart){
-                        if(line.startsWith(matchCodeStart)){
+                        if(Constants.glineIdentity.isCodeStart(line)){
                             if(inCode){
                                 inCode = false;
                             }

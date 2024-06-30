@@ -76,6 +76,7 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 ### 变更日志
 #### 0.1.6
 * relative path is used instead of original absolute path to make it more portable
+* can add description about tag in `sepNotes_category.md`
 #### 0.1.5
 * attach action is not needed anymore when adding first note 
 * handle situation when src file cannot write
