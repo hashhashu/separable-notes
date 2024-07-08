@@ -404,7 +404,7 @@ export class NoteFile{
           // common leaf node
           if (lastNestedTag.leafNode(line)
             && contentBlock.trim().length > 0) {
-            logger.debug('leaf node lastrecordtag:' + lastRecordTag.tags.join('/') + ' lastnestedtag:' + lastNestedTag.tags.join('/'));
+            logger.debug('leaf node lastrecordtag:' + lastRecordTag.getFullTag() + ' lastnestedtag:' + lastNestedTag.getFullTag() + 'curnestedtag:' + curNestedTag.getFullTag());
             // leaf node maybe disappearing
             for (let outline of lastRecordTag.needAddOutLineTag(lastNestedTag)) {
               contentAll += addEof(outline);
@@ -414,23 +414,26 @@ export class NoteFile{
             contentBlock = '';
             inCurFile = false;
           }
-          // need add leaf node
-          if (Constants.glineIdentity.isTagOutLine(line) &&
-            catIndex < sortedCat.length &&
-            curNestedTag.compareString(sortedCat[catIndex]) > 0) {
-            logger.debug('new add leaf node lastrecordtag:' + lastRecordTag.tags.join('/') + ' lastnestedtag:' + lastNestedTag.tags.join('/') + ' sortedCat:' + sortedCat[catIndex]);
-            // outline
-            for (let outline of lastRecordTag.needAddOutLine(sortedCat[catIndex])) {
-              contentAll += addEof(outline);
-            }
-            // content
-            contentAll += contentByCat.get(sortedCat[catIndex]);
+          // need add leaf nodes
+          if (Constants.glineIdentity.isTagOutLine(line)) {
+            // add all smaler node
+            while(catIndex < sortedCat.length 
+                  && curNestedTag.compareString(sortedCat[catIndex]) > 0)
+            {
+              logger.debug('new add leaf node lastrecordtag:' + lastRecordTag.getFullTag() + ' lastnestedtag:' + lastNestedTag.getFullTag() + ' sortedCat:' + sortedCat[catIndex] + 'curnestedtag:'+curNestedTag.getFullTag());
+              // outline
+              for (let outline of lastRecordTag.needAddOutLine(sortedCat[catIndex])) {
+                contentAll += addEof(outline);
+              }
+              // content
+              contentAll += contentByCat.get(sortedCat[catIndex]);
 
-            lastRecordTag.setTags(sortedCat[catIndex]);
-            lastNestedTag.copyTag(lastRecordTag);
+              lastRecordTag.setTags(sortedCat[catIndex]);
+              lastNestedTag.copyTag(lastRecordTag);
+              ++catIndex
+            }
             curNestedTag.copyTag(lastNestedTag);
             curNestedTag.update(line);
-            ++catIndex
           }
           // fill contentBlock
           else if (!Constants.glineIdentity.isTagOutLine(line)) {
