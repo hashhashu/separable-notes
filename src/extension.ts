@@ -130,18 +130,20 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                                     let anno = getAnnoFromMd(event.document, startpos);
                                     logger.debug('text:' + anno.text + ' linenumber:' + anno.linenumber.toString());
                                     let linenumber = anno.linenumber;
-                                    if (note.isMdLineChanged(mdType)) {
-                                        linenumber = note.getMdLine(linenumber);
+                                    if(linenumber >= 0){
+                                        if (note.isMdLineChanged(mdType)) {
+                                            linenumber = note.getMdLine(linenumber);
+                                        }
+                                        if(note.isMatch(linenumber,anno.codeBelow)){
+                                            note.syncSrcWithMd(anno.text, linenumber,mdType);
+                                            note.updateMdLine(anno.linenumber, rowsChanged(contentChange) + mdLineChangeCount, mdType);
+                                            updateStateNote(extensionContext);
+                                        }
+                                        else{
+                                            window.showWarningMessage('src file is not matched, need to refresh first');
+                                        }
+                                        logger.debug('linenumber:' + linenumber.toString() + ' rowschanged:' + rowsChanged(contentChange));
                                     }
-                                    if(note.isMatch(linenumber,anno.codeBelow)){
-                                        note.syncSrcWithMd(anno.text, linenumber,mdType);
-                                        note.updateMdLine(anno.linenumber, rowsChanged(contentChange) + mdLineChangeCount, mdType);
-                                        updateStateNote(extensionContext);
-                                    }
-                                    else{
-                                        window.showWarningMessage('src file is not matched, need to refresh first');
-                                    }
-                                    logger.debug('linenumber:' + linenumber.toString() + ' rowschanged:' + rowsChanged(contentChange));
                                 }
                                 else {
                                     window.showWarningMessage('file:' + srcPath + ' is not attached, changes won\'t sync with src file');
