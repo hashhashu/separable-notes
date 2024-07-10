@@ -79,7 +79,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * can add description about tag in `sepNotes_category.md` 
 * fix bug about tag lost in `sepNotes_category.md`
 * fix bug when new added node is not leaf node
-* fix bug when syncMdWithSrc cause irregular changes in `sepNotes_category.md`
+* fix bug when syncMdWithSrc cause irregular changes in `sepNotes_category.md` 
 #### 0.1.5
 * attach action is not needed anymore when adding first note 
 * handle situation when src file cannot write

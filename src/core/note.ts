@@ -401,20 +401,6 @@ export class NoteFile{
             }
           }
           curNestedTag.update(line);
-          // common leaf node
-          if (lastNestedTag.leafNode(line)
-            && contentBlock.trim().length > 0) {
-            logger.debug('leaf node lastrecordtag:' + lastRecordTag.getFullTag() + ' lastnestedtag:' + lastNestedTag.getFullTag() + 'curnestedtag:' + curNestedTag.getFullTag());
-            // leaf node maybe disappearing
-            for (let outline of lastRecordTag.needAddOutLineTag(lastNestedTag)) {
-              contentAll += addEof(outline);
-            }
-            contentAll += contentBlock;
-            lastRecordTag.copyTag(lastNestedTag);
-            contentBlock = '';
-            inCurFile = false;
-          }
-          // need add nodes(maybe not leaf node)
           if (Constants.glineIdentity.isTagOutLine(line)) {
             // add previous old content
             if(contentBlock.trim().length > 0){
@@ -428,8 +414,7 @@ export class NoteFile{
             }
             // add all new smaler node
             while(catIndex < sortedCat.length 
-                  && curNestedTag.compareString(sortedCat[catIndex]) > 0)
-            {
+                  && curNestedTag.compareString(sortedCat[catIndex]) > 0){
               logger.debug('new add leaf node lastrecordtag:' + lastRecordTag.getFullTag() + ' lastnestedtag:' + lastNestedTag.getFullTag() + ' sortedCat:' + sortedCat[catIndex] + 'curnestedtag:'+curNestedTag.getFullTag());
               // outline
               for (let outline of lastRecordTag.needAddOutLine(sortedCat[catIndex])) {
