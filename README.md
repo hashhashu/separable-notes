@@ -78,6 +78,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * relative path is used instead of original absolute path to make it more portable
 * can add description about tag in `sepNotes_category.md` 
 * fix bug about tag lost in `sepNotes_category.md`
+* fix bug when new added node is not leaf node
 #### 0.1.5
 * attach action is not needed anymore when adding first note 
 * handle situation when src file cannot write
@@ -154,6 +155,22 @@ if you change this, you should also change the configuration for todo-tree or ot
 * [x] tag identify optimize
 * use relative path
 * 利用vscode的 CodeLens 显示 detach后的内容
+
+* 插件可以考虑数据库结合
+* 全局更改所有标签
+* 设置光标位置
+* 标签相同的如何比较
+* 考虑原来是全局还是局部
+<!-- * 升级需要做的事情 -->
+* 修改知乎的描述
+   * 层次标签
+   * 可以输入描述 
+
+
+* 已知问题
+  * 后台需要全量编译
+  * 
+
 
 Please star :star: it if you like it, Thanks.
 

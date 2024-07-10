@@ -414,9 +414,19 @@ export class NoteFile{
             contentBlock = '';
             inCurFile = false;
           }
-          // need add leaf nodes
+          // need add nodes(maybe not leaf node)
           if (Constants.glineIdentity.isTagOutLine(line)) {
-            // add all smaler node
+            // add previous old content
+            if(contentBlock.trim().length > 0){
+              for (let outline of lastRecordTag.needAddOutLineTag(lastNestedTag)) {
+                contentAll += addEof(outline);
+              }
+              contentAll += contentBlock;
+              lastRecordTag.copyTag(lastNestedTag);
+              contentBlock = '';
+              inCurFile = false;
+            }
+            // add all new smaler node
             while(catIndex < sortedCat.length 
                   && curNestedTag.compareString(sortedCat[catIndex]) > 0)
             {
