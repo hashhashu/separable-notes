@@ -6,6 +6,7 @@ import { Configuration } from "../configuration";
 import { logger } from "../logging/logger";
 import { NestedTag} from "./tag";
 import { LineIdentity } from "./LineIdentity";
+import { TagOutLineProvider } from "./treeView";
 
 export class NoteFile{
     path: string;
@@ -20,10 +21,12 @@ export class NoteFile{
     needRefresh: boolean;
     mdChangeType: MdType;
     lineIdentity: LineIdentity;
-    constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,blocks:Array<NoteBlock> = new Array(),needrefresh:boolean = false){
+    tagOutLineProvider: TagOutLineProvider;
+    constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,tagOutLineProvider: TagOutLineProvider,blocks:Array<NoteBlock> = new Array(),needrefresh:boolean = false){
       this.path = filePath;
       this.configuration = configuration;
       this.statusbaritem = statusbar;
+      this.tagOutLineProvider = tagOutLineProvider;
       this.noteMode = noteMode;
       this.blocks = blocks;
       this.respondCount = 0;
@@ -328,7 +331,7 @@ export class NoteFile{
       return {"content":contentExport,"contentByCat":contentByCat};
     }
 
-// sepNotes #abcd/1:dbc
+// sepNotes #abcd/1:dbc 
 // sepNotes 12312
     //`sepNotes.md`
     refreshMd(document:vscode.TextDocument = null, mdStatus:string = ''){
@@ -470,6 +473,7 @@ export class NoteFile{
         if (this.mdChangeType == MdType.sepNotesCat) {
           this.mdChangedLine.length = 0;
         }
+        this.tagOutLineProvider.refresh();
         logger.debug('refreshMdCat  end-------------------');
       }
     }

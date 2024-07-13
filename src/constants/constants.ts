@@ -61,7 +61,9 @@ export namespace Commands {
     export const openSepNotesCat = 'separableNotes.openSepNotesCat';
     export const importNotes = 'separableNotes.importNotes';
     export const syncPos = 'separableNotes.syncPos';
+    export const jumpToNoteLine = 'separableNotes.jumpToNoteLine';
 }
 // sepNotes **hello**
 export enum NoteMode{  Detached = 0,     Attached = 1}
 export enum MdType{ None = 0, sepNotes = 1, sepNotesCat = 2 }
+export enum OutLineItemType{Tag = 0, codeBlock = 1}

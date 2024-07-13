@@ -10,7 +10,7 @@ separable notes is a VSCode extension that can manage your inline code note, mak
 It can be applied to scenarios such as:
 * keep your note private and not committing to the repository that is maintained by many people.
 * outline your code and organize you code note in standalone markdown file(`sepNotes.md`).
-* Reorganize the content of the notes by category (by defining tag(#xxx/abc) shown in `sepNotes_category.md`)
+* Reorganize the content of the notes by category (by defining tag(#xxx/abc) shown in `sepNotes_category.md`)(The outline content can also be seen in the Explorer of the sidebar.)
 
 ![demo1](pic/demo1.PNG)
 
@@ -80,6 +80,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * fix bug about tag lost in `sepNotes_category.md`
 * fix bug when new added node is not leaf node
 * fix bug when syncMdWithSrc cause irregular changes in `sepNotes_category.md` 
+* add outline view for `sepNotes_category.md` in explorer view
 #### 0.1.5
 * attach action is not needed anymore when adding first note 
 * handle situation when src file cannot write
@@ -142,7 +143,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * keyword can be defined
 * note block like jupyter notebook
 * [x] log time microsecond about every step
-* support describe category in `sepNotes_category.md`
+* [x] support describe category in `sepNotes_category.md`
 * support auto lable order in `sepNotes_category.md`
 * optimize refresh mechanism 
 * [x] netsted tags like other notes app(such as obsidian)
@@ -154,7 +155,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * 优化sepnotes里的编辑体验
 * sepnotes 加入刷新按钮 或者 快捷命令
 * [x] tag identify optimize
-* use relative path
+* [x] use relative path
 * 利用vscode的 CodeLens 显示 detach后的内容
 
 * 插件可以考虑数据库结合
@@ -163,12 +164,15 @@ if you change this, you should also change the configuration for todo-tree or ot
 * 标签相同的如何比较
 * 考虑原来是全局还是局部
 * 刷新考虑加按钮的方式
+* 同步的时候能不能固定位置(有固定的排序方式,路径+行数)
+* 参考流程图的格式
 <!-- * 升级需要做的事情 -->
 * 修改知乎的描述
    * 层次标签
    * 可以输入描述 
+* 对#tag的标签加个标签
 
-
+* 实现左侧固定浏览  
 * 已知问题
   * 后台需要全量编译
   * 

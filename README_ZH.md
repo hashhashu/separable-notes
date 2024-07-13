@@ -8,7 +8,7 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 它可以应用于以下场景，例如：
 * 保持你的笔记私密性，不将其提交给由多人维护的存储库(可以方便地合并或分离)。
 * 梳理你的代码，并将你的代码笔记组织到独立的 Markdown 文件中(`sepNotes.md`)(以文件目录方式),并且对该文件的修改可以同步到源文件中。
-* 可以给笔记内容贴上标签，并支持多级标签，贴上标签的内容会以多级标题的方式重新组织(通过定义#xxx/abc格式，结果显示在`sepNotes_category.md`)
+* 可以给笔记内容贴上标签，并支持多级标签，贴上标签的内容会以多级标题的方式重新组织(通过定义#xxx/abc格式，结果显示在`sepNotes_category.md`)(可以在侧边栏的资源管理器中看到大纲内容)
 
 ![demo1](pic/demo1.PNG)
 
@@ -80,6 +80,7 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * fix bug about tag lost in `sepNotes_category.md`
 * fix bug when new added node is not leaf node
 * fix bug when syncMdWithSrc cause irregular changes in `sepNotes_category.md`
+* add outline view for `sepNotes_category.md` in explorer view
 #### 0.1.5
 * attach action is not needed anymore when adding first note 
 * handle situation when src file cannot write

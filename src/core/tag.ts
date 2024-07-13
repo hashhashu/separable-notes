@@ -70,18 +70,13 @@ export class NestedTag{
         }
         return add;
     }
-    
-    leafNode(line:string):boolean{
-        let outline = NestedTag.getOutLine(line);
-        if(outline.length > 0){
-            if(outline.length <= this.tags.length){
-                return true;
-            }
-            else{
-                return false;
-            }
-        }
-        return false;
+ 
+    equal(tag:NestedTag):boolean{
+        return this.getFullTag() == tag.getFullTag();
+    }
+
+    contain(tag:NestedTag):boolean{
+        return this.getFullTag().includes(tag.getFullTag());
     }
 
     update(line:string){
@@ -102,6 +97,14 @@ export class NestedTag{
 
     getFullTag(){
         return this.tags.join('/');
+    }
+
+    getLevel():number{
+        return this.tags.length;
+    }
+
+    getLastTag(){
+        return this.tags[this.tags.length - 1];
     }
 
     static compareNestedTag(a:string, b:string):number{

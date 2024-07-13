@@ -12,6 +12,7 @@ import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimi
 import * as fs from 'fs';
 import { NestedTag } from './core/tag';
 import { NotesCat } from './core/notesCat';
+import { OutLineItem, TagOutLineProvider } from './core/treeView';
 
 let configuration: Configuration;
 let activatables: Array<Activatable> = new Array();
@@ -25,6 +26,7 @@ let ratelimiter:RateLimiter;
 let ratelimiterSep:RateLimiter;
 let ratelimiterUpdate:RateLimiter;
 let mdLineChangeCount = 0;
+let tagOutLineProvider:TagOutLineProvider;
 
 export async function activate(extensionContext: ExtensionContext): Promise<boolean> {
     logger.info(
@@ -38,6 +40,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     statusBarItem.command = Commands.NoteModeSwitch;
     statusBarItem.text = 'Detached';
     statusBarItem.show();
+
+    tagOutLineProvider = new TagOutLineProvider();
+    vscode.window.registerTreeDataProvider('tagOutLine', tagOutLineProvider);
 
     if(!fs.existsSync(Constants.sepNotesFilePath)){
         if(fs.existsSync(Constants.sepNotesFileOriPath)){
@@ -56,7 +61,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     serializedNotes = extensionContext.workspaceState.get(Constants.keyNotes)??new Array<serializableNoteFile>();
     for(let note of serializedNotes){
         if(fs.existsSync(note.path)){
-            Notes.set(note.path,new NoteFile(note.path,note.noteMode,configuration,statusBarItem,note.blocks,(note.needRefresh == null)?false:note.needRefresh));
+            Notes.set(note.path,new NoteFile(note.path,note.noteMode,configuration,statusBarItem,tagOutLineProvider,note.blocks,(note.needRefresh == null)?false:note.needRefresh));
         }
     }
     logger.info('workspace state restored');
@@ -235,8 +240,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             // logger.info(JSON.stringify(configuration.associations));
 		}));
       
-// sepNotes ### mode switch(**test123**) @label(test123) @order(12.2) #abcd/cdb 
-// sepNotes test  for itabc
+// sepNotes test  for itabc #abcd/aba/def
 	extensionContext.subscriptions.push(
 		commands.registerCommand(Commands.NoteModeSwitch, async () => {
             activeEditor = vscode.window.activeTextEditor;
@@ -252,7 +256,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 return;
             }
             if(!Notes.has(path)){
-                Notes.set(path,new NoteFile(path,NoteMode.Detached,configuration,statusBarItem));
+                Notes.set(path,new NoteFile(path,NoteMode.Detached,configuration,statusBarItem,tagOutLineProvider));
                 ++detachedFileNum;
             }
             if(!inAll && Notes.has(path) && !Notes.get(path).notFinished()){
@@ -506,6 +510,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 }
                 window.showInformationMessage('sync with file '+Constants.sepNotesFileName+','+ Constants.sepNotesCategoryFileName +' success');
             }
+            tagOutLineProvider.refresh();
             updateMdStatus();
         }
 	));
@@ -623,7 +628,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 for(let line of contentLines){
                     if(Constants.glineIdentity.isFileStart(line)){
                         srcPath = getSrcFileFromLine(line);
-                        note = new NoteFile(srcPath,NoteMode.Detached,configuration,statusBarItem);
+                        note = new NoteFile(srcPath,NoteMode.Detached,configuration,statusBarItem,tagOutLineProvider);
                         Notes.set(srcPath,note);
                         fileStart = true;
                         inCode = false;
@@ -764,6 +769,32 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }
     ));
 
+    extensionContext.subscriptions.push(
+        commands.registerCommand(Commands.jumpToNoteLine, async (item: OutLineItem) => {
+            vscode.window.showTextDocument(vscode.Uri.file(item.path), { preview: true, preserveFocus: true }).then(
+                textEditor => {
+                    try {
+                        let range = new vscode.Range(
+                            item.line,
+                            0,
+                            item.line,
+                            0
+                        );
+                        textEditor.selection = new vscode.Selection(range.start, range.start);
+                        textEditor.revealRange(range);
+                    } catch (e) {
+                        vscode.window.showWarningMessage("Failed to navigate to bookmark (3): " + e);
+                        return;
+                    }
+                },
+                rejectReason => {
+                    vscode.window.showWarningMessage("Failed to navigate to bookmark (2): " + rejectReason.message);
+                }
+            );
+        }));
+
+
+
     function showAttachStatus(){
         let activeEditor = vscode.window.activeTextEditor;
         if(activeEditor){
@@ -804,7 +835,7 @@ function updateStateWrap(textEditor:vscode.TextEditor,extensionContext: Extensio
         return;
     }
     if (!Notes.has(path)) {
-        Notes.set(path, new NoteFile(path, NoteMode.Detached, configuration, statusBarItem));
+        Notes.set(path, new NoteFile(path, NoteMode.Detached, configuration, statusBarItem,tagOutLineProvider));
         ++detachedFileNum;
     }
     Notes.get(path).setStatusBarItemText();

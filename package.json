@@ -92,8 +92,20 @@
       {
         "command": "separableNotes.syncPos",
         "title": "separableNotes syncPos"
+      },
+      {
+        "command": "separableNotes.jumpToNoteLine",
+        "title": "separableNotes.jumpToNoteLine"
       }
     ],
+    "views": {
+      "explorer": [
+        {
+          "id": "tagOutLine",
+          "name": "sepNotes_category"
+        }
+      ]
+    },
     "submenus": [
       {
         "id":"separableNotes.openSepNotes",
