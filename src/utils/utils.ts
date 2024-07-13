@@ -59,6 +59,12 @@ export function getFileName(filePath:string):string{
   return path.basename(filePath);
 }
 
+export function getRelativePath(filePath:string):string{
+  filePath = filePath.replace(/\\/g,'\\\\',);
+  filePath = path.relative(Constants.workspaceFolder,filePath);
+  return filePath;
+}
+
 export function getLanguageIdetifier(associations:{ [extension: string]: string },filePath:string):string{
   for(const extension in associations){
     if(getFileExt(extension) == getFileExt(filePath)){

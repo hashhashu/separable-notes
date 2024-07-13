@@ -8,7 +8,7 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, decode, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, isSepNotesCatFile} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, decode, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, getRelativePath} from './utils/utils';
 import * as fs from 'fs';
 import { NestedTag } from './core/tag';
 import { NotesCat } from './core/notesCat';
@@ -78,6 +78,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         let ret = note.afterDetachOrAttach();
                         if(ret >= 0){
                             if(ret == 0){
+                                path = getRelativePath(path);
                                 if(note.isAttached()){
                                     window.showInformationMessage('attach file: '+path+' over');
                                 }
@@ -146,7 +147,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                                     }
                                 }
                                 else {
-                                    window.showWarningMessage('file:' + srcPath + ' is not attached, changes won\'t sync with src file');
+                                    window.showWarningMessage('file:' + getRelativePath(srcPath) + ' is not attached, changes won\'t sync with src file');
                                 }
                             }
                         }
@@ -247,7 +248,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 return;
             }
             if(!canAttachFile(path)){
-                vscode.window.showInformationMessage('cannot attach '+path);
+                vscode.window.showInformationMessage('cannot attach '+getRelativePath(path));
                 return;
             }
             if(!Notes.has(path)){
@@ -699,7 +700,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     }
                 }
                 if(!editorSrc){
-                    vscode.window.showInformationMessage(path+' not visible');
+                    vscode.window.showInformationMessage(getRelativePath(path)+' not visible');
                 }
                 else{
                     let srcLine = getLineNumberDown(editorSepNotes.document, curLine);
@@ -756,7 +757,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         editorSepNotes.revealRange(new vscode.Range(mdLineStart, 0, mdLineEnd, 0));
                     }
                     else if(!Notes.has(path) || !Notes.get(path).isAttached()){
-                        vscode.window.showInformationMessage(path+' is not attached');
+                        vscode.window.showInformationMessage(getRelativePath(path)+' is not attached');
                     }
                 }
             }

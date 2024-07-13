@@ -1,7 +1,5 @@
-import { getFileName } from "../utils/utils";
+import { getFileName, getRelativePath } from "../utils/utils";
 import { NestedTag } from "./tag"
-import { Constants } from "../constants/constants";
-import path from "path";
 export class LineIdentity{
     path:string;
     curFileStart:string;
@@ -56,8 +54,7 @@ export class LineIdentity{
     } 
     private matchFilePathStart(patha:string,isAnno = false){
         let fileName = getFileName(patha);
-        patha = patha.replace(/\\/g,'\\\\',);
-        patha = path.relative(Constants.workspaceFolder,patha);
+        patha = getRelativePath(patha);
         let fileIden = '# ['+ fileName +']'+'(' + patha +')' ;
         if(isAnno){
             return '<!-- ' + fileIden +' -->';
