@@ -4,7 +4,7 @@ import { NestedTag } from "./tag";
 import * as fs from 'fs';
 
 export class NotesCat{
-    static fetchDesc(){
+    static getDesc(){
         let descs:Map<string,string> = new Map<string,string>();
         let contentLines = splitIntoLines(fs.readFileSync(Constants.sepNotesCategoryFilePath).toString());
         let curNestedTag = new NestedTag();

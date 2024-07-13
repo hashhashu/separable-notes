@@ -15,7 +15,7 @@ export class LineIdentity{
     }
     // (# abc)  
     isTagOutLine(line:string):boolean{
-        return NestedTag.fetchOutLine(line).length > 0
+        return NestedTag.getOutLine(line).length > 0
     }
     isFileStart(line:string):boolean{
         if(line.startsWith(this.fileStart) || line.startsWith(this.fileStartAnno)){

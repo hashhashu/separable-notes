@@ -72,7 +72,7 @@ export class NestedTag{
     }
     
     leafNode(line:string):boolean{
-        let outline = NestedTag.fetchOutLine(line);
+        let outline = NestedTag.getOutLine(line);
         if(outline.length > 0){
             if(outline.length <= this.tags.length){
                 return true;
@@ -85,10 +85,10 @@ export class NestedTag{
     }
 
     update(line:string){
-        let outline = NestedTag.fetchOutLine(line);
+        let outline = NestedTag.getOutLine(line);
         if(outline.length > 0){
             this.tags = this.tags.slice(0,outline.length - 1);
-            this.tags.push(NestedTag.fetchOutLineTag(line));
+            this.tags.push(NestedTag.getOutLineTag(line));
         }
     }
 
@@ -109,19 +109,19 @@ export class NestedTag{
         return c.compareString(b);
     }
 
-    static fetchOutLine(line:string){
+    static getOutLine(line:string){
         const regex = /^(#+)\s+/;   
         const match = line.match(regex);  
         return (match && match.length > 1) ? match[1] : '';
     }
 
-    static fetchOutLineTag(line:string){
+    static getOutLineTag(line:string){
         const regex = /^#+\s+([^\s]+)/;   
         const match = line.match(regex);  
         return (match && match.length > 1) ? match[1] : '';
     }
 
-    static fetchTag(line:string):Array<string>{
+    static getTag(line:string):Array<string>{
         const regex = /(?:^|\s)#([^\s#]+)/g;   
         let match;
         let tags:Array<string> = new Array<string>();

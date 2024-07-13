@@ -87,7 +87,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                                 }
                             }
                             if(note.needRefresh){
-                                note.refresh(event.document,fetchMdStatus());
+                                note.refresh(event.document,getMdStatus());
                             }
                         }
                         //warn modify
@@ -97,12 +97,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         // sync markdown with source
                         else if(note.isAttached()){
                             if(ratelimiter.isAllowed()){
-                                note.refresh(event.document,fetchMdStatus());
+                                note.refresh(event.document,getMdStatus());
                             }
                             else{
                                 setTimeout(function(){
                                     if(ratelimiter.isAllowed()){
-                                        note.refresh(event.document,fetchMdStatus());
+                                        note.refresh(event.document,getMdStatus());
                                     }
                                 },1200);
                             }
@@ -213,9 +213,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 		commands.registerCommand(Commands.test, async () => {
 			window.showInformationMessage('Hello World from tiger! well well ');
             let str = '你好啊#呼呼 #12ab/哈哈哈/ **hello**';
-            let matches = NestedTag.fetchTag(str);
+            let matches = NestedTag.getTag(str);
             logger.debug(matches);
-            logger.debug(NestedTag.fetchOutLineTag('# 123'));
+            logger.debug(NestedTag.getOutLineTag('# 123'));
             // let path = activeEditor.document.uri.fsPath;
             // extensionContext.workspaceState.update(Constants.keyNotes,null);
             // let aa = await vscode.languages.getLanguages();
@@ -272,7 +272,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         updateState(activeEditor,extensionContext);
                         updateMdStatus();
                         if(note.isAttached()){
-                            note.refresh(null,fetchMdStatus());
+                            note.refresh(null,getMdStatus());
                         }
                     }
                 });
@@ -462,16 +462,16 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
             let contentMd = Constants.sepNotesFileHead + getMdUserRandomNote();
             let contentMdCat = Constants.sepNotesCatDesc;
-            let contentByCatAll:Map<string,string> = NotesCat.fetchDesc();
-            let contentFetchRet:{"content":string,"contentByCat":Map<string,string>};
+            let contentByCatAll:Map<string,string> = NotesCat.getDesc();
+            let contentgetRet:{"content":string,"contentByCat":Map<string,string>};
             let sortedCat:Array<string>;
             let notAttached = false;
             let lastNestedTag = new NestedTag();
             for(let [_,note] of Notes){
                 if(note.isAttached()){
-                    contentFetchRet = note.fetchMdFromSrc();
-                    contentMd += contentFetchRet.content;
-                    for(let [key,value] of contentFetchRet.contentByCat){
+                    contentgetRet = note.getMdFromSrc();
+                    contentMd += contentgetRet.content;
+                    for(let [key,value] of contentgetRet.contentByCat){
                         if(!contentByCatAll.has(key)){
                             contentByCatAll.set(key,value);
                         }
@@ -708,7 +708,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         srcLine = getLineNumberUp(editorSepNotes.document,curLine);
                     }
                     if(srcLine <= 0){
-                        vscode.window.showInformationMessage('cannot fetch src line');
+                        vscode.window.showInformationMessage('cannot get src line');
                     }
                     else{
                         let srcLineStart = srcLine;
@@ -772,7 +772,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 if(note.isAttached()){
                     attachedFileNum += 1;
                     if(note.needRefresh){
-                        note.refresh(null,fetchMdStatus());
+                        note.refresh(null,getMdStatus());
                     }
                 }
                 else{
@@ -834,7 +834,7 @@ function updateStateNote(extensionContext: ExtensionContext){
     extensionContext.workspaceState.update(Constants.keyNotes,serializedNotes);
 }
 // sepNotes 12345678
-function fetchMdStatus():string{
+function getMdStatus():string{
     let status = Constants.sepNotesFileHeadStatus;
     status = status.replace('#attachedFileNum',attachedFileNum.toString());
     status = status.replace('#detachedFileNum',detachedFileNum.toString());

@@ -98,8 +98,8 @@ export class NoteFile{
       return detached;
     }
    
-    private fetchAttachContent(contentLines:string[],beforeAdjust:boolean = true):{"content":string,"notMatchNum":number}{
-      logger.debug('fetchAttachContent start--------------------');
+    private getAttachContent(contentLines:string[],beforeAdjust:boolean = true):{"content":string,"notMatchNum":number}{
+      logger.debug('getAttachContent start--------------------');
       let attachedContent = '';
       let blockIndex = this.blocks.length;
       let block:NoteBlock;
@@ -140,7 +140,7 @@ export class NoteFile{
           ++notMatchNum;
         }
       }
-      logger.debug('fetchAttachContent end--------------------');
+      logger.debug('getAttachContent end--------------------');
       return {"content":attachedContent,"notMatchNum":notMatchNum};
     }
      
@@ -153,9 +153,9 @@ export class NoteFile{
         if((this.blocks.length > 0)){
           const contentLines = this.getContentLines(document);
           let attachedContent = '';
-          let fetchAttachContentRet = this.fetchAttachContent(contentLines);
-          notMatchNum = fetchAttachContentRet.notMatchNum;
-          attachedContent = fetchAttachContentRet.content;
+          let getAttachContentRet = this.getAttachContent(contentLines);
+          notMatchNum = getAttachContentRet.notMatchNum;
+          attachedContent = getAttachContentRet.content;
           // need adjust pos
           if(notMatchNum > 0){
             logger.debug('need rematch--------------');
@@ -163,7 +163,7 @@ export class NoteFile{
               logger.debug('user setting need rematch---------');
               this.adjustNotePos(contentLines);
               // merge block
-              attachedContent = this.fetchAttachContent(contentLines,false).content;
+              attachedContent = this.getAttachContent(contentLines,false).content;
             }
             this.exportToMdDiff(attachAll);
           }
@@ -266,8 +266,8 @@ export class NoteFile{
       return this.inProcess;
     }
 
-    fetchMdFromSrc(document:vscode.TextDocument = null):{"content":string,"contentByCat":Map<string,string>}{
-      logger.debug('fetchMdFromSrc----start-------------------------------');
+    getMdFromSrc(document:vscode.TextDocument = null):{"content":string,"contentByCat":Map<string,string>}{
+      logger.debug('getMdFromSrc----start-------------------------------');
       const contentLines = this.getContentLines(document);
       let below = 0;  //code block max lines below note
       let lineCount = 1;
@@ -324,7 +324,7 @@ export class NoteFile{
         contentExport = this.lineIdentity.curFileStart + '  \n' + contentExport + '  \n  \n';
       }
       logger.debug('from:'+Constants.sepNotesFilePath+'  TO:'+this.path);
-      logger.debug('fetchMdFromSrc----end-------------------------------');
+      logger.debug('getMdFromSrc----end-------------------------------');
       return {"content":contentExport,"contentByCat":contentByCat};
     }
 
@@ -353,7 +353,7 @@ export class NoteFile{
           else if(!fileEnd){
             if(this.lineIdentity.isOtherFileStart(line)){
               fileEnd = true;
-              contentAll += this.fetchMdFromSrc(document).content;
+              contentAll += this.getMdFromSrc(document).content;
               contentAll += addEof(line);
             }
           }
@@ -362,7 +362,7 @@ export class NoteFile{
           }
         }
         if(!fileEnd){
-          contentAll += this.fetchMdFromSrc(document).content;
+          contentAll += this.getMdFromSrc(document).content;
         }
         fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
         writeFile(Constants.sepNotesFilePath, contentAll);
@@ -377,7 +377,7 @@ export class NoteFile{
     refreshMdCat(document:vscode.TextDocument = null){
       if(this.isAttached()){
         logger.debug('refreshMdCat  start-------------------');
-        let ret = this.fetchMdFromSrc(document);
+        let ret = this.getMdFromSrc(document);
         let contentByCat = ret.contentByCat;
         let sortedCat = Array.from(contentByCat.keys());
         sortedCat.sort((a, b) => NestedTag.compareNestedTag(a, b));
@@ -835,7 +835,7 @@ class ContentCatBlock{
   addNote(contentP:string){
     this.content += addEof(contentP);
     this.contentCat += addEof(removeOutlineMarker(contentP));
-    this.addKeywords(NestedTag.fetchTag(contentP));
+    this.addKeywords(NestedTag.getTag(contentP));
   }
   addCodeBegin(identifier:string){
     let contentp = '```'+identifier+'\n';
