@@ -43,6 +43,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 
     tagOutLineProvider = new TagOutLineProvider();
     vscode.window.registerTreeDataProvider('tagOutLine', tagOutLineProvider);
+    vscode.commands.registerCommand('separableNotes.refreshEntry', () => tagOutLineProvider.refresh());
 
     if(!fs.existsSync(Constants.sepNotesFilePath)){
         if(fs.existsSync(Constants.sepNotesFileOriPath)){
@@ -774,14 +775,20 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             vscode.window.showTextDocument(vscode.Uri.file(item.path), { preview: true, preserveFocus: true }).then(
                 textEditor => {
                     try {
+                        let note = Notes.get(item.path);
+                        let line = item.line;
+                        if(note && !note.isAttached()){
+                            line = note.getDetachedLine(line);
+                        }
+                        line = line - 1;
                         let range = new vscode.Range(
-                            item.line,
+                            line,
                             0,
-                            item.line,
+                            line,
                             0
                         );
                         textEditor.selection = new vscode.Selection(range.start, range.start);
-                        textEditor.revealRange(range);
+                        textEditor.revealRange(range,vscode.TextEditorRevealType.AtTop);
                     } catch (e) {
                         vscode.window.showWarningMessage("Failed to navigate to bookmark (3): " + e);
                         return;

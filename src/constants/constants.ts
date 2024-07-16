@@ -62,6 +62,7 @@ export namespace Commands {
     export const importNotes = 'separableNotes.importNotes';
     export const syncPos = 'separableNotes.syncPos';
     export const jumpToNoteLine = 'separableNotes.jumpToNoteLine';
+    export const refreshEntry = 'separableNotes.refreshEntry';
 }
 // sepNotes **hello**
 export enum NoteMode{  Detached = 0,     Attached = 1}

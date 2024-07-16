@@ -804,7 +804,7 @@ export class serializableNoteFile{
 }
 
 export class NoteBlock{
-  codeLine: number;
+  codeLine: number;      //zero based index
   note: string;          // note block content
   noteLineCount: number; // note block lines count
   codeBelow: string; //code below(for match)
