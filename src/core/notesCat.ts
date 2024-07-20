@@ -7,6 +7,29 @@ import * as fs from 'fs';
 import { logger } from '../logging/logger';
 
 export class NotesCat{
+    static contentLines: string[];
+    static tagPos: Map<string,number>;
+    static headings: Array<OutLineItem>;
+    static refresh(){
+      logger.debug('NotesCat refresh start');
+      this.contentLines = this.getContentLines();
+      this.tagPos = new Map<string,number>();
+      this.headings = new Array<OutLineItem>();
+      let curNestedTag = new NestedTag();
+      let linenumber = 0;
+      for(let line of this.contentLines){
+        if(Constants.glineIdentity.isTagOutLine(line)){
+          curNestedTag.update(line);
+          this.tagPos.set(curNestedTag.getFullTag(),linenumber);
+          if(NestedTag.getOutLine(line).length == 1){
+            let tag = NestedTag.getOutLineTag(line);
+            this.headings.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,tag,new NestedTag(tag),OutLineItemType.Tag));
+          }
+        }
+        linenumber = linenumber + 1;
+      }
+      logger.debug('NotesCat refresh end');
+    }
     static getDesc(){
         let descs:Map<string,string> = new Map<string,string>();
         let contentLines = this.getContentLines();
@@ -47,29 +70,13 @@ export class NotesCat{
         }
         return descs;
     }
-    static getTreeViewRoot(contentLines:string[]):{"item":Array<OutLineItem>,"tagPos":Map<string,number>}{
-      logger.debug('getTreeViewRoot start');
-      let headings = new Array<OutLineItem>();
-      let curNestedTag = new NestedTag();
-      let tagPos = new Map<string,number>();
-      let linenumber = 0;
-      for(let line of contentLines){
-        if(Constants.glineIdentity.isTagOutLine(line)){
-          curNestedTag.update(line);
-          tagPos.set(curNestedTag.getFullTag(),linenumber);
-          if(NestedTag.getOutLine(line).length == 1){
-            let tag = NestedTag.getOutLineTag(line);
-            headings.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,tag,new NestedTag(tag),OutLineItemType.Tag));
-          }
-        }
-        linenumber = linenumber + 1;
-      }
-      logger.debug('getTreeViewRoot end');
-      return {"item":headings,"tagPos":tagPos};
+    static getTreeViewRoot():Array<OutLineItem>{
+      return this.headings;
     }
-    static getChildren(parentTag:NestedTag,startPos:number,contentLines:string[]):Array<OutLineItem>{
-      logger.debug('getChildren start parent:'+ parentTag.getFullTag() + 'startpos:'+startPos.toString());
-      contentLines = contentLines.slice(startPos);
+    static getChildren(parentTag:NestedTag):Array<OutLineItem>{
+      logger.debug('getChildren start parent:'+ parentTag.getFullTag());
+      let startpos = this.tagPos.get(parentTag.getFullTag());
+      let contentLines = this.contentLines.slice(startpos);
       let children = new Array<OutLineItem>();
       let curNestedTag = new NestedTag(parentTag.getFullTag());
       let tmpOutLineItem = new OutLineItem(vscode.TreeItemCollapsibleState.None);

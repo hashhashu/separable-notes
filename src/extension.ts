@@ -44,6 +44,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     tagOutLineProvider = new TagOutLineProvider();
     vscode.window.registerTreeDataProvider('tagOutLine', tagOutLineProvider);
     vscode.commands.registerCommand('separableNotes.refreshEntry', () => tagOutLineProvider.refresh());
+    NotesCat.refresh();
 
     if(!fs.existsSync(Constants.sepNotesFilePath)){
         if(fs.existsSync(Constants.sepNotesFileOriPath)){
@@ -511,6 +512,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 }
                 window.showInformationMessage('sync with file '+Constants.sepNotesFileName+','+ Constants.sepNotesCategoryFileName +' success');
             }
+            NotesCat.refresh();
             tagOutLineProvider.refresh();
             updateMdStatus();
         }

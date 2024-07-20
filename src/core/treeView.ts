@@ -41,8 +41,6 @@ export class TagOutLineProvider implements vscode.TreeDataProvider<OutLineItem> 
 
 	private _onDidChangeTreeData: vscode.EventEmitter<OutLineItem | undefined | void> = new vscode.EventEmitter<OutLineItem | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<OutLineItem | undefined | void> = this._onDidChangeTreeData.event;
-    tagPos: Map<string,number>;
-    contentLines: string[];
 
 	constructor() {
 	}
@@ -57,12 +55,9 @@ export class TagOutLineProvider implements vscode.TreeDataProvider<OutLineItem> 
 
 	getChildren(element?: OutLineItem): Thenable<OutLineItem[]> {
 		if (element) {
-			return Promise.resolve(NotesCat.getChildren(element.tag,this.tagPos.get(element.tag.getFullTag()),this.contentLines));
+			return Promise.resolve(NotesCat.getChildren(element.tag));
 		} else {
-            this.contentLines = NotesCat.getContentLines();
-            let ret = NotesCat.getTreeViewRoot(this.contentLines);
-            this.tagPos = ret.tagPos;
-            return Promise.resolve(ret.item);
+            return Promise.resolve(NotesCat.getTreeViewRoot());
 		}
 	}
 }

@@ -7,6 +7,7 @@ import { logger } from "../logging/logger";
 import { NestedTag} from "./tag";
 import { LineIdentity } from "./LineIdentity";
 import { TagOutLineProvider } from "./treeView";
+import { NotesCat } from "./notesCat";
 
 export class NoteFile{
     path: string;
@@ -384,7 +385,7 @@ export class NoteFile{
         let contentByCat = ret.contentByCat;
         let sortedCat = Array.from(contentByCat.keys());
         sortedCat.sort((a, b) => NestedTag.compareNestedTag(a, b));
-        let contentLines = this.getContentLines(null, Constants.sepNotesCategoryFilePath);
+        let contentLines = NotesCat.contentLines;
         let contentAll = '';
         let contentBlock = '';
         let inCurFile = false;
@@ -473,6 +474,7 @@ export class NoteFile{
         if (this.mdChangeType == MdType.sepNotesCat) {
           this.mdChangedLine.length = 0;
         }
+        NotesCat.refresh();
         this.tagOutLineProvider.refresh();
         logger.debug('refreshMdCat  end-------------------');
       }
@@ -611,7 +613,7 @@ export class NoteFile{
             contentLines = this.getContentLines(null,Constants.sepNotesFilePath);
           }
           else{
-            contentLines = this.getContentLines(null,Constants.sepNotesCategoryFilePath);
+            contentLines = NotesCat.contentLines;
           }
           let fileStart = false;
           for (let i=0;i<contentLines.length;i++) {
