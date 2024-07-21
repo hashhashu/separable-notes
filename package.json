@@ -96,6 +96,21 @@
       {
         "command": "separableNotes.jumpToNoteLine",
         "title": "separableNotes.jumpToNoteLine"
+      },
+      {
+        "command": "separableNotes.refresh",
+        "title": "refresh",
+				"icon": "$(refresh)"
+      },
+      {
+        "command": "separableNotes.MoveUp",
+        "title": "up",
+        "icon":"$(chevron-up)"
+      },
+      {
+        "command": "separableNotes.MoveDown",
+        "title": "down",
+        "icon":"$(chevron-down)"
       }
     ],
     "views": {
@@ -143,6 +158,25 @@
         {
           "command": "separableNotes.openSepNotesCat",
           "group": "navigation"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "separableNotes.refresh",
+          "when": "view == tagOutLine",
+          "group": "navigation@1"
+        }
+      ],
+      "view/item/context": [
+        {
+         "command": "separableNotes.MoveUp",
+         "when": "view == tagOutLine",
+         "group": "inline" 
+        },
+        {
+         "command": "separableNotes.MoveDown",
+         "when": "view == tagOutLine",
+         "group": "inline" 
         }
       ]
     },

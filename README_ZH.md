@@ -81,6 +81,7 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * fix bug when new added node is not leaf node
 * fix bug when syncMdWithSrc cause irregular changes in `sepNotes_category.md`
 * add outline view for `sepNotes_category.md` in explorer view
+* order can be adjusted via tree view in the sidebar view and original order way is abandoned
 #### 0.1.5
 * attach action is not needed anymore when adding first note 
 * handle situation when src file cannot write

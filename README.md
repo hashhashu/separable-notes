@@ -81,6 +81,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * fix bug when new added node is not leaf node
 * fix bug when syncMdWithSrc cause irregular changes in `sepNotes_category.md` 
 * add outline view for `sepNotes_category.md` in explorer view
+* order can be adjusted via tree view in the sidebar view and original order way is abandoned
 #### 0.1.5
 * attach action is not needed anymore when adding first note 
 * handle situation when src file cannot write
@@ -156,26 +157,11 @@ if you change this, you should also change the configuration for todo-tree or ot
 * sepnotes 加入刷新按钮 或者 快捷命令
 * [x] tag identify optimize
 * [x] use relative path
-* 利用vscode的 CodeLens 显示 detach后的内容
 
-* 插件可以考虑数据库结合
-* 全局更改所有标签
-* 设置光标位置
-* 标签相同的如何比较
-* 考虑原来是全局还是局部
-* 刷新考虑加按钮的方式
-* 同步的时候能不能固定位置(有固定的排序方式,路径+行数)
-* 参考流程图的格式
-<!-- * 升级需要做的事情 -->
-* 修改知乎的描述
-   * 层次标签
-   * 可以输入描述 
-* 对#tag的标签加个标签
+* [x] Sidebar Fixed Navigation
 
-* 实现左侧固定浏览  
-* 已知问题
-  * 后台需要全量编译
-  * 
+* 加入按钮(查找,折叠,刷新)
+
 
 
 Please star :star: it if you like it, Thanks.

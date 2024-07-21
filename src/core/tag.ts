@@ -1,37 +1,29 @@
 import { getMin } from "../utils/utils";
+import { NotesCat } from "./notesCat";
 
 export class NestedTag{
     tags:Array<string>;
     constructor(tag:string = ''){
-        this.tags = tag.split('/');
+        this.tags = NestedTag.convertToTags(tag);
     }
 
-    compareTag(nestedTag2:NestedTag):number{
-        let tags2 = nestedTag2.tags;
-        let count = getMin(this.tags.length,tags2.length);
+    compareTag(nestedTag2:NestedTag, adjusted:boolean = true):number{
+        let tagOrder1:Array<string>;
+        let tagOrder2:Array<string>;
+        if(adjusted){
+            tagOrder1 = NestedTag.convertToTags(NotesCat.getOrder(this.getFullTag()));
+            tagOrder2 = NestedTag.convertToTags(NotesCat.getOrder(nestedTag2.getFullTag()));
+        }
+        else{
+            tagOrder1 = this.tags;
+            tagOrder2 = nestedTag2.tags;
+        }
+        let count = getMin(tagOrder1.length,tagOrder2.length);
         let tag1;
         let tag2;
-        let order1 = 0;
-        let order2 = 0;
         for(let i=0;i<count;i++){
-            order1 = Infinity;
-            order2 = Infinity;
-            tag1 = this.tags[i];
-            tag2 = tags2[i];
-            if(tag1.includes(':')){
-                order1 = Number(tag1.split(':')[0]);
-                tag1 = NestedTag.removeTagNumber(tag1);
-            }
-            if(tag2.includes(':')){
-                order2 = Number(tag2.split(':')[0]);
-                tag2 = NestedTag.removeTagNumber(tag2);
-            }
-            if(order1 < order2){
-                return -1;
-            }
-            else if(order1 > order2){
-                return 1;
-            }
+            tag1 = tagOrder1[i];
+            tag2 = tagOrder2[i];
             if(tag1 < tag2){
                 return -1;
             }
@@ -39,11 +31,11 @@ export class NestedTag{
                 return 1;
             }
         }
-        return this.tags.length - tags2.length;
+        return tagOrder1.length - tagOrder2.length;
     }
-    compareString(nestedTag2:string):number{
+    compareString(nestedTag2:string, adjusted:boolean = true):number{
         let tags2 = new NestedTag(nestedTag2);
-        return this.compareTag(tags2);
+        return this.compareTag(tags2,adjusted);
     }
 
     needAddOutLine(nestedTag2:string):Array<string>{
@@ -57,14 +49,14 @@ export class NestedTag{
         let i = 0;
         let outline = '#';
         for(i=0;i<count;i++){
-            if(NestedTag.removeTagNumber(tags2[i]) != NestedTag.removeTagNumber(this.tags[i])){
+            if(tags2[i] != this.tags[i]){
                 break;
             }
             outline += '#';
         }
         
         while(i<tags2.length){
-            add.push(outline + ' ' + NestedTag.removeTagNumber(tags2[i]));
+            add.push(outline + ' ' + tags2[i]);
             ++i;
             outline += '#';
         }
@@ -107,9 +99,18 @@ export class NestedTag{
         return this.tags[this.tags.length - 1];
     }
 
-    static compareNestedTag(a:string, b:string):number{
+    getParentTag(level:number = 1):string{
+        if(this.tags.length <= level){
+            return '';
+        }
+        else{
+            return this.tags.slice(0,this.tags.length - level).join('/');
+        }
+    }
+
+    static compareNestedTag(a:string, b:string, adjusted:boolean = true):number{
         let c = new NestedTag(a);
-        return c.compareString(b);
+        return c.compareString(b,adjusted);
     }
 
     static getOutLine(line:string){
@@ -134,8 +135,8 @@ export class NestedTag{
         return tags;
     }
 
-    static removeTagNumber(tag:string):string{
-        return tag.substring(tag.indexOf(':')+1);
+    static convertToTags(tag:string):Array<string>{
+        return tag.split('/');
     }
 
 }

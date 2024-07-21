@@ -42,17 +42,15 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     statusBarItem.show();
 
     tagOutLineProvider = new TagOutLineProvider();
-    vscode.window.registerTreeDataProvider('tagOutLine', tagOutLineProvider);
-    vscode.commands.registerCommand('separableNotes.refreshEntry', () => tagOutLineProvider.refresh());
+    vscode.window.createTreeView('tagOutLine', {
+        treeDataProvider: tagOutLineProvider, showCollapseAll: true
+    });
+    vscode.commands.registerCommand('separableNotes.refresh', () => tagOutLineProvider.refresh());
     NotesCat.refresh();
+    NotesCat.load(extensionContext);
 
     if(!fs.existsSync(Constants.sepNotesFilePath)){
-        if(fs.existsSync(Constants.sepNotesFileOriPath)){
-            fs.copyFileSync(Constants.sepNotesFileOriPath,Constants.sepNotesFilePath);
-        }
-        else{
-            writeFile(Constants.sepNotesFilePath, Constants.sepNotesFileHead);
-        }
+        writeFile(Constants.sepNotesFilePath, Constants.sepNotesFileHead);
     }
     if(!fs.existsSync(Constants.sepNotesCategoryFilePath)){
         writeFile(Constants.sepNotesCategoryFilePath, Constants.sepNotesCatDesc);
@@ -802,7 +800,19 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             );
         }));
 
+    extensionContext.subscriptions.push(
+        commands.registerCommand(Commands.MoveUp, async (item: OutLineItem) => {
+           NotesCat.moveUp(item.tag);
+           NotesCat.save(extensionContext); 
+           tagOutLineProvider.refresh();
+        }));
 
+    extensionContext.subscriptions.push(
+        commands.registerCommand(Commands.MoveDown, async (item: OutLineItem) => {
+           NotesCat.moveDown(item.tag);
+           NotesCat.save(extensionContext);
+           tagOutLineProvider.refresh(); 
+        }));
 
     function showAttachStatus(){
         let activeEditor = vscode.window.activeTextEditor;

@@ -41,9 +41,10 @@ export namespace Constants {
     export const sepNotesFileHeadStatus = `attachedFileNum:#attachedFileNum    detachedFileNum:#detachedFileNum    refreshTime:#Time  `;
     export const sepNotesFileHead = sepNotesFileHeadFix +'\n' + sepNotesFileHeadStatus +'\n' + '-->  \n  \n';
     export const sepNotesUserNote = '# userContent\n  ';
-    export const sepNotesCatDesc = sepNotesFileHeadFix + '  \n' + 'notes can be categorized as (#xxx/abc) like other nested tags, order can be defined like `#1:abc`  )' + '-->  \n  \n';
+    export const sepNotesCatDesc = sepNotesFileHeadFix + '  \n' + 'notes can be categorized as (#xxx/abc) like other nested tags, order can be adjusted via tree view in the sidebar  )' + '-->  \n  \n';
 
     export const keyNotes = 'separableNotes.notesKey';
+    export const TagOrder = 'separableNotes.tagOrder';
 
     export const glineIdentity = new LineIdentity();
 }
@@ -62,7 +63,9 @@ export namespace Commands {
     export const importNotes = 'separableNotes.importNotes';
     export const syncPos = 'separableNotes.syncPos';
     export const jumpToNoteLine = 'separableNotes.jumpToNoteLine';
-    export const refreshEntry = 'separableNotes.refreshEntry';
+    export const refresh = 'separableNotes.refresh';
+    export const MoveUp = 'separableNotes.MoveUp';
+    export const MoveDown = 'separableNotes.MoveDown';
 }
 // sepNotes **hello**
 export enum NoteMode{  Detached = 0,     Attached = 1}
