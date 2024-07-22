@@ -44,7 +44,7 @@ export class NotesCat{
         this.tagOrder = new Map<string,string>();
       }
       let toDelete = [];
-      for(let [key,value] of this.tagOrder){
+      for(let [key,_] of this.tagOrder){
         if(!this.tagPos.has(key)){
           toDelete.push(key);
         }
@@ -71,16 +71,26 @@ export class NotesCat{
       logger.debug('swapOrder start');
       let tag1 = children[index - 1].tag.getFullTag();
       let tag2 = children[index].tag.getFullTag();
+      // swap order
       this.tagOrder.set(tag1,this.getOrder(tag2));
       this.tagOrder.set(tag2,this.getOrder(tag1));
       let pos1 = this.tagPos.get(tag1);
       let pos2 = this.tagPos.get(tag2);
-      this.tagPos.set(tag2,pos1);
-      this.tagPos.set(tag1,pos1+tagLength);
+      // swap content
       this.contentLines = [...this.contentLines.slice(0,pos1),...this.contentLines.slice(pos2,pos2+tagLength),
                            ...this.contentLines.slice(pos1,pos2),...this.contentLines.slice(pos2+tagLength)];
       writeFile(Constants.sepNotesCategoryFilePath,addEof(this.contentLines.join('\n')));
+      // swap children pos
       [children[index - 1], children[index]] = [children[index], children[index - 1]];
+      // adjust tagpos
+      let curNestedTag = new NestedTag(tag2);
+      for(let i = pos1;i < pos2 + tagLength; i++){
+        let line = this.contentLines[i];
+        if(Constants.glineIdentity.isTagOutLine(line)){
+          curNestedTag.update(line);
+          this.tagPos.set(curNestedTag.getFullTag(),i);
+        }
+      }
       logger.debug('swapOrder end');
     }
     static getDesc(){
@@ -133,6 +143,7 @@ export class NotesCat{
       let children:Array<OutLineItem>;
       if(!this.childrens.get(parentTag.getFullTag())){
         let startpos = this.tagPos.get(parentTag.getFullTag());
+        logger.debug('startpos:'+startpos.toString());
         let contentLines = this.contentLines.slice(startpos);
         children = new Array<OutLineItem>();
         let curNestedTag = new NestedTag(parentTag.getFullTag());
