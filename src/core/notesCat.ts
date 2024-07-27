@@ -8,30 +8,70 @@ import { logger } from '../logging/logger';
 
 export class NotesCat{
     static contentLines: string[];
-    static tagPos: Map<string,number>;
+    static tagPos: Map<string,number> = new Map<string,number>();
     static tagOrder: Map<string,string>;
-    static headings: Array<OutLineItem>;
-    static childrens: Map<string,Array<OutLineItem>>;
-    static refresh(){
+    static childrens: Map<string,Array<OutLineItem>> = new Map<string,Array<OutLineItem>>();
+    static searchTag: string = '';
+    static refresh(searchTagp:string = ''){
       logger.debug('NotesCat refresh start');
+      this.searchTag = searchTagp;
       this.contentLines = this.getContentLines();
-      this.tagPos = new Map<string,number>();
-      this.headings = new Array<OutLineItem>();
+      this.tagPos.clear();
+      this.childrens.clear();
+      let headings = new Array<OutLineItem>();
       let curNestedTag = new NestedTag();
+      let tempTags = new Array<NestedTag>();
       let linenumber = 0;
       for(let line of this.contentLines){
         if(Constants.glineIdentity.isTagOutLine(line)){
           curNestedTag.update(line);
           this.tagPos.set(curNestedTag.getFullTag(),linenumber);
-          if(NestedTag.getOutLine(line).length == 1){
-            let tag = NestedTag.getOutLineTag(line);
-            this.headings.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,tag,new NestedTag(tag),OutLineItemType.Tag));
+          if(this.searchTag == '' || curNestedTag.includes(this.searchTag)){
+            if(this.searchTag != ''){
+              tempTags.push(new NestedTag(curNestedTag.getFullTag()));
+            }
+            // only first level
+            else if(NestedTag.getOutLine(line).length == 1){
+              let tag = NestedTag.getOutLineTag(line);
+              headings.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,new NestedTag(tag),OutLineItemType.Tag));
+            }
           }
         }
         linenumber = linenumber + 1;
       }
-      this.childrens = new Map<string,Array<OutLineItem>>();
-      this.childrens.set('',this.headings);
+      if(this.searchTag == ''){
+        this.childrens.set('',headings);
+      }
+      else{
+        let added = new Set<string>();
+        for(let index = tempTags.length - 1;index>=0;index--){
+          curNestedTag = tempTags[index];
+          // all levels
+          let skipNotConKey = true;
+          for (let i = 0; i < curNestedTag.getLevel(); i++) {
+            if (skipNotConKey) {
+              if (!curNestedTag.getLastTag(i + 1).includes(this.searchTag)) {
+                continue;
+              }
+              else {
+                skipNotConKey = false;
+              }
+            }
+
+            let tag = curNestedTag.getParentTag(i);
+            if (!added.has(tag)) {
+              added.add(tag);
+              let item = new OutLineItem(vscode.TreeItemCollapsibleState.Expanded, new NestedTag(tag), OutLineItemType.Tag);
+              let parent = curNestedTag.getParentTag(i + 1);
+              if (!this.childrens.has(parent)) {
+                let children = new Array<OutLineItem>();
+                this.childrens.set(parent, children);
+              }
+              this.childrens.get(parent).push(item);
+            }
+          }
+        }
+      }
       logger.debug('NotesCat refresh end');
     }
     static load(extensionContext){
@@ -136,7 +176,7 @@ export class NotesCat{
       return descs;
     }
     static getTreeViewRoot():Array<OutLineItem>{
-      return this.headings;
+      return this.childrens.get('');
     }
     static getChildren(parentTag:NestedTag):Array<OutLineItem>{
       logger.debug('getChildren start parent:'+ parentTag.getFullTag());
@@ -158,7 +198,7 @@ export class NotesCat{
               break;
             }
             if (curNestedTag.getLevel() == (parentTag.getLevel() + 1)) {
-              children.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed, curNestedTag.getLastTag(), curNestedTag, OutLineItemType.Tag));
+              children.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,curNestedTag, OutLineItemType.Tag));
               enterOutLine = true;
             }
           }

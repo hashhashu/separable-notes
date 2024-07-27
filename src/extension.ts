@@ -35,6 +35,13 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 	configuration = getConfiguration(extensionContext);
     logger.setLogLevel(configuration.logLevel);
 
+    if(!fs.existsSync(Constants.sepNotesFilePath)){
+        writeFile(Constants.sepNotesFilePath, Constants.sepNotesFileHead);
+    }
+    if(!fs.existsSync(Constants.sepNotesCategoryFilePath)){
+        writeFile(Constants.sepNotesCategoryFilePath, Constants.sepNotesCatDesc);
+    }
+
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1);
     extensionContext.subscriptions.push(statusBarItem);
     statusBarItem.command = Commands.NoteModeSwitch;
@@ -43,18 +50,14 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 
     tagOutLineProvider = new TagOutLineProvider();
     vscode.window.createTreeView('tagOutLine', {
-        treeDataProvider: tagOutLineProvider, showCollapseAll: true
+        treeDataProvider: tagOutLineProvider, showCollapseAll: true, manageCheckboxStateManually:true
     });
-    vscode.commands.registerCommand('separableNotes.refresh', () => tagOutLineProvider.refresh());
+    vscode.commands.registerCommand('separableNotes.refresh', () => {
+        NotesCat.refresh();
+        tagOutLineProvider.refresh();
+    });
     NotesCat.refresh();
     NotesCat.load(extensionContext);
-
-    if(!fs.existsSync(Constants.sepNotesFilePath)){
-        writeFile(Constants.sepNotesFilePath, Constants.sepNotesFileHead);
-    }
-    if(!fs.existsSync(Constants.sepNotesCategoryFilePath)){
-        writeFile(Constants.sepNotesCategoryFilePath, Constants.sepNotesCatDesc);
-    }
 
     let activeEditor = vscode.window.activeTextEditor;
     // restore state
@@ -812,6 +815,16 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
            NotesCat.moveDown(item.tag);
            NotesCat.save(extensionContext);
            tagOutLineProvider.refresh(); 
+        }));
+
+    extensionContext.subscriptions.push(
+        commands.registerCommand(Commands.filterTag, async () => {
+            const result = await window.showInputBox({
+                value: NotesCat.searchTag,
+                placeHolder: 'search keyword',
+            });
+            NotesCat.refresh(result);
+            tagOutLineProvider.refresh(); 
         }));
 
     function showAttachStatus(){

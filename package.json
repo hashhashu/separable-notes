@@ -103,6 +103,11 @@
 				"icon": "$(refresh)"
       },
       {
+        "command": "separableNotes.filterTag",
+        "title": "filter",
+				"icon": "$(filter)"
+      },
+      {
         "command": "separableNotes.MoveUp",
         "title": "up",
         "icon":"$(chevron-up)"
@@ -165,6 +170,11 @@
           "command": "separableNotes.refresh",
           "when": "view == tagOutLine",
           "group": "navigation@1"
+        },
+        {
+          "command": "separableNotes.filterTag",
+          "when": "view == tagOutLine",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [

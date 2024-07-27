@@ -66,6 +66,7 @@ export namespace Commands {
     export const refresh = 'separableNotes.refresh';
     export const MoveUp = 'separableNotes.MoveUp';
     export const MoveDown = 'separableNotes.MoveDown';
+    export const filterTag = 'separableNotes.filterTag';
 }
 // sepNotes **hello**
 export enum NoteMode{  Detached = 0,     Attached = 1}

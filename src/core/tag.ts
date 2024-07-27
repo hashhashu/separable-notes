@@ -95,8 +95,8 @@ export class NestedTag{
         return this.tags.length;
     }
 
-    getLastTag(){
-        return this.tags[this.tags.length - 1];
+    getLastTag(level:number = 1){
+        return this.tags[this.tags.length - level];
     }
 
     getParentTag(level:number = 1):string{
@@ -106,6 +106,10 @@ export class NestedTag{
         else{
             return this.tags.slice(0,this.tags.length - level).join('/');
         }
+    }
+
+    includes(keyword:string):boolean{
+        return this.getFullTag().includes(keyword);
     }
 
     static compareNestedTag(a:string, b:string, adjusted:boolean = true):number{

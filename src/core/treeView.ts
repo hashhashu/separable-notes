@@ -9,7 +9,8 @@ export  class OutLineItem extends vscode.TreeItem{
     path: string;
     code: string;
     line: number;
-    constructor(readonly collapsibleState: vscode.TreeItemCollapsibleState,label:string = '',tagp:NestedTag = new NestedTag(),itemTypep:OutLineItemType = OutLineItemType.codeBlock,pathp:string = '',codep:string = '',linep:number = -1){
+    constructor(readonly collapsibleState: vscode.TreeItemCollapsibleState,tagp:NestedTag = new NestedTag(),itemTypep:OutLineItemType = OutLineItemType.codeBlock,pathp:string = '',codep:string = '',linep:number = -1){
+        let label = tagp.getLastTag();
         super(label, collapsibleState);
         this.tag = new NestedTag(tagp.getFullTag());
         this.itemType = itemTypep;
