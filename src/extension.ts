@@ -73,8 +73,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     ratelimiterSep = new RateLimiter(1,1000);
     ratelimiterUpdate = new RateLimiter(1,2000);
     
-// sepNotes sync markdown #abcd/aba/def  with source and vice versa(**test123**)123 @order(13) 
-// sepNotes 12312412434 #abcd/abafeccdeff2345212/cde **123** #ddef/d #hhhcde/abc  
+// sepNotes ### sync markdown with source and vice versa #content_change
     extensionContext.subscriptions.push(
         workspace.onDidChangeTextDocument((event)=>{
             if (window.activeTextEditor && event.document === window.activeTextEditor.document) {
@@ -243,8 +242,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             // logger.info(JSON.stringify(configuration.associations));
 		}));
       
-// sepNotes test  for itabc #abcd/aba/def
 	extensionContext.subscriptions.push(
+// sepNotes ### notemode switch  #command/statusbar/notemode
 		commands.registerCommand(Commands.NoteModeSwitch, async () => {
             activeEditor = vscode.window.activeTextEditor;
             if (!activeEditor) {
@@ -287,6 +286,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }
 	));
 	extensionContext.subscriptions.push(
+// sepNotes ### attach all #command/global/attachall
 		commands.registerCommand(Commands.attachAll, async () => {
             if(!inAll){
                 logger.debug('attachAll-------------------------');
@@ -344,12 +344,13 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     }
 
 	extensionContext.subscriptions.push(
+// sepNotes ### detach all #command/global/detachall
 		commands.registerCommand(Commands.detachAll, async () => {
             detachAll();
         }
 	));
-// sepNotes ### add comment and remove comment
 	extensionContext.subscriptions.push(
+// sepNotes ### add comment and remove comment #command/menu/noteit
 		commands.registerCommand(Commands.noteIt, async () => {
             activeEditor = vscode.window.activeTextEditor;
             let path = activeEditor.document.uri.fsPath;
@@ -422,7 +423,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             updateState(activeEditor,extensionContext);
         }
 	));
-// sepNotes ### hover for inline code
+// sepNotes ### hover for inline code #hover
     function provideHover(document:vscode.TextDocument, position:vscode.Position, token){
         let path = document.uri.fsPath;
         if(!Notes.has(path) || !Notes.get(path).isAttached()){
@@ -464,6 +465,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         vscode.languages.registerHoverProvider({ scheme: 'file'},{provideHover})
     );
 	extensionContext.subscriptions.push(
+// sepNotes ### sync markdown files  #command/global/syncmdwithall #command/menu/syncmdwithsrc
 		commands.registerCommand(Commands.syncMdWithSrc, async () => {
             logger.debug('syncMdWithSrc----------------------');
             fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
@@ -520,6 +522,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 	));
     
     //markdown definition in src file 
+// sepNotes ### #definition
     function provideDefinition(document:vscode.TextDocument, position:vscode.Position, token) {
         const line		= document.lineAt(position);
         let lineNumber = getLineNumber(line.text);
@@ -609,6 +612,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 	));
 
 	extensionContext.subscriptions.push(
+// sepNotes ### #command/global/importnotes
 		commands.registerCommand(Commands.importNotes, async () => {
             if(!inAll){
                 logger.debug('importNotes---------------');
@@ -687,6 +691,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 	));
 
 	extensionContext.subscriptions.push(
+// sepNotes ### #command/menu/syncpos
 		commands.registerCommand(Commands.syncPos, async () => {
             logger.debug('syncPos start');
             activeEditor = vscode.window.activeTextEditor;
@@ -774,6 +779,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     ));
 
     extensionContext.subscriptions.push(
+// sepNotes ### #command/view/jumptoline
         commands.registerCommand(Commands.jumpToNoteLine, async (item: OutLineItem) => {
             vscode.window.showTextDocument(vscode.Uri.file(item.path), { preview: true, preserveFocus: true }).then(
                 textEditor => {
@@ -804,6 +810,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }));
 
     extensionContext.subscriptions.push(
+// sepNotes ### #command/view/moveup
         commands.registerCommand(Commands.MoveUp, async (item: OutLineItem) => {
            NotesCat.moveUp(item.tag);
            NotesCat.save(extensionContext); 
@@ -811,6 +818,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }));
 
     extensionContext.subscriptions.push(
+// sepNotes ### #command/view/movedown
         commands.registerCommand(Commands.MoveDown, async (item: OutLineItem) => {
            NotesCat.moveDown(item.tag);
            NotesCat.save(extensionContext);
@@ -818,6 +826,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }));
 
     extensionContext.subscriptions.push(
+// sepNotes ### #command/view/filtertag
         commands.registerCommand(Commands.filterTag, async () => {
             const result = await window.showInputBox({
                 value: NotesCat.searchTag,
@@ -896,7 +905,6 @@ function updateStateNote(extensionContext: ExtensionContext){
     }
     extensionContext.workspaceState.update(Constants.keyNotes,serializedNotes);
 }
-// sepNotes 12345678
 function getMdStatus():string{
     let status = Constants.sepNotesFileHeadStatus;
     status = status.replace('#attachedFileNum',attachedFileNum.toString());

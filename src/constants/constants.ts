@@ -68,7 +68,6 @@ export namespace Commands {
     export const MoveDown = 'separableNotes.MoveDown';
     export const filterTag = 'separableNotes.filterTag';
 }
-// sepNotes **hello**
 export enum NoteMode{  Detached = 0,     Attached = 1}
 export enum MdType{ None = 0, sepNotes = 1, sepNotesCat = 2 }
 export enum OutLineItemType{Tag = 0, codeBlock = 1}

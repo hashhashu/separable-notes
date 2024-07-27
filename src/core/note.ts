@@ -332,8 +332,6 @@ export class NoteFile{
       return {"content":contentExport,"contentByCat":contentByCat};
     }
 
-// sepNotes #abcd/1:dbc 
-// sepNotes 12312
     //`sepNotes.md`
     refreshMd(document:vscode.TextDocument = null, mdStatus:string = ''){
       if(this.isAttached()){
