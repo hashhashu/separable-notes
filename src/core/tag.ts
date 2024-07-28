@@ -11,8 +11,8 @@ export class NestedTag{
         let tagOrder1:Array<string>;
         let tagOrder2:Array<string>;
         if(adjusted){
-            tagOrder1 = NestedTag.convertToTags(NotesCat.getOrder(this.getFullTag()));
-            tagOrder2 = NestedTag.convertToTags(NotesCat.getOrder(nestedTag2.getFullTag()));
+            tagOrder1 = NotesCat.getOrder(this);
+            tagOrder2 = NotesCat.getOrder(nestedTag2);
         }
         else{
             tagOrder1 = this.tags;

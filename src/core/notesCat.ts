@@ -98,24 +98,40 @@ export class NotesCat{
       let entries = Array.from(this.tagOrder.entries()).map(([key,value])=>({ key, value }));
       extensionContext.workspaceState.update(Constants.TagOrder,entries);
     }
-    static getOrder(tag:string){
-      if(this.tagOrder.has(tag)){
-        return this.tagOrder.get(tag);
+    static getOrder(tag:NestedTag){
+      let order:Array<string> = new Array<string>();
+      for(let level = tag.getLevel();level>=1;level--){
+        let oriNestedTag = tag.getParentTag(level - 1);
+        if(this.tagOrder.has(oriNestedTag)){
+          order.push(this.tagOrder.get(oriNestedTag));
+        } 
+        else{
+          let orisTag = tag.getLastTag(level);
+          order.push(orisTag);
+        }
       }
-      else{
-        return tag;
-      }
+      return order;
     }
     // tag2 --> tag1
     static swapOrder(children:Array<OutLineItem>, index: number, tagLength:number){
       logger.debug('swapOrder start');
-      let tag1 = children[index - 1].tag.getFullTag();
-      let tag2 = children[index].tag.getFullTag();
+      let tag1 = children[index - 1].tag;
+      let sTag1 = tag1.getFullTag();
+      let tag2 = children[index].tag;
+      let sTag2 = tag2.getFullTag();
       // swap order
-      this.tagOrder.set(tag1,this.getOrder(tag2));
-      this.tagOrder.set(tag2,this.getOrder(tag1));
-      let pos1 = this.tagPos.get(tag1);
-      let pos2 = this.tagPos.get(tag2);
+      let order1 = tag1.getLastTag();
+      if(this.tagOrder.has(sTag1)){
+        order1 = this.tagOrder.get(sTag1);
+      }
+      let order2 = tag2.getLastTag();
+      if(this.tagOrder.has(sTag2)){
+        order2 = this.tagOrder.get(sTag2);
+      }
+      this.tagOrder.set(sTag1,order2);
+      this.tagOrder.set(sTag2,order1);
+      let pos1 = this.tagPos.get(sTag1);
+      let pos2 = this.tagPos.get(sTag2);
       // swap content
       this.contentLines = [...this.contentLines.slice(0,pos1),...this.contentLines.slice(pos2,pos2+tagLength),
                            ...this.contentLines.slice(pos1,pos2),...this.contentLines.slice(pos2+tagLength)];
@@ -123,7 +139,7 @@ export class NotesCat{
       // swap children pos
       [children[index - 1], children[index]] = [children[index], children[index - 1]];
       // adjust tagpos
-      let curNestedTag = new NestedTag(tag2);
+      let curNestedTag = new NestedTag(sTag2);
       for(let i = pos1;i < pos2 + tagLength; i++){
         let line = this.contentLines[i];
         if(Constants.glineIdentity.isTagOutLine(line)){
