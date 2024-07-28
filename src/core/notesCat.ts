@@ -260,12 +260,15 @@ export class NotesCat{
         if(index < (children.length - 1)){
           nextNodePos = this.tagPos.get(children[index + 1].tag.getFullTag());
         }
-        else if(tag.getLevel() > 1){
-          let curParent = tag.getParentTag();
-          let parents = this.childrens.get(tag.getParentTag(2));
-          let parentIndex = parents.findIndex(item => item.tag.compareString(curParent,false) == 0);
-          if(parentIndex < (parents.length - 1)){
-            nextNodePos = this.tagPos.get(parents[parentIndex + 1].tag.getFullTag());
+        else{
+          for(let i = 1;i<tag.getLevel();i++){
+            let curParent = tag.getParentTag(i);
+            let parents = this.childrens.get(tag.getParentTag(i+1));
+            let parentIndex = parents.findIndex(item => item.tag.compareString(curParent,false) == 0);
+            if(parentIndex < (parents.length - 1)){
+              nextNodePos = this.tagPos.get(parents[parentIndex + 1].tag.getFullTag());
+              break;
+            }
           }
         }
         let tagLength = nextNodePos - this.tagPos.get(tag.getFullTag());
