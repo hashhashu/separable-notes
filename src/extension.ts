@@ -471,7 +471,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
             let contentMd = Constants.sepNotesFileHead + getMdUserRandomNote();
             let contentMdCat = Constants.sepNotesCatDesc;
-            let contentByCatAll:Map<string,string> = NotesCat.getDesc();
+            let contentByCatAll:Map<string,string> = NotesCat.descs;
             let contentgetRet:{"content":string,"contentByCat":Map<string,string>};
             let sortedCat:Array<string>;
             let notAttached = false;

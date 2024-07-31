@@ -17,8 +17,7 @@ export  class OutLineItem extends vscode.TreeItem{
         this.path = pathp;
         this.code = codep;
         this.line = linep;
-        this.tooltip = label;
-        this.description = label;
+
         if(this.itemType == OutLineItemType.codeBlock){
             this.command = {
                 "title": "jump to noteLine",
@@ -26,13 +25,9 @@ export  class OutLineItem extends vscode.TreeItem{
                 "arguments": [this]
             }
         }
-    }
-    getLabel():string{
-        if(this.itemType == OutLineItemType.Tag){
-            return this.tag.getLastTag();
-        }
         else{
-            return this.code;
+            this.tooltip = NotesCat.getTagDesc(tagp);
+            this.description = NotesCat.getTagDesc(tagp);
         }
     }
 }

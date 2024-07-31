@@ -12,6 +12,7 @@ export class NotesCat{
     static tagOrder: Map<string,string>;
     static childrens: Map<string,Array<OutLineItem>> = new Map<string,Array<OutLineItem>>();
     static searchTag: string = '';
+    static descs: Map<string, string> = new Map<string,string>();
     static refresh(searchTagp:string = ''){
       logger.debug('NotesCat refresh start');
       this.searchTag = searchTagp;
@@ -22,6 +23,7 @@ export class NotesCat{
       let curNestedTag = new NestedTag();
       let tempTags = new Array<NestedTag>();
       let linenumber = 0;
+      this.refreshDesc();
       for(let line of this.contentLines){
         if(Constants.glineIdentity.isTagOutLine(line)){
           curNestedTag.update(line);
@@ -149,9 +151,9 @@ export class NotesCat{
       }
       logger.debug('swapOrder end');
     }
-    static getDesc(){
-      logger.debug('NotesCat getDesc start');
-      let descs: Map<string, string> = new Map<string, string>();
+    static refreshDesc(){
+      logger.debug('NotesCat refreshDesc start');
+      this.descs.clear();
       let contentLines = this.getContentLines();
       let curNestedTag = new NestedTag();
       let desc = '';
@@ -170,7 +172,7 @@ export class NotesCat{
         }
         else if (Constants.glineIdentity.isTagOutLine(line)) {
           if (desc.trim().length > 0) {
-            descs.set(curNestedTag.getFullTag(), desc);
+            this.descs.set(curNestedTag.getFullTag(), desc);
           }
           desc = '';
           crossDesc = false;
@@ -186,10 +188,18 @@ export class NotesCat{
         }
       }
       if (desc.trim().length > 0) {
-        descs.set(curNestedTag.getFullTag(), desc);
+        this.descs.set(curNestedTag.getFullTag(), desc);
       }
       logger.debug('NotesCat getDesc end');
-      return descs;
+      return this.descs;
+    }
+    static getTagDesc(tagp:NestedTag){
+      if(this.descs.has(tagp.getFullTag())){
+        return this.descs.get(tagp.getFullTag());
+      }
+      else{
+        return '';
+      }
     }
     static getTreeViewRoot():Array<OutLineItem>{
       return this.childrens.get('');
@@ -231,7 +241,7 @@ export class NotesCat{
             else if (enterCodeBlock) {
               if (isFirstCode) {
                 tmpOutLineItem.line = getLineNumber(line);
-                tmpOutLineItem.code = removeLineNumber(line);
+                tmpOutLineItem.code = removeLineNumber(line).trimLeft();
                 tmpOutLineItem.label = tmpOutLineItem.code;
                 children.push(tmpOutLineItem);
                 tmpOutLineItem = new OutLineItem(vscode.TreeItemCollapsibleState.None);
