@@ -6,6 +6,7 @@ import path from "path";
 import { Constants } from '../constants/constants';
 import * as fs from 'fs'; 
 import { LineIdentity } from '../core/LineIdentity';
+import { NestedTag } from '../core/tag';
 
 export function randomString(length: number, extended: boolean = false) {
     let text = "";
@@ -275,6 +276,11 @@ export function getId(line:string,idOrRefer:boolean = true,identifier:string='')
 
 export function cutNoteId(line:string,noteId:string):string{
   return line.substring(line.indexOf(noteId)+noteId.length).trimLeft();
+}
+
+export function cutOutLineMarker(line:string):string{
+  let outline = NestedTag.getOutLine(line);
+  return line.substring(outline.length).trimLeft();
 }
 
 export function removeOutlineMarker(line:string):string{

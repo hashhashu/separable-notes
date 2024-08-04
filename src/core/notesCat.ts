@@ -238,7 +238,7 @@ export class NotesCat{
                 isFirstCode = true;
               }
             }
-            else if (enterCodeBlock) {
+            else{
               if (isFirstCode) {
                 tmpOutLineItem.line = getLineNumber(line);
                 tmpOutLineItem.code = removeLineNumber(line).trimLeft();

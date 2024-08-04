@@ -3,8 +3,14 @@ import { NotesCat } from "./notesCat";
 
 export class NestedTag{
     tags:Array<string>;
-    constructor(tag:string = ''){
+    outlines:Array<number>;
+    recordOutLine:boolean;
+    constructor(tag:string = '',recordOutLine:boolean = false){
         this.tags = NestedTag.convertToTags(tag);
+        this.recordOutLine = recordOutLine;
+        if(this.recordOutLine){
+            this.outlines = [0];
+        }
     }
 
     compareTag(nestedTag2:NestedTag, adjusted:boolean = true):number{
@@ -74,7 +80,18 @@ export class NestedTag{
     update(line:string){
         let outline = NestedTag.getOutLine(line);
         if(outline.length > 0){
-            this.tags = this.tags.slice(0,outline.length - 1);
+            if(!this.recordOutLine){
+                this.tags = this.tags.slice(0,outline.length - 1);
+            }
+            else{
+                let i = this.outlines.length - 1;
+                while(i >=0 && this.outlines[i] >= outline.length){
+                    this.outlines.pop();
+                    this.tags.pop();
+                    i-=1;
+                }
+                this.outlines.push(outline.length);
+            }
             this.tags.push(NestedTag.getOutLineTag(line));
         }
     }
@@ -85,6 +102,10 @@ export class NestedTag{
 
     copyTag(tags:NestedTag){
         this.tags = tags.tags.slice();
+        this.recordOutLine = tags.recordOutLine;
+        if(this.recordOutLine){
+            this.outlines = tags.outlines.slice();
+        }
     }
 
     getFullTag(){
@@ -92,7 +113,12 @@ export class NestedTag{
     }
 
     getLevel():number{
-        return this.tags.length;
+        if(!this.recordOutLine){
+            return this.tags.length;
+        }
+        else{
+            return this.outlines[this.outlines.length - 1];
+        }
     }
 
     getLastTag(level:number = 1){

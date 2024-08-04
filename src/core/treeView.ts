@@ -2,23 +2,30 @@ import * as vscode from 'vscode';
 import { OutLineItemType } from "../constants/constants";
 import { NestedTag } from "./tag";
 import { NotesCat } from './notesCat';
+import { NoteFileTree } from './noteFileTree';
 
 export  class OutLineItem extends vscode.TreeItem{  
-    tag: NestedTag;
+    tag: NestedTag = new NestedTag();
     itemType: OutLineItemType;
     path: string;
     code: string;
     line: number;
-    constructor(readonly collapsibleState: vscode.TreeItemCollapsibleState,tagp:NestedTag = new NestedTag(),itemTypep:OutLineItemType = OutLineItemType.codeBlock,pathp:string = '',codep:string = '',linep:number = -1){
-        let label = tagp.getLastTag();
+    constructor(collapsibleState: vscode.TreeItemCollapsibleState,tagp:NestedTag = new NestedTag(),itemTypep:OutLineItemType = OutLineItemType.codeBlock,pathp:string = '',codep:string = '',linep:number = -1){
+		let label;
+		if(itemTypep == OutLineItemType.TagAndCode){
+			label = codep;
+		}
+		else{
+			label = tagp.getLastTag();
+		}
         super(label, collapsibleState);
-        this.tag = new NestedTag(tagp.getFullTag());
+		this.tag.copyTag(tagp);
         this.itemType = itemTypep;
         this.path = pathp;
         this.code = codep;
         this.line = linep;
 
-        if(this.itemType == OutLineItemType.codeBlock){
+        if(this.itemType == OutLineItemType.codeBlock || this.itemType == OutLineItemType.TagAndCode){
             this.command = {
                 "title": "jump to noteLine",
                 "command": "separableNotes.jumpToNoteLine",
@@ -54,6 +61,31 @@ export class TagOutLineProvider implements vscode.TreeDataProvider<OutLineItem> 
 			return Promise.resolve(NotesCat.getChildren(element.tag));
 		} else {
             return Promise.resolve(NotesCat.getTreeViewRoot());
+		}
+	}
+}
+
+export class FileOutLineProvider implements vscode.TreeDataProvider<OutLineItem> {
+
+	private _onDidChangeTreeData: vscode.EventEmitter<OutLineItem | undefined | void> = new vscode.EventEmitter<OutLineItem | undefined | void>();
+	readonly onDidChangeTreeData: vscode.Event<OutLineItem | undefined | void> = this._onDidChangeTreeData.event;
+
+	constructor() {
+	}
+
+	refresh(): void {
+		this._onDidChangeTreeData.fire();
+	}
+
+	getTreeItem(element: OutLineItem): vscode.TreeItem {
+		return element;
+	}
+
+	getChildren(element?: OutLineItem): Thenable<OutLineItem[]> {
+		if (element) {
+			return Promise.resolve(NoteFileTree.getChildren(element.tag));
+		} else {
+            return Promise.resolve(NoteFileTree.getTreeViewRoot());
 		}
 	}
 }

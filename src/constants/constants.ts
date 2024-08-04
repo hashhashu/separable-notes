@@ -64,10 +64,11 @@ export namespace Commands {
     export const syncPos = 'separableNotes.syncPos';
     export const jumpToNoteLine = 'separableNotes.jumpToNoteLine';
     export const refresh = 'separableNotes.refresh';
+    export const refreshSepNotes = 'separableNotes.refreshSepNotes';
     export const MoveUp = 'separableNotes.MoveUp';
     export const MoveDown = 'separableNotes.MoveDown';
     export const filterTag = 'separableNotes.filterTag';
 }
 export enum NoteMode{  Detached = 0,     Attached = 1}
 export enum MdType{ None = 0, sepNotes = 1, sepNotesCat = 2 }
-export enum OutLineItemType{Tag = 0, codeBlock = 1}
+export enum OutLineItemType{Tag = 0, codeBlock = 1, TagAndCode = 2}

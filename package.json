@@ -103,6 +103,11 @@
 				"icon": "$(refresh)"
       },
       {
+        "command": "separableNotes.refreshSepNotes",
+        "title": "refresh",
+				"icon": "$(refresh)"
+      },
+      {
         "command": "separableNotes.filterTag",
         "title": "filter",
 				"icon": "$(filter)"
@@ -110,12 +115,12 @@
       {
         "command": "separableNotes.MoveUp",
         "title": "up",
-        "icon":"$(chevron-up)"
+        "icon":"$(arrow-circle-up)"
       },
       {
         "command": "separableNotes.MoveDown",
         "title": "down",
-        "icon":"$(chevron-down)"
+        "icon":"$(arrow-circle-down)"
       }
     ],
     "views": {
@@ -123,6 +128,10 @@
         {
           "id": "tagOutLine",
           "name": "sepNotes_category"
+        },
+        {
+          "id": "fileOutLine",
+          "name": "sepNotes"
         }
       ]
     },
@@ -175,6 +184,11 @@
           "command": "separableNotes.filterTag",
           "when": "view == tagOutLine",
           "group": "navigation@2"
+        },
+        {
+          "command": "separableNotes.refreshSepNotes",
+          "when": "view == fileOutLine",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [

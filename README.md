@@ -74,6 +74,9 @@ if you change this, you should also change the configuration for todo-tree or ot
 ```
 
 ### ChangeLog
+#### 0.1.7
+* add outline view for `sepNotes.md` in explorer view
+
 #### 0.1.6
 * relative path is used instead of original absolute path to make it more portable
 * can add description about tag in `sepNotes_category.md` 

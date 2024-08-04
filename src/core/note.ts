@@ -6,8 +6,9 @@ import { Configuration } from "../configuration";
 import { logger } from "../logging/logger";
 import { NestedTag} from "./tag";
 import { LineIdentity } from "./LineIdentity";
-import { TagOutLineProvider } from "./treeView";
+import { FileOutLineProvider, TagOutLineProvider } from "./treeView";
 import { NotesCat } from "./notesCat";
+import { NoteFileTree } from "./noteFileTree";
 
 export class NoteFile{
     path: string;
@@ -23,11 +24,13 @@ export class NoteFile{
     mdChangeType: MdType;
     lineIdentity: LineIdentity;
     tagOutLineProvider: TagOutLineProvider;
-    constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,tagOutLineProvider: TagOutLineProvider,blocks:Array<NoteBlock> = new Array(),needrefresh:boolean = false){
+    fileOutLineProvider: FileOutLineProvider;
+    constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,tagOutLineProvider: TagOutLineProvider,fileOutLineProvider:FileOutLineProvider,blocks:Array<NoteBlock> = new Array(),needrefresh:boolean = false){
       this.path = filePath;
       this.configuration = configuration;
       this.statusbaritem = statusbar;
       this.tagOutLineProvider = tagOutLineProvider;
+      this.fileOutLineProvider = fileOutLineProvider;
       this.noteMode = noteMode;
       this.blocks = blocks;
       this.respondCount = 0;
@@ -371,6 +374,8 @@ export class NoteFile{
         if(this.mdChangeType == MdType.sepNotes){
           this.mdChangedLine.length = 0;
         }
+        NoteFileTree.refresh(this.path);
+        this.fileOutLineProvider.refresh();
         logger.debug('refreshMd---end------------------');
       }
     }    
