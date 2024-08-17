@@ -710,10 +710,10 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }
 	));
 
-	extensionContext.subscriptions.push(
-// sepNotes ### #command/menu/syncpos
-		commands.registerCommand(Commands.syncPos, async () => {
-            logger.debug('syncPos start');
+    extensionContext.subscriptions.push(
+        window.onDidChangeTextEditorSelection((event)=>{
+            let curLine = event.selections[0].active.line;
+            logger.debug('onDidChangeTextEditorSelection start');
             activeEditor = vscode.window.activeTextEditor;
             if(!activeEditor){
                 return;
@@ -723,9 +723,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             // markdown
             if(canSync(activeEditor.document.uri.fsPath)){
                 editorSepNotes = activeEditor;
-                let curLine = 0;
-                let range = editorSepNotes.selection;
-                curLine = Math.floor((range.start.line + range.end.line) / 2);
                 let path = getSrcFileFromMd(editorSepNotes.document, curLine);
                 for(let editor of vscode.window.visibleTextEditors){
                     if(editor.document.uri.fsPath == path){
@@ -733,10 +730,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         break;
                     }
                 }
-                if(!editorSrc){
-                    vscode.window.showInformationMessage(getRelativePath(path)+' not visible');
-                }
-                else{
+                if(editorSrc){
                     let srcLine = getLineNumberDown(editorSepNotes.document, curLine);
                     if(srcLine == -1){
                         srcLine = getLineNumberUp(editorSepNotes.document,curLine);
@@ -767,17 +761,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         break;
                     }
                 }
-                if(!editorSepNotes){
-                    vscode.window.showInformationMessage(Constants.sepNotesFileName+' is not visible');
-                }
-                else{
+                if(editorSepNotes){
                     let path = editorSrc.document.uri.fsPath;
                     if (Notes.has(path)) {
-                        let curLine = 0;
-                        let range = editorSrc.selection;
-                        logger.debug('src start:'+range.start.line.toString()+' end:'+range.end.line.toString());
-                        curLine = Math.floor((range.start.line + range.end.line) / 2);
-
                         let mdLine = getMdPos(path, curLine);
                         let mdLineStart = mdLine;
                         let mdLineEnd = mdLine;
@@ -795,8 +781,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     }
                 }
             }
-        }
-    ));
+            logger.debug('onDidChangeTextEditorSelection end');
+        }));
 
     extensionContext.subscriptions.push(
 // sepNotes ### #command/view/jumptoline

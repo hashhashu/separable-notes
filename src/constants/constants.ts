@@ -61,7 +61,6 @@ export namespace Commands {
     export const openSepNotesDiff = 'separableNotes.openSepNotesDiff';
     export const openSepNotesCat = 'separableNotes.openSepNotesCat';
     export const importNotes = 'separableNotes.importNotes';
-    export const syncPos = 'separableNotes.syncPos';
     export const jumpToNoteLine = 'separableNotes.jumpToNoteLine';
     export const refresh = 'separableNotes.refresh';
     export const refreshSepNotes = 'separableNotes.refreshSepNotes';

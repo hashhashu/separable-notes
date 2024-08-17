@@ -90,10 +90,6 @@
         "title": "openSepNotesCat"
       },
       {
-        "command": "separableNotes.syncPos",
-        "title": "separableNotes syncPos"
-      },
-      {
         "command": "separableNotes.jumpToNoteLine",
         "title": "separableNotes.jumpToNoteLine"
       },
@@ -150,10 +146,6 @@
         {
           "group": "separableNotes@1",
           "submenu":"separableNotes.openSepNotes"
-        },
-        {
-          "command":"separableNotes.syncPos",
-          "group": "separableNotes@1"
         },
         {
           "command":"separableNotes.syncMdWithSrc",

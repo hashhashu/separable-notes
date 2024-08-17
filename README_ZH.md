@@ -76,6 +76,7 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 ### 变更日志
 #### 0.1.7
 * add outline view for `sepNotes.md` in explorer view 
+* command `separableNotes.syncPos` is abandon and cursor response is added instead
 
 #### 0.1.6
 * relative path is used instead of original absolute path to make it more portable
