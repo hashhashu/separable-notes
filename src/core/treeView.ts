@@ -10,7 +10,8 @@ export  class OutLineItem extends vscode.TreeItem{
     path: string;
     code: string;
     line: number;
-    constructor(collapsibleState: vscode.TreeItemCollapsibleState,tagp:NestedTag = new NestedTag(),itemTypep:OutLineItemType = OutLineItemType.codeBlock,pathp:string = '',codep:string = '',linep:number = -1){
+	parent: OutLineItem;
+    constructor(collapsibleState: vscode.TreeItemCollapsibleState,tagp:NestedTag = new NestedTag(),itemTypep:OutLineItemType = OutLineItemType.codeBlock,pathp:string = '',codep:string = '',linep:number = -1,parent = null){
 		let label;
 		if(itemTypep == OutLineItemType.TagAndCode){
 			label = codep;
@@ -36,6 +37,7 @@ export  class OutLineItem extends vscode.TreeItem{
             this.tooltip = NotesCat.getTagDesc(tagp);
             this.description = NotesCat.getTagDesc(tagp);
         }
+		this.parent = parent;
     }
 }
 
@@ -87,5 +89,13 @@ export class FileOutLineProvider implements vscode.TreeDataProvider<OutLineItem>
 		} else {
             return Promise.resolve(NoteFileTree.getTreeViewRoot());
 		}
+	}
+
+	getItemByPos(pos:number):OutLineItem{
+		return NoteFileTree.getItemByPos(pos);
+	}
+
+	getParent(element: OutLineItem): vscode.ProviderResult<OutLineItem> {
+		return element.parent;
 	}
 }

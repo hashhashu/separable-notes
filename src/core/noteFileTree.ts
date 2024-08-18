@@ -14,6 +14,8 @@ export class NoteFileTree{
         this.childrens.set('',new Array<OutLineItem>());
         let parents:Array<NestedTag> = [new NestedTag()];
         let contentLines = splitIntoLines(decode(fs.readFileSync(Constants.sepNotesFilePath),'utf-8'));
+        let tagPos:Map<string,OutLineItem> = new Map<string,OutLineItem>();
+        let item:OutLineItem;
         let fileStart = false;
         let enterCodeBlock = false;
         let lineIdentity = new LineIdentity(path);
@@ -21,6 +23,7 @@ export class NoteFileTree{
         let noteContent = '';
         let normalTag = '##################';
         let linenumber = 0;
+        tagPos.set('',null);
         for (let line of contentLines) {
             // skip before file start
             if (!fileStart) {
@@ -59,7 +62,9 @@ export class NoteFileTree{
                             this.childrens.set(parent, new Array<OutLineItem>());
                         }
                         let children = this.childrens.get(parent);
-                        children.push(new OutLineItem(vscode.TreeItemCollapsibleState.None,curNestedTag,OutLineItemType.TagAndCode,path,code,codeLineNumber));
+                        item = new OutLineItem(vscode.TreeItemCollapsibleState.None,curNestedTag,OutLineItemType.TagAndCode,path,code,codeLineNumber,tagPos.get(parents[i].getFullTag()));
+                        children.push(item);
+                        tagPos.set(item.tag.getFullTag(),item);
                         let tempTag = new NestedTag();
                         tempTag.copyTag(curNestedTag);
                         parents.push(tempTag);
@@ -89,4 +94,29 @@ export class NoteFileTree{
     static getChildren(parentTag:NestedTag):Array<OutLineItem>{
         return this.childrens.get(parentTag.getFullTag());
     }
+    static getItemByPos(pos:number):OutLineItem{
+        let children = this.childrens.get('');
+        if(children.length > 0){
+            let i = 0;
+            let lastItem = children[0];
+            while(i <= children.length){
+                if(i == children.length ||  Number(children[i].tag.getLastTag()) > pos){
+                    if(this.childrens.has(lastItem.tag.getFullTag())){
+                        children = this.childrens.get(lastItem.tag.getFullTag());
+                        i = 0;
+                        lastItem = children[0];
+                    }
+                    else{
+                        return lastItem;
+                    }
+                }
+                else{
+                    lastItem = children[i];
+                }
+                i+=1;
+            }
+            return lastItem;
+        }
+        return null;
+    } 
 }

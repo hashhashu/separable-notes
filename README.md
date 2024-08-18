@@ -77,6 +77,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 #### 0.1.7
 * add outline view for `sepNotes.md` in sidebar explore view
 * command `separableNotes.syncPos` is abandon and cursor response is added instead
+* add follow pos for outline view of `sepNotes.md`
 
 #### 0.1.6
 * relative path is used instead of original absolute path to make it more portable

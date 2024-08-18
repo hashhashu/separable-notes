@@ -29,6 +29,7 @@ let ratelimiterUpdate:RateLimiter;
 let mdLineChangeCount = 0;
 let tagOutLineProvider:TagOutLineProvider;
 let fileOutLineProvider:FileOutLineProvider;
+let fileOutLineTreeView:vscode.TreeView<OutLineItem>;
 
 export async function activate(extensionContext: ExtensionContext): Promise<boolean> {
     logger.info(
@@ -62,7 +63,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     NotesCat.load(extensionContext);
 
     fileOutLineProvider = new FileOutLineProvider();
-    vscode.window.createTreeView('fileOutLine', {
+    fileOutLineTreeView = vscode.window.createTreeView('fileOutLine', {
         treeDataProvider: fileOutLineProvider, showCollapseAll: true, manageCheckboxStateManually:true
     });
     vscode.commands.registerCommand(Commands.refreshSepNotes, () => {
@@ -712,8 +713,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 
     extensionContext.subscriptions.push(
         window.onDidChangeTextEditorSelection((event)=>{
+            if(!fs.existsSync(event.textEditor.document.uri.fsPath)){
+                return;
+            }
             let curLine = event.selections[0].active.line;
             logger.debug('onDidChangeTextEditorSelection start');
+            // -------------markdown src pos match
             activeEditor = vscode.window.activeTextEditor;
             if(!activeEditor){
                 return;
@@ -781,6 +786,13 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     }
                 }
             }
+
+            // tree view item show
+            let item = fileOutLineProvider.getItemByPos(curLine);
+            if (item) {
+                fileOutLineTreeView.reveal(item, { focus: false, select: true });
+            }
+
             logger.debug('onDidChangeTextEditorSelection end');
         }));
 
