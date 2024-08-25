@@ -374,7 +374,7 @@ export class NoteFile{
         if(this.mdChangeType == MdType.sepNotes){
           this.mdChangedLine.length = 0;
         }
-        NoteFileTree.refresh(this.path);
+        NoteFileTree.refresh(this);
         this.fileOutLineProvider.refresh();
         logger.debug('refreshMd---end------------------');
       }
@@ -533,7 +533,7 @@ export class NoteFile{
       this.needRefresh = false;
     }
 
-    private getContentLines(document:vscode.TextDocument = null, path:string = ''):string[]{
+    getContentLines(document:vscode.TextDocument = null, path:string = ''):string[]{
       let content = '';
       let encoding = 'UTF-8';
       let tmpPath = path;
@@ -777,8 +777,11 @@ export class NoteFile{
       logger.debug('exportToMdDiff end-------------');
     }
 
-    isMatch(lineNumber:number,code:string):boolean{
-      if(this.getContentLines()[lineNumber-1].trim() != code.trim()){
+    isMatch(lineNumber:number,code:string,contentLine:string = ''):boolean{
+      if(lineNumber > 0){
+        contentLine = this.getContentLines()[lineNumber-1];
+      }
+      if(contentLine.trim() != code.trim()){
         return false;
       }
       else{
@@ -814,12 +817,14 @@ export class NoteBlock{
   noteLineCount: number; // note block lines count
   codeBelow: string; //code below(for match)
   changedLine: number;
-  constructor(codeLinep: number = -1, notep: string = '', noteLineCountp:number = 0, codeBelowp:string = '', changedline:number = 0){
+  outline: string;
+  constructor(codeLinep: number = -1, notep: string = '', noteLineCountp:number = 0, codeBelowp:string = '', changedline:number = 0, outlinep:string = ''){
     this.codeLine = codeLinep;
     this.note = notep;
     this.noteLineCount = noteLineCountp;
     this.codeBelow = codeBelowp;
     this.changedLine = changedline;
+    this.outline = outlinep;
   }
   toJSON(): any {  
     return {  

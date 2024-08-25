@@ -17,7 +17,7 @@ export  class OutLineItem extends vscode.TreeItem{
 			label = codep;
 		}
 		else{
-			label = tagp.getLastTag();
+			label = tagp.getLastTag().trim();
 		}
         super(label, collapsibleState);
 		this.tag.copyTag(tagp);

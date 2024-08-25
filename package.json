@@ -117,6 +117,16 @@
         "command": "separableNotes.MoveDown",
         "title": "down",
         "icon":"$(arrow-circle-down)"
+      },
+      {
+        "command": "separableNotes.MoveLeft",
+        "title": "left",
+        "icon":"$(arrow-circle-left)"
+      },
+      {
+        "command": "separableNotes.MoveRight",
+        "title": "right",
+        "icon":"$(arrow-circle-right)"
       }
     ],
     "views": {
@@ -192,6 +202,16 @@
         {
          "command": "separableNotes.MoveDown",
          "when": "view == tagOutLine",
+         "group": "inline" 
+        },
+        {
+         "command": "separableNotes.MoveLeft",
+         "when": "view == fileOutLine",
+         "group": "inline" 
+        },
+        {
+         "command": "separableNotes.MoveRight",
+         "when": "view == fileOutLine",
          "group": "inline" 
         }
       ]

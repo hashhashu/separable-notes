@@ -70,7 +70,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         let activeEditor = vscode.window.activeTextEditor;
         let path = activeEditor.document.uri.fsPath;
         if(Notes.has(path)){
-            NoteFileTree.refresh(path);
+            NoteFileTree.refresh(Notes.get(path));
             fileOutLineProvider.refresh();
         }
     });
@@ -215,7 +215,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             updateState(textEditor,extensionContext);
             let path = textEditor.document.uri.fsPath;
             if(Notes.has(path)){
-                NoteFileTree.refresh(path);
+                NoteFileTree.refresh(Notes.get(path));
                 fileOutLineProvider.refresh();
             }
         })
@@ -717,7 +717,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 return;
             }
             let curLine = event.selections[0].active.line;
-            logger.debug('onDidChangeTextEditorSelection start');
             // -------------markdown src pos match
             activeEditor = vscode.window.activeTextEditor;
             if(!activeEditor){
@@ -788,12 +787,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }
 
             // tree view item show
-            let item = fileOutLineProvider.getItemByPos(curLine);
-            if (item) {
-                fileOutLineTreeView.reveal(item, { focus: false, select: true });
+            if(fileOutLineTreeView.visible){
+                let item = fileOutLineProvider.getItemByPos(curLine);
+                if (item) {
+                    fileOutLineTreeView.reveal(item, { focus: false, select: true });
+                }
             }
-
-            logger.debug('onDidChangeTextEditorSelection end');
         }));
 
     extensionContext.subscriptions.push(
@@ -844,6 +843,24 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }));
 
     extensionContext.subscriptions.push(
+// sepNotes ### #command/view/moveleft
+        commands.registerCommand(Commands.MoveLeft, async (item: OutLineItem) => {
+           NoteFileTree.MoveLeft(item.line);
+           updateStateNote(extensionContext);
+           NoteFileTree.refresh(Notes.get(item.path));
+           fileOutLineProvider.refresh(); 
+        }));
+
+    extensionContext.subscriptions.push(
+// sepNotes ### #command/view/moveleft
+        commands.registerCommand(Commands.MoveRight, async (item: OutLineItem) => {
+           NoteFileTree.MoveRight(item.line);
+           updateStateNote(extensionContext);
+           NoteFileTree.refresh(Notes.get(item.path));
+           fileOutLineProvider.refresh(); 
+        }));
+
+    extensionContext.subscriptions.push(
 // sepNotes ### #command/view/filtertag
         commands.registerCommand(Commands.filterTag, async () => {
             const result = await window.showInputBox({
@@ -871,7 +888,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }
             let path = activeEditor.document.uri.fsPath;
             if(Notes.has(path)){
-                NoteFileTree.refresh(activeEditor.document.uri.fsPath);
+                NoteFileTree.refresh(Notes.get(path));
                 fileOutLineProvider.refresh();
             }
         }

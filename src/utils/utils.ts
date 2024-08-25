@@ -202,11 +202,18 @@ export function getSrcFileFromLine(line:string){
   return '';
 }
 
-export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number){
+export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number,contentLines:string [] = null){
   logger.debug('getAnnoFromMd------------------');
-  let content = documment.getText();
-  let sepNotesCat = isSepNotesCatFile(documment.uri.fsPath);
-  let lines = splitIntoLines(content);
+  let isSepNotesCat; 
+  let lines;
+  if(documment){ 
+    isSepNotesCat = isSepNotesCatFile(documment.uri.fsPath);
+    lines = splitIntoLines(documment.getText());
+  }
+  else{
+    isSepNotesCat = false;
+    lines = contentLines;
+  }
   let ret = '';
   let start = startpos - 1;
   let line = '';
@@ -231,12 +238,12 @@ export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number){
   for(let i=start;i<=end;i++){
     line = lines[i];
     // syncMdWithSrc maybe cause some irregular changes
-    if(sepNotesCat 
+    if(isSepNotesCat 
       && (Constants.glineIdentity.isFileStart(line)
           || Constants.glineIdentity.isTagOutLine(line))){
             return {"text":'',"linenumber":-1,"codeBelow":''};
           }
-    if(isSepNotesCatFile(documment.uri.fsPath)){
+    if(isSepNotesCat){
       ret += addEof(recoverOutlineMarker(line));
     }
     else{

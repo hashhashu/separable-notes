@@ -1,26 +1,32 @@
-import { Constants, OutLineItemType } from "../constants/constants";
+import { Constants, MdType, OutLineItemType } from "../constants/constants";
 import { logger } from "../logging/logger";
-import { addEof, cutOutLineMarker, decode, getLineNumber, splitIntoLines } from "../utils/utils";
+import { addEof, cutOutLineMarker, decode, getAnnoFromMd, getLineNumber, removeLineNumber, splitIntoLines, writeFile } from "../utils/utils";
 import { LineIdentity } from "./LineIdentity";
+import { NoteBlock, NoteFile } from "./note";
 import { NestedTag } from "./tag";
 import { OutLineItem } from "./treeView";
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 export class NoteFileTree{
     static childrens: Map<string,Array<OutLineItem>> = new Map<string,Array<OutLineItem>>();
-    static refresh(path:string){
+    static noteFileContent: Array<NoteBlock> = new Array<NoteBlock>();
+    static note:NoteFile =  null;
+    static refresh(notep:NoteFile){
+        let path = notep.path;
         logger.debug('NoteFileTree refresh start path:'+path);
         this.childrens.clear();
         this.childrens.set('',new Array<OutLineItem>());
+        this.noteFileContent.length = 0;
+        this.note = notep;
         let parents:Array<NestedTag> = [new NestedTag()];
-        let contentLines = splitIntoLines(decode(fs.readFileSync(Constants.sepNotesFilePath),'utf-8'));
+        let contentLines = this.getContentLines();
         let tagPos:Map<string,OutLineItem> = new Map<string,OutLineItem>();
         let item:OutLineItem;
         let fileStart = false;
         let enterCodeBlock = false;
         let lineIdentity = new LineIdentity(path);
         let curNestedTag = new NestedTag('',true);
-        let noteContent = '';
+        let noteContents = new Array<string>();
         let normalTag = '##################';
         let linenumber = 0;
         tagPos.set('',null);
@@ -39,35 +45,51 @@ export class NoteFileTree{
                 if (!enterCodeBlock && (linenumber+1) < contentLines.length) {
                     enterCodeBlock = true;
                     let codeLineNumber = getLineNumber(contentLines[linenumber + 1]);
-                    if(codeLineNumber >= 0){
-                        let code;
-                        if(lineIdentity.isTagOutLine(noteContent)){
-                            let outline = NestedTag.getOutLine(noteContent);
-                            curNestedTag.update(outline + ' ' + codeLineNumber.toString());
-                            code = cutOutLineMarker(noteContent);
-                        }
-                        else{
-                            curNestedTag.update(normalTag+' '+codeLineNumber.toString());
-                            code = noteContent;
-                        }
-                        noteContent = '';
+                    if(codeLineNumber >= 0 && noteContents.length > 0){
+                        let noteContent = noteContents[0];
+                        let noteStart = linenumber - noteContents.length;
+                        let noteLineCount = 1;
+                        for(let j = 1;j<=noteContents.length;j++){
+                            if(j < noteContents.length && !lineIdentity.isTagOutLine(noteContents[j])){
+                                noteContent = addEof(noteContent) + noteContents[j];
+                                noteLineCount += 1;
+                                continue;
+                            }
+                            let outline = '';
+                            if (lineIdentity.isTagOutLine(noteContent)) {
+                                outline = NestedTag.getOutLine(noteContent);
+                                curNestedTag.update(outline + ' ' + codeLineNumber.toString());
+                                noteContent = cutOutLineMarker(noteContent);
+                            }
+                            else {
+                                curNestedTag.update(normalTag + ' ' + codeLineNumber.toString());
+                            }
 
-                        let i = parents.length - 1;
-                        while (parents[i].getLevel() >= curNestedTag.getLevel()) {
-                            parents.pop();
-                            i -= 1;
+                            this.noteFileContent.push(new NoteBlock(codeLineNumber,noteContent,noteLineCount,removeLineNumber(contentLines[linenumber + 1]),noteStart,outline));
+
+                            let i = parents.length - 1;
+                            while (parents[i].getLevel() >= curNestedTag.getLevel()) {
+                                parents.pop();
+                                i -= 1;
+                            }
+                            let parent = parents[i].getFullTag();
+                            if (!this.childrens.has(parent)) {
+                                this.childrens.set(parent, new Array<OutLineItem>());
+                            }
+                            let children = this.childrens.get(parent);
+                            item = new OutLineItem(vscode.TreeItemCollapsibleState.None, curNestedTag, OutLineItemType.TagAndCode, path, noteContent, codeLineNumber, tagPos.get(parents[i].getFullTag()));
+                            children.push(item);
+                            tagPos.set(item.tag.getFullTag(), item);
+                            let tempTag = new NestedTag();
+                            tempTag.copyTag(curNestedTag);
+                            parents.push(tempTag);
+                            if(j < noteContents.length){
+                                noteContent = noteContents[j];
+                                noteStart = linenumber - noteContents.length + j;
+                                noteLineCount = 1;
+                            }
                         }
-                        let parent = parents[i].getFullTag();
-                        if (!this.childrens.has(parent)) {
-                            this.childrens.set(parent, new Array<OutLineItem>());
-                        }
-                        let children = this.childrens.get(parent);
-                        item = new OutLineItem(vscode.TreeItemCollapsibleState.None,curNestedTag,OutLineItemType.TagAndCode,path,code,codeLineNumber,tagPos.get(parents[i].getFullTag()));
-                        children.push(item);
-                        tagPos.set(item.tag.getFullTag(),item);
-                        let tempTag = new NestedTag();
-                        tempTag.copyTag(curNestedTag);
-                        parents.push(tempTag);
+                        noteContents.length = 0;
                     }
                 }
                 else{
@@ -75,14 +97,14 @@ export class NoteFileTree{
                 }
             }
             else if(!enterCodeBlock && line.trim().length > 0){
-                noteContent += addEof(line);
+                noteContents.push(line);
             }
             linenumber += 1;
         }
         for(let [_,children] of this.childrens){
             for(let child of children){
                 if(this.childrens.has(child.tag.getFullTag())){
-                    child.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+                    child.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
                 }
             }
         }
@@ -119,4 +141,83 @@ export class NoteFileTree{
         }
         return null;
     } 
+    static checkIsMatch():boolean{
+        let contentLines = this.note.getContentLines();
+        for(let block of this.noteFileContent){
+            if(!this.note.isMatch(-1,block.codeBelow,contentLines[block.codeLine - 1])){
+                return false;
+            }
+        }
+        return true;
+    }
+    static MoveLeft(codeLineNumber:number){
+        this.Move(codeLineNumber,true);
+    }
+    static MoveRight(codeLineNumber:number){
+        this.Move(codeLineNumber,false);
+    }
+    static Move(codeLineNumber:number,left:boolean){
+        logger.debug('Move start');
+        if(!this.checkIsMatch()){
+            vscode.window.showWarningMessage('src file is not matched, need to refresh first');
+        }
+        else{
+            let index = this.noteFileContent.findIndex(item => item.codeLine == codeLineNumber);
+            let block = this.noteFileContent[index];
+            let contentLines = this.getContentLines();
+            if((left && (block.outline == '' || block.outline.length >= 3)
+               || (!left && block.outline != ''))){
+                let satisfyOutLine = new Array<string>();
+                let tempOutline = '';
+                for(let j = index - 1;j <= (index +1); j++){
+                    if(j< 0 || j == index || j >= this.noteFileContent.length){
+                        continue;
+                    }
+                    if(this.noteFileContent[j].outline != ''){
+                        tempOutline = this.noteFileContent[j].outline;
+                        if((left && (block.outline == '' || block.outline.length > tempOutline.length))
+                           || (!left && (block.outline.length < tempOutline.length))){
+                            satisfyOutLine.push(tempOutline);
+                        }
+                    }
+                }
+
+                if(satisfyOutLine.length == 1){
+                    block.outline = satisfyOutLine[0];
+                }
+                else if(satisfyOutLine.length == 2){
+                    if((left && satisfyOutLine[0].length > satisfyOutLine[1].length)
+                       || (!left && satisfyOutLine[0].length < satisfyOutLine[1].length)){
+                        block.outline = satisfyOutLine[0];
+                    }
+                    else{
+                        block.outline = satisfyOutLine[1];
+                    }
+                }
+                else if(satisfyOutLine.length == 0){
+                    if(left && block.outline != ''){
+                        block.outline = block.outline.substring(0,block.outline.length - 1);
+                    }
+                    else if(!left){
+                        block.outline = '';
+                    }
+                }
+                if (left && block.outline == '') {
+                    block.outline = '###';
+                }
+                block.note = block.outline +' ' + block.note;
+                contentLines = [...contentLines.slice(0,block.changedLine),...splitIntoLines(block.note),...contentLines.slice(block.changedLine + block.noteLineCount)];
+                writeFile(Constants.sepNotesFilePath,addEof(contentLines.join('\n')));
+                let anno = getAnnoFromMd(null, block.changedLine, contentLines);
+                let linenumber = anno.linenumber;
+                if (linenumber >= 0) {
+                    this.note.syncSrcWithMd(anno.text, linenumber, MdType.sepNotes);
+                }
+            }
+        }
+        logger.debug('Move end');
+    }
+    static getContentLines(){
+        return splitIntoLines(decode(fs.readFileSync(Constants.sepNotesFilePath),'utf-8'));
+    }
 }
