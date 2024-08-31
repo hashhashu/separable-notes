@@ -29,6 +29,7 @@ export class NoteFileTree{
         let noteContents = new Array<string>();
         let normalTag = '##################';
         let linenumber = 0;
+        let noteLineNumber = 0;
         tagPos.set('',null);
         for (let line of contentLines) {
             // skip before file start
@@ -56,16 +57,17 @@ export class NoteFileTree{
                                 continue;
                             }
                             let outline = '';
+                            noteLineNumber = codeLineNumber + (noteStart - linenumber);
                             if (lineIdentity.isTagOutLine(noteContent)) {
                                 outline = NestedTag.getOutLine(noteContent);
-                                curNestedTag.update(outline + ' ' + codeLineNumber.toString());
+                                curNestedTag.update(outline + ' ' + noteLineNumber.toString());
                                 noteContent = cutOutLineMarker(noteContent);
                             }
                             else {
-                                curNestedTag.update(normalTag + ' ' + codeLineNumber.toString());
+                                curNestedTag.update(normalTag + ' ' + noteLineNumber.toString());
                             }
 
-                            this.noteFileContent.push(new NoteBlock(codeLineNumber,noteContent,noteLineCount,removeLineNumber(contentLines[linenumber + 1]),noteStart,outline));
+                            this.noteFileContent.push(new NoteBlock(noteLineNumber,noteContent,noteLineCount,removeLineNumber(contentLines[linenumber + 1]),noteStart,outline));
 
                             let i = parents.length - 1;
                             while (parents[i].getLevel() >= curNestedTag.getLevel()) {
@@ -77,7 +79,7 @@ export class NoteFileTree{
                                 this.childrens.set(parent, new Array<OutLineItem>());
                             }
                             let children = this.childrens.get(parent);
-                            item = new OutLineItem(vscode.TreeItemCollapsibleState.None, curNestedTag, OutLineItemType.TagAndCode, path, noteContent, codeLineNumber, tagPos.get(parents[i].getFullTag()));
+                            item = new OutLineItem(vscode.TreeItemCollapsibleState.None, curNestedTag, OutLineItemType.TagAndCode, path, noteContent, noteLineNumber, tagPos.get(parents[i].getFullTag()));
                             children.push(item);
                             tagPos.set(item.tag.getFullTag(), item);
                             let tempTag = new NestedTag();
@@ -122,7 +124,10 @@ export class NoteFileTree{
             let i = 0;
             let lastItem = children[0];
             while(i <= children.length){
-                if(i == children.length ||  Number(children[i].tag.getLastTag()) > pos){
+                if(i < children.length && children[i].line == pos){
+                    return children[i];
+                }
+                else if(i == children.length ||  children[i].line > pos){
                     if(this.childrens.has(lastItem.tag.getFullTag())){
                         children = this.childrens.get(lastItem.tag.getFullTag());
                         i = 0;
@@ -134,8 +139,8 @@ export class NoteFileTree{
                 }
                 else{
                     lastItem = children[i];
+                    i+=1;
                 }
-                i+=1;
             }
             return lastItem;
         }

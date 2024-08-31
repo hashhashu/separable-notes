@@ -788,7 +788,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 
             // tree view item show
             if(fileOutLineTreeView.visible){
-                let item = fileOutLineProvider.getItemByPos(curLine);
+                let item = fileOutLineProvider.getItemByPos(curLine + 1);
                 if (item) {
                     fileOutLineTreeView.reveal(item, { focus: false, select: true });
                 }
