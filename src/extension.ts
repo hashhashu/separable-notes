@@ -12,7 +12,7 @@ import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimi
 import * as fs from 'fs';
 import { NestedTag } from './core/tag';
 import { NotesCat } from './core/notesCat';
-import { FileOutLineProvider, OutLineItem, TagOutLineProvider } from './core/treeView';
+import { FileOutLineDragAndDrop, FileOutLineProvider, OutLineItem, TagOutLineProvider } from './core/treeView';
 import { NoteFileTree } from './core/noteFileTree';
 
 let configuration: Configuration;
@@ -30,6 +30,7 @@ let mdLineChangeCount = 0;
 let tagOutLineProvider:TagOutLineProvider;
 let fileOutLineProvider:FileOutLineProvider;
 let fileOutLineTreeView:vscode.TreeView<OutLineItem>;
+let fileOutLineDragAndDrop:FileOutLineDragAndDrop;
 
 export async function activate(extensionContext: ExtensionContext): Promise<boolean> {
     logger.info(
@@ -63,8 +64,10 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     NotesCat.load(extensionContext);
 
     fileOutLineProvider = new FileOutLineProvider();
+    fileOutLineDragAndDrop = new FileOutLineDragAndDrop();
     fileOutLineTreeView = vscode.window.createTreeView('fileOutLine', {
-        treeDataProvider: fileOutLineProvider, showCollapseAll: true, manageCheckboxStateManually:true
+        treeDataProvider: fileOutLineProvider, showCollapseAll: true, manageCheckboxStateManually:true,
+        dragAndDropController:fileOutLineDragAndDrop
     });
     vscode.commands.registerCommand(Commands.refreshSepNotes, () => {
         let activeEditor = vscode.window.activeTextEditor;
@@ -214,7 +217,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }
             updateState(textEditor,extensionContext);
             let path = textEditor.document.uri.fsPath;
-            if(Notes.has(path)){
+            if(Notes.has(path) && canAttachFile(path)){
                 NoteFileTree.refresh(Notes.get(path));
                 fileOutLineProvider.refresh();
             }
@@ -859,6 +862,14 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
            NoteFileTree.refresh(Notes.get(item.path));
            fileOutLineProvider.refresh(); 
         }));
+
+    extensionContext.subscriptions.push(
+// sepNotes ### #command/view/copytag
+        commands.registerCommand(Commands.copyTag, async (item: OutLineItem) => {
+            vscode.env.clipboard.writeText('#' + item.tag.getFullTag());
+            window.showInformationMessage(item.tag.getFullTag()+' copied');
+        }));
+
 
     extensionContext.subscriptions.push(
 // sepNotes ### #command/view/filtertag

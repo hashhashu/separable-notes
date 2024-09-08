@@ -2,7 +2,7 @@
   "name": "separable-notes",
   "displayName": "separable notes",
   "description": "Inline Code Note Management",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "engines": {
     "vscode": "^1.42.0"
   },
@@ -119,6 +119,11 @@
         "icon":"$(arrow-circle-down)"
       },
       {
+        "command": "separableNotes.copyTag",
+        "title": "copy tag",
+        "icon":"$(copy)"
+      },
+      {
         "command": "separableNotes.MoveLeft",
         "title": "left",
         "icon":"$(arrow-circle-left)"
@@ -203,6 +208,11 @@
          "command": "separableNotes.MoveDown",
          "when": "view == tagOutLine",
          "group": "inline" 
+        },
+        {
+          "command": "separableNotes.copyTag",
+          "group": "inline", 
+          "when": "view == tagOutLine"
         },
         {
          "command": "separableNotes.MoveLeft",

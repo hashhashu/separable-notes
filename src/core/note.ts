@@ -788,6 +788,9 @@ export class NoteFile{
         return true;
       }
     }
+    writeFile(content:string){
+      fs.writeFileSync(this.path, encode(content, this.configuration.encoding));
+    }
 }
 export class serializableNoteFile{
     path: string;
@@ -818,13 +821,15 @@ export class NoteBlock{
   codeBelow: string; //code below(for match)
   changedLine: number;
   outline: string;
-  constructor(codeLinep: number = -1, notep: string = '', noteLineCountp:number = 0, codeBelowp:string = '', changedline:number = 0, outlinep:string = ''){
+  noteLine: number;
+  constructor(codeLinep: number = -1, notep: string = '', noteLineCountp:number = 0, codeBelowp:string = '', changedline:number = 0, outlinep:string = '',notelinep:number = 0){
     this.codeLine = codeLinep;
     this.note = notep;
     this.noteLineCount = noteLineCountp;
     this.codeBelow = codeBelowp;
     this.changedLine = changedline;
     this.outline = outlinep;
+    this.noteLine = notelinep;
   }
   toJSON(): any {  
     return {  

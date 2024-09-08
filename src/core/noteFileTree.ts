@@ -1,6 +1,6 @@
 import { Constants, MdType, OutLineItemType } from "../constants/constants";
 import { logger } from "../logging/logger";
-import { addEof, cutOutLineMarker, decode, getAnnoFromMd, getLineNumber, removeLineNumber, splitIntoLines, writeFile } from "../utils/utils";
+import { addEof, cutOutLineMarker, decode, getAnnoFromMd, getLineNumber, removeLineNumber, splitIntoLines, writeFile, getPrefix } from "../utils/utils";
 import { LineIdentity } from "./LineIdentity";
 import { NoteBlock, NoteFile } from "./note";
 import { NestedTag } from "./tag";
@@ -67,7 +67,7 @@ export class NoteFileTree{
                                 curNestedTag.update(normalTag + ' ' + noteLineNumber.toString());
                             }
 
-                            this.noteFileContent.push(new NoteBlock(noteLineNumber,noteContent,noteLineCount,removeLineNumber(contentLines[linenumber + 1]),noteStart,outline));
+                            this.noteFileContent.push(new NoteBlock(codeLineNumber,noteContent,noteLineCount,removeLineNumber(contentLines[linenumber + 1]),noteStart,outline,noteLineNumber));
 
                             let i = parents.length - 1;
                             while (parents[i].getLevel() >= curNestedTag.getLevel()) {
@@ -155,19 +155,19 @@ export class NoteFileTree{
         }
         return true;
     }
-    static MoveLeft(codeLineNumber:number){
-        this.Move(codeLineNumber,true);
+    static MoveLeft(noteLineNumber:number){
+        this.Move(noteLineNumber,true);
     }
-    static MoveRight(codeLineNumber:number){
-        this.Move(codeLineNumber,false);
+    static MoveRight(noteLineNumber:number){
+        this.Move(noteLineNumber,false);
     }
-    static Move(codeLineNumber:number,left:boolean){
+    static Move(noteLineNumber:number,left:boolean){
         logger.debug('Move start');
         if(!this.checkIsMatch()){
             vscode.window.showWarningMessage('src file is not matched, need to refresh first');
         }
         else{
-            let index = this.noteFileContent.findIndex(item => item.codeLine == codeLineNumber);
+            let index = this.noteFileContent.findIndex(item => item.noteLine == noteLineNumber);
             let block = this.noteFileContent[index];
             let contentLines = this.getContentLines();
             if((left && (block.outline == '' || block.outline.length >= 3)
@@ -221,6 +221,53 @@ export class NoteFileTree{
             }
         }
         logger.debug('Move end');
+    }
+    static DrapAndDrop(destNoteLine:number,destOutline:string,noteLineNumbers:Array<number>){
+        logger.debug('DrapAndDrop start');
+        if(!this.checkIsMatch()){
+            vscode.window.showWarningMessage('src file is not matched, need to refresh first');
+        }
+        else if(!(destNoteLine in noteLineNumbers)){
+            let mdContentLines = this.getContentLines();
+            let newMdContentLines = [];
+            let srcContentLines = this.note.getContentLines();
+            let noteIndex = 0;
+            let lastMdIndex = 0;
+            noteLineNumbers.push(destNoteLine);
+            noteLineNumbers.sort((a,b)=> a - b);
+            if(destOutline == ''){
+                destOutline = '###';
+            }
+            let childOutline = destOutline + '#';
+            for(let noteLineNumber of noteLineNumbers){
+                logger.debug('notelinenumber:'+noteLineNumber.toString());
+                while(noteIndex < this.noteFileContent.length
+                      && this.noteFileContent[noteIndex].noteLine < noteLineNumber){
+                        noteIndex += 1;
+                }
+                let block = this.noteFileContent[noteIndex];
+                if(noteLineNumber == destNoteLine){
+                    block.outline = destOutline;
+                }
+                else{
+                    block.outline = childOutline;
+                }
+                block.note = block.outline +' ' + block.note;
+                let blockNote = splitIntoLines(block.note);
+                for(let i = 0;i<blockNote.length;i++){
+                    const prefix = getPrefix(srcContentLines[block.noteLine - 1 + i],this.note.configuration.noteId)
+                    srcContentLines[block.noteLine - 1 + i] = prefix + blockNote[i];
+                }
+                newMdContentLines = [...newMdContentLines,...mdContentLines.slice(lastMdIndex,block.changedLine),...blockNote];
+                lastMdIndex = block.changedLine + block.noteLineCount;
+            }
+            newMdContentLines = [...newMdContentLines, ...mdContentLines.slice(lastMdIndex)];
+            writeFile(Constants.sepNotesFilePath,newMdContentLines.join('\n'));
+            this.note.writeFile(srcContentLines.join('\n'));
+            this.note.refreshMdCat();
+            this.refresh(this.note);
+        }
+        logger.debug('DrapAndDrop end');
     }
     static getContentLines(){
         return splitIntoLines(decode(fs.readFileSync(Constants.sepNotesFilePath),'utf-8'));

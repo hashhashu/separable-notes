@@ -3,6 +3,7 @@ import { OutLineItemType } from "../constants/constants";
 import { NestedTag } from "./tag";
 import { NotesCat } from './notesCat';
 import { NoteFileTree } from './noteFileTree';
+import { logger } from '../logging/logger';
 
 export  class OutLineItem extends vscode.TreeItem{  
     tag: NestedTag = new NestedTag();
@@ -98,4 +99,28 @@ export class FileOutLineProvider implements vscode.TreeDataProvider<OutLineItem>
 	getParent(element: OutLineItem): vscode.ProviderResult<OutLineItem> {
 		return element.parent;
 	}
+}
+
+export class FileOutLineDragAndDrop implements vscode.TreeDragAndDropController<OutLineItem>{
+	dropMimeTypes = ['application/vnd.code.tree.fileOutLine'];
+	dragMimeTypes = [];
+	handleDrag?(source: readonly OutLineItem[], dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): Thenable<void> | void {
+		logger.debug('drag start');
+		let noteLineNumbers = [];
+		for(let item of source){
+			noteLineNumbers.push(item.line);
+		}
+		dataTransfer.set('application/vnd.code.tree.fileOutLine', new vscode.DataTransferItem(noteLineNumbers));
+	}
+	handleDrop?(target: OutLineItem, dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): Thenable<void> | void {
+		logger.debug('drop start:line'+target.line);
+		const transferItem = dataTransfer.get('application/vnd.code.tree.fileOutLine');
+		if (!transferItem) {
+			return;
+		}
+		const noteLineNumbers: number[] = transferItem.value;
+		NoteFileTree.DrapAndDrop(target.line,target.tag.getLastOutline(),noteLineNumbers);
+		
+	}
+
 }

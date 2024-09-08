@@ -138,6 +138,17 @@ export class NestedTag{
         return this.getFullTag().includes(keyword);
     }
 
+    getLastOutline():string{
+        if(this.recordOutLine && this.outlines.length > 0){
+            let outline = '';
+            for(let i = 0;i<this.outlines[this.outlines.length - 1];i++){
+                outline += '#';
+            }
+            return outline;
+        }
+        return '';
+    }
+
     static compareNestedTag(a:string, b:string, adjusted:boolean = true):number{
         let c = new NestedTag(a);
         return c.compareString(b,adjusted);
