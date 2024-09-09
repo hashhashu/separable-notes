@@ -132,6 +132,11 @@
         "command": "separableNotes.MoveRight",
         "title": "right",
         "icon":"$(arrow-circle-right)"
+      },
+      {
+        "command": "separableNotes.copyOutline",
+        "title": "copy outline",
+        "icon":"$(copy)"
       }
     ],
     "views": {
@@ -221,6 +226,11 @@
         },
         {
          "command": "separableNotes.MoveRight",
+         "when": "view == fileOutLine",
+         "group": "inline" 
+        },
+        {
+         "command": "separableNotes.copyOutline",
          "when": "view == fileOutLine",
          "group": "inline" 
         }

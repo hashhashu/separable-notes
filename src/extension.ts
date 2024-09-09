@@ -67,7 +67,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     fileOutLineDragAndDrop = new FileOutLineDragAndDrop();
     fileOutLineTreeView = vscode.window.createTreeView('fileOutLine', {
         treeDataProvider: fileOutLineProvider, showCollapseAll: true, manageCheckboxStateManually:true,
-        dragAndDropController:fileOutLineDragAndDrop
+        dragAndDropController:fileOutLineDragAndDrop, canSelectMany: true
     });
     vscode.commands.registerCommand(Commands.refreshSepNotes, () => {
         let activeEditor = vscode.window.activeTextEditor;
@@ -492,6 +492,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 // sepNotes ### sync markdown files  #command/global/syncmdwithall #command/menu/syncmdwithsrc
 		commands.registerCommand(Commands.syncMdWithSrc, async () => {
             logger.debug('syncMdWithSrc----------------------');
+            NotesCat.refresh();
             fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
             let contentMd = Constants.sepNotesFileHead + getMdUserRandomNote();
             let contentMdCat = Constants.sepNotesCatDesc;
@@ -541,6 +542,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }
             NotesCat.refresh();
             tagOutLineProvider.refresh();
+            activeEditor = vscode.window.activeTextEditor;
+            NoteFileTree.refresh(Notes.get(activeEditor.document.uri.fsPath));
+            fileOutLineProvider.refresh();
             updateMdStatus();
         }
 	));
@@ -870,6 +874,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             window.showInformationMessage(item.tag.getFullTag()+' copied');
         }));
 
+    extensionContext.subscriptions.push(
+// sepNotes ### #command/view/copyOutline
+        commands.registerCommand(Commands.copyOutline, async (item: OutLineItem) => {
+            vscode.env.clipboard.writeText(item.tag.getLastOutline());
+            window.showInformationMessage(item.tag.getLastOutline()+' copied');
+        }));
 
     extensionContext.subscriptions.push(
 // sepNotes ### #command/view/filtertag
@@ -982,4 +992,4 @@ function updateMdStatus(){
 }
 
 
-
+

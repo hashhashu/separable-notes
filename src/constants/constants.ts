@@ -70,6 +70,7 @@ export namespace Commands {
     export const MoveLeft = 'separableNotes.MoveLeft';
     export const MoveRight = 'separableNotes.MoveRight';
     export const copyTag = 'separableNotes.copyTag'; 
+    export const copyOutline = 'separableNotes.copyOutline'; 
 }
 export enum NoteMode{  Detached = 0,     Attached = 1}
 export enum MdType{ None = 0, sepNotes = 1, sepNotesCat = 2 }

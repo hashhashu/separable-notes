@@ -227,7 +227,7 @@ export class NoteFileTree{
         if(!this.checkIsMatch()){
             vscode.window.showWarningMessage('src file is not matched, need to refresh first');
         }
-        else if(!(destNoteLine in noteLineNumbers)){
+        else if(!(noteLineNumbers.includes(destNoteLine))){
             let mdContentLines = this.getContentLines();
             let newMdContentLines = [];
             let srcContentLines = this.note.getContentLines();
@@ -246,7 +246,7 @@ export class NoteFileTree{
                         noteIndex += 1;
                 }
                 let block = this.noteFileContent[noteIndex];
-                if(noteLineNumber == destNoteLine){
+                if(noteLineNumber == destNoteLine || block.outline == childOutline){
                     block.outline = destOutline;
                 }
                 else{
