@@ -986,10 +986,10 @@ function updateMdStatus(){
     status = status.replace('#Time',now.toLocaleDateString()+'  '+now.toLocaleTimeString());
     let lines = splitIntoLines(content);
     lines[1] = status;
-    content = lines.join('\n');
+    content = addEof(lines.join('\n'));
     logger.debug('updateMdStatus:'+status);
     writeFile(Constants.sepNotesFilePath,content);
 }
 
 
-
+

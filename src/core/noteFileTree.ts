@@ -262,8 +262,8 @@ export class NoteFileTree{
                 lastMdIndex = block.changedLine + block.noteLineCount;
             }
             newMdContentLines = [...newMdContentLines, ...mdContentLines.slice(lastMdIndex)];
-            writeFile(Constants.sepNotesFilePath,newMdContentLines.join('\n'));
-            this.note.writeFile(srcContentLines.join('\n'));
+            writeFile(Constants.sepNotesFilePath,addEof(newMdContentLines.join('\n')));
+            this.note.writeFile(addEof(srcContentLines.join('\n')));
             this.note.refreshMdCat();
             this.refresh(this.note);
         }
