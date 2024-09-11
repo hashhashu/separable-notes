@@ -74,7 +74,7 @@ export class NestedTag{
     }
 
     contain(tag:NestedTag):boolean{
-        return this.getFullTag().includes(tag.getFullTag());
+        return (this.getFullTag()+'/').includes(tag.getFullTag()+'/');
     }
 
     update(line:string){
