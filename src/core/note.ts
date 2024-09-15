@@ -6,7 +6,6 @@ import { Configuration } from "../configuration";
 import { logger } from "../logging/logger";
 import { NestedTag} from "./tag";
 import { LineIdentity } from "./LineIdentity";
-import { FileOutLineProvider} from "./treeView";
 import { NotesCat } from "./notesCat";
 import { NoteFileTree } from "./noteFileTree";
 
@@ -23,12 +22,10 @@ export class NoteFile{
     needRefresh: boolean;
     mdChangeType: MdType;
     lineIdentity: LineIdentity;
-    fileOutLineProvider: FileOutLineProvider;
-    constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,fileOutLineProvider:FileOutLineProvider,blocks:Array<NoteBlock> = new Array(),needrefresh:boolean = false){
+    constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,blocks:Array<NoteBlock> = new Array(),needrefresh:boolean = false){
       this.path = filePath;
       this.configuration = configuration;
       this.statusbaritem = statusbar;
-      this.fileOutLineProvider = fileOutLineProvider;
       this.noteMode = noteMode;
       this.blocks = blocks;
       this.respondCount = 0;
@@ -373,7 +370,6 @@ export class NoteFile{
           this.mdChangedLine.length = 0;
         }
         NoteFileTree.refresh(this);
-        this.fileOutLineProvider.refresh();
         logger.debug('refreshMd---end------------------');
       }
     }    

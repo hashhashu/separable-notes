@@ -11,6 +11,7 @@ export class NoteFileTree{
     static childrens: Map<string,Array<OutLineItem>> = new Map<string,Array<OutLineItem>>();
     static noteFileContent: Array<NoteBlock> = new Array<NoteBlock>();
     static note:NoteFile =  null;
+    static fileOutLineProvider;
     static refresh(notep:NoteFile){
         let path = notep.path;
         logger.debug('NoteFileTree refresh start path:'+path);
@@ -110,6 +111,7 @@ export class NoteFileTree{
                 }
             }
         }
+        this.fileOutLineProvider.refresh();
         logger.debug('NoteFileTree refresh end -------------------');
     }
     static getTreeViewRoot():Array<OutLineItem>{

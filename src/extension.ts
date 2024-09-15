@@ -73,12 +73,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         treeDataProvider: fileOutLineProvider, showCollapseAll: true, manageCheckboxStateManually:true,
         dragAndDropController:fileOutLineDragAndDrop, canSelectMany: true
     });
+    NoteFileTree.fileOutLineProvider = fileOutLineProvider;
     vscode.commands.registerCommand(Commands.refreshSepNotes, () => {
         let activeEditor = vscode.window.activeTextEditor;
         let path = activeEditor.document.uri.fsPath;
         if(Notes.has(path)){
             NoteFileTree.refresh(Notes.get(path));
-            fileOutLineProvider.refresh();
         }
     });
 
@@ -87,7 +87,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     serializedNotes = extensionContext.workspaceState.get(Constants.keyNotes)??new Array<serializableNoteFile>();
     for(let note of serializedNotes){
         if(fs.existsSync(note.path)){
-            Notes.set(note.path,new NoteFile(note.path,note.noteMode,configuration,statusBarItem,fileOutLineProvider,note.blocks,(note.needRefresh == null)?false:note.needRefresh));
+            Notes.set(note.path,new NoteFile(note.path,note.noteMode,configuration,statusBarItem,note.blocks,(note.needRefresh == null)?false:note.needRefresh));
         }
     }
     logger.info('workspace state restored');
@@ -223,7 +223,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             let path = textEditor.document.uri.fsPath;
             if(Notes.has(path) && canAttachFile(path)){
                 NoteFileTree.refresh(Notes.get(path));
-                fileOutLineProvider.refresh();
             }
         })
     );
@@ -286,7 +285,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 return;
             }
             if(!Notes.has(path)){
-                Notes.set(path,new NoteFile(path,NoteMode.Detached,configuration,statusBarItem,fileOutLineProvider));
+                Notes.set(path,new NoteFile(path,NoteMode.Detached,configuration,statusBarItem));
                 ++detachedFileNum;
             }
             if(!inAll && Notes.has(path) && !Notes.get(path).notFinished()){
@@ -547,7 +546,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             NotesCat.refresh();
             activeEditor = vscode.window.activeTextEditor;
             NoteFileTree.refresh(Notes.get(activeEditor.document.uri.fsPath));
-            fileOutLineProvider.refresh();
             updateMdStatus();
         }
 	));
@@ -667,7 +665,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 for(let line of contentLines){
                     if(Constants.glineIdentity.isFileStart(line)){
                         srcPath = getSrcFileFromLine(line);
-                        note = new NoteFile(srcPath,NoteMode.Detached,configuration,statusBarItem,fileOutLineProvider);
+                        note = new NoteFile(srcPath,NoteMode.Detached,configuration,statusBarItem);
                         Notes.set(srcPath,note);
                         fileStart = true;
                         inCode = false;
@@ -854,7 +852,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
            NoteFileTree.MoveLeft(item.line);
            updateStateNote(extensionContext);
            NoteFileTree.refresh(Notes.get(item.path));
-           fileOutLineProvider.refresh(); 
         }));
 
     extensionContext.subscriptions.push(
@@ -863,7 +860,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
            NoteFileTree.MoveRight(item.line);
            updateStateNote(extensionContext);
            NoteFileTree.refresh(Notes.get(item.path));
-           fileOutLineProvider.refresh(); 
         }));
 
     extensionContext.subscriptions.push(
@@ -908,7 +904,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             let path = activeEditor.document.uri.fsPath;
             if(Notes.has(path)){
                 NoteFileTree.refresh(Notes.get(path));
-                fileOutLineProvider.refresh();
             }
         }
     }
@@ -935,7 +930,7 @@ function updateStateWrap(textEditor:vscode.TextEditor,extensionContext: Extensio
         return;
     }
     if (!Notes.has(path)) {
-        Notes.set(path, new NoteFile(path, NoteMode.Detached, configuration, statusBarItem,fileOutLineProvider));
+        Notes.set(path, new NoteFile(path, NoteMode.Detached, configuration, statusBarItem));
         ++detachedFileNum;
     }
     Notes.get(path).setStatusBarItemText();
