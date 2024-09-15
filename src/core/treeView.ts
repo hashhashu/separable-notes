@@ -124,3 +124,23 @@ export class FileOutLineDragAndDrop implements vscode.TreeDragAndDropController<
 	}
 
 }
+
+export class TagOutLineDragAndDrop implements vscode.TreeDragAndDropController<OutLineItem>{
+	dropMimeTypes = ['application/vnd.code.tree.tagOutLine'];
+	dragMimeTypes = [];
+	handleDrag?(source: readonly OutLineItem[], dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): Thenable<void> | void {
+		logger.debug('drag start');
+		dataTransfer.set('application/vnd.code.tree.tagOutLine', new vscode.DataTransferItem(source[0].tag));
+	}
+	handleDrop?(target: OutLineItem, dataTransfer: vscode.DataTransfer, token: vscode.CancellationToken): Thenable<void> | void {
+		logger.debug('drop start:line'+target.line);
+		const transferItem = dataTransfer.get('application/vnd.code.tree.tagOutLine');
+		if (!transferItem) {
+			return;
+		}
+		const srcTag = transferItem.value;
+		NotesCat.DrapAndDrop(target.tag,srcTag);
+		
+	}
+
+}

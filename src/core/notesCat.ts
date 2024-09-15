@@ -13,6 +13,8 @@ export class NotesCat{
     static childrens: Map<string,Array<OutLineItem>> = new Map<string,Array<OutLineItem>>();
     static searchTag: string = '';
     static descs: Map<string, string> = new Map<string,string>();
+    static extensionContext;
+    static tagOutLineProvider;
     static refresh(searchTagp:string = ''){
       logger.debug('NotesCat refresh start');
       this.searchTag = searchTagp;
@@ -74,11 +76,13 @@ export class NotesCat{
           }
         }
       }
+      this.load();
+      this.tagOutLineProvider.refresh();
       logger.debug('NotesCat refresh end');
     }
-    static load(extensionContext){
+    static load(){
       logger.debug('load start');
-      let entries =  extensionContext.workspaceState.get(Constants.TagOrder);
+      let entries =  this.extensionContext.workspaceState.get(Constants.TagOrder);
       if(entries){
         this.tagOrder = new Map(entries.map(entry => [entry.key, entry.value]));
       }
@@ -96,13 +100,16 @@ export class NotesCat{
       }
       logger.debug('load end');
     }
-    static save(extensionContext){
+    static save(){
       let entries = Array.from(this.tagOrder.entries()).map(([key,value])=>({ key, value }));
-      extensionContext.workspaceState.update(Constants.TagOrder,entries);
+      this.extensionContext.workspaceState.update(Constants.TagOrder,entries);
     }
-    static getOrder(tag:NestedTag){
+    static getOrder(tag:NestedTag, start: number = -1){
       let order:Array<string> = new Array<string>();
-      for(let level = tag.getLevel();level>=1;level--){
+      if(start == -1){
+        start = tag.getLevel();
+      }
+      for(let level = start;level>=1;level--){
         let oriNestedTag = tag.getParentTag(level - 1);
         if(this.tagOrder.has(oriNestedTag)){
           order.push(this.tagOrder.get(oriNestedTag));
@@ -115,40 +122,39 @@ export class NotesCat{
       return order;
     }
     // tag2 --> tag1
-    static swapOrder(children:Array<OutLineItem>, index: number, tagLength:number){
-      logger.debug('swapOrder start');
-      let tag1 = children[index - 1].tag;
+    static swapOrder(children:Array<OutLineItem>, index1: number, tagLength1:number,index2:number, tagLength2: number){
+      logger.debug('swapOrder start: index1:'+ index1.toString()+' taglength1:'+tagLength1.toString()+" index2:"+index2.toString()) + ' length2:'+tagLength2.toString();
+      let tag1 = children[index1].tag;
       let sTag1 = tag1.getFullTag();
-      let tag2 = children[index].tag;
+      let tag2 = children[index2].tag;
       let sTag2 = tag2.getFullTag();
-      // swap order
-      let order1 = tag1.getLastTag();
-      if(this.tagOrder.has(sTag1)){
-        order1 = this.tagOrder.get(sTag1);
-      }
-      let order2 = tag2.getLastTag();
-      if(this.tagOrder.has(sTag2)){
-        order2 = this.tagOrder.get(sTag2);
-      }
-      this.tagOrder.set(sTag1,order2);
-      this.tagOrder.set(sTag2,order1);
       let pos1 = this.tagPos.get(sTag1);
       let pos2 = this.tagPos.get(sTag2);
-      // swap content
-      this.contentLines = [...this.contentLines.slice(0,pos1),...this.contentLines.slice(pos2,pos2+tagLength),
-                           ...this.contentLines.slice(pos1,pos2),...this.contentLines.slice(pos2+tagLength)];
-      writeFile(Constants.sepNotesCategoryFilePath,addEof(this.contentLines.join('\n')));
-      // swap children pos
-      [children[index - 1], children[index]] = [children[index], children[index - 1]];
-      // adjust tagpos
-      let curNestedTag = new NestedTag(sTag2);
-      for(let i = pos1;i < pos2 + tagLength; i++){
-        let line = this.contentLines[i];
-        if(Constants.glineIdentity.isTagOutLine(line)){
-          curNestedTag.update(line);
-          this.tagPos.set(curNestedTag.getFullTag(),i);
+      let order1 = this.getOrder(tag1,1)[0];
+      // move down
+      if(index1 > index2){
+        // swap order
+        for(let i = index1;i > index2; i--){
+          this.tagOrder.set(children[i].tag.getFullTag(),this.getOrder(children[i - 1].tag,1)[0]);
         }
+        // swap content
+        this.contentLines = [...this.contentLines.slice(0,pos2),...this.contentLines.slice(pos2+tagLength2,pos1+tagLength1),
+                           ...this.contentLines.slice(pos2,pos2+tagLength2), ...this.contentLines.slice(pos1+tagLength1)];
       }
+      // move up
+      else{
+        //swap order
+        for(let i = index1;i < index2; i++){
+          this.tagOrder.set(children[i].tag.getFullTag(),this.getOrder(children[i + 1].tag,1)[0]);
+        }
+        // swap content
+        this.contentLines = [...this.contentLines.slice(0,pos1),...this.contentLines.slice(pos2,pos2+tagLength2),
+                           ...this.contentLines.slice(pos1,pos2), ...this.contentLines.slice(pos2+tagLength2)];
+      }
+      this.tagOrder.set(tag2.getFullTag(),order1);
+      writeFile(Constants.sepNotesCategoryFilePath,addEof(this.contentLines.join('\n')));
+      this.save();
+      this.refresh();
       logger.debug('swapOrder end');
     }
     static refreshDesc(){
@@ -220,7 +226,7 @@ export class NotesCat{
         for (let line of contentLines) {
           if (Constants.glineIdentity.isTagOutLine(line)) {
             curNestedTag.update(line);
-            if (!curNestedTag.contain(parentTag)) {
+            if (!curNestedTag.startsWith(parentTag)) {
               break;
             }
             if (curNestedTag.getLevel() == (parentTag.getLevel() + 1)) {
@@ -266,23 +272,7 @@ export class NotesCat{
       let children = this.childrens.get(tag.getParentTag());
       let index = children.findIndex(item => item.tag.compareTag(tag,false) == 0);
       if(index > 0){
-        let nextNodePos = this.contentLines.length;
-        if(index < (children.length - 1)){
-          nextNodePos = this.tagPos.get(children[index + 1].tag.getFullTag());
-        }
-        else{
-          for(let i = 1;i<tag.getLevel();i++){
-            let curParent = tag.getParentTag(i);
-            let parents = this.childrens.get(tag.getParentTag(i+1));
-            let parentIndex = parents.findIndex(item => item.tag.compareString(curParent,false) == 0);
-            if(parentIndex < (parents.length - 1)){
-              nextNodePos = this.tagPos.get(parents[parentIndex + 1].tag.getFullTag());
-              break;
-            }
-          }
-        }
-        let tagLength = nextNodePos - this.tagPos.get(tag.getFullTag());
-        this.swapOrder(children,index,tagLength);
+        this.DrapAndDrop(children[index - 1].tag,tag);
       }
       logger.debug('moveUp end ');
     }
@@ -295,7 +285,40 @@ export class NotesCat{
       }
       logger.debug('moveDown end ');
     }
+    static DrapAndDrop(tag1:NestedTag,tag2:NestedTag){
+      logger.debug('DrapAndDrop start');
+      // adjust order
+      if(tag1.getFullTag()!=tag2.getFullTag() 
+         && tag1.getParentTag()==tag2.getParentTag()){
+        let children = this.childrens.get(tag1.getParentTag());
+        let index1 = children.findIndex(item => item.tag.compareTag(tag1,false) == 0);
+        let index2 = children.findIndex(item => item.tag.compareTag(tag2,false) == 0);
+        this.swapOrder(children,index1,this.getTagLength(tag1),index2,this.getTagLength(tag2));
+      }
+      logger.debug('DrapAndDrop end');
+    }
     static getContentLines():string[]{
       return splitIntoLines(fs.readFileSync(Constants.sepNotesCategoryFilePath).toString());
+    }
+    static getTagLength(tag:NestedTag):number{
+      let children = this.childrens.get(tag.getParentTag());
+      let index = children.findIndex(item => item.tag.compareTag(tag,false) == 0);
+      let nextNodePos = this.contentLines.length;
+      if (index < (children.length - 1)) {
+        nextNodePos = this.tagPos.get(children[index + 1].tag.getFullTag());
+      }
+      else {
+        for (let i = 1; i < tag.getLevel(); i++) {
+          let curParent = tag.getParentTag(i);
+          let parents = this.childrens.get(tag.getParentTag(i + 1));
+          let parentIndex = parents.findIndex(item => item.tag.compareString(curParent, false) == 0);
+          if (parentIndex < (parents.length - 1)) {
+            nextNodePos = this.tagPos.get(parents[parentIndex + 1].tag.getFullTag());
+            break;
+          }
+        }
+      }
+      let tagLength = nextNodePos - this.tagPos.get(tag.getFullTag());
+      return tagLength;
     }
 }

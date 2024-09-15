@@ -80,6 +80,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * add follow pos for outline view of `sepNotes.md`
 * add outline edit for view of `sepNotes.md`(move left/right)
 * outline for `sepNotes.md` can be adjusted by drag and drop
+* outline order for `sepNotes_category` can be adjusted by drag and drop
 
 #### 0.1.6
 * relative path is used instead of original absolute path to make it more portable

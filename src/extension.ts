@@ -12,7 +12,7 @@ import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimi
 import * as fs from 'fs';
 import { NestedTag } from './core/tag';
 import { NotesCat } from './core/notesCat';
-import { FileOutLineDragAndDrop, FileOutLineProvider, OutLineItem, TagOutLineProvider } from './core/treeView';
+import { FileOutLineDragAndDrop, FileOutLineProvider, OutLineItem, TagOutLineDragAndDrop, TagOutLineProvider } from './core/treeView';
 import { NoteFileTree } from './core/noteFileTree';
 
 let configuration: Configuration;
@@ -28,6 +28,7 @@ let ratelimiterSep:RateLimiter;
 let ratelimiterUpdate:RateLimiter;
 let mdLineChangeCount = 0;
 let tagOutLineProvider:TagOutLineProvider;
+let tagOutLineDragAndDrop:TagOutLineDragAndDrop;
 let fileOutLineProvider:FileOutLineProvider;
 let fileOutLineTreeView:vscode.TreeView<OutLineItem>;
 let fileOutLineDragAndDrop:FileOutLineDragAndDrop;
@@ -53,15 +54,18 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     statusBarItem.show();
 
     tagOutLineProvider = new TagOutLineProvider();
+    tagOutLineDragAndDrop = new TagOutLineDragAndDrop();
     vscode.window.createTreeView('tagOutLine', {
-        treeDataProvider: tagOutLineProvider, showCollapseAll: true, manageCheckboxStateManually:true
+        treeDataProvider: tagOutLineProvider, showCollapseAll: true, manageCheckboxStateManually:true,
+        dragAndDropController:tagOutLineDragAndDrop
     });
     vscode.commands.registerCommand(Commands.refresh, () => {
         NotesCat.refresh();
         tagOutLineProvider.refresh();
     });
+    NotesCat.extensionContext = extensionContext;
+    NotesCat.tagOutLineProvider = tagOutLineProvider;
     NotesCat.refresh();
-    NotesCat.load(extensionContext);
 
     fileOutLineProvider = new FileOutLineProvider();
     fileOutLineDragAndDrop = new FileOutLineDragAndDrop();
@@ -83,7 +87,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     serializedNotes = extensionContext.workspaceState.get(Constants.keyNotes)??new Array<serializableNoteFile>();
     for(let note of serializedNotes){
         if(fs.existsSync(note.path)){
-            Notes.set(note.path,new NoteFile(note.path,note.noteMode,configuration,statusBarItem,tagOutLineProvider,fileOutLineProvider,note.blocks,(note.needRefresh == null)?false:note.needRefresh));
+            Notes.set(note.path,new NoteFile(note.path,note.noteMode,configuration,statusBarItem,fileOutLineProvider,note.blocks,(note.needRefresh == null)?false:note.needRefresh));
         }
     }
     logger.info('workspace state restored');
@@ -282,7 +286,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 return;
             }
             if(!Notes.has(path)){
-                Notes.set(path,new NoteFile(path,NoteMode.Detached,configuration,statusBarItem,tagOutLineProvider,fileOutLineProvider));
+                Notes.set(path,new NoteFile(path,NoteMode.Detached,configuration,statusBarItem,fileOutLineProvider));
                 ++detachedFileNum;
             }
             if(!inAll && Notes.has(path) && !Notes.get(path).notFinished()){
@@ -541,7 +545,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 window.showInformationMessage('sync with file '+Constants.sepNotesFileName+','+ Constants.sepNotesCategoryFileName +' success');
             }
             NotesCat.refresh();
-            tagOutLineProvider.refresh();
             activeEditor = vscode.window.activeTextEditor;
             NoteFileTree.refresh(Notes.get(activeEditor.document.uri.fsPath));
             fileOutLineProvider.refresh();
@@ -664,7 +667,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 for(let line of contentLines){
                     if(Constants.glineIdentity.isFileStart(line)){
                         srcPath = getSrcFileFromLine(line);
-                        note = new NoteFile(srcPath,NoteMode.Detached,configuration,statusBarItem,tagOutLineProvider,fileOutLineProvider);
+                        note = new NoteFile(srcPath,NoteMode.Detached,configuration,statusBarItem,fileOutLineProvider);
                         Notes.set(srcPath,note);
                         fileStart = true;
                         inCode = false;
@@ -837,16 +840,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 // sepNotes ### #command/view/moveup
         commands.registerCommand(Commands.MoveUp, async (item: OutLineItem) => {
            NotesCat.moveUp(item.tag);
-           NotesCat.save(extensionContext); 
-           tagOutLineProvider.refresh();
         }));
 
     extensionContext.subscriptions.push(
 // sepNotes ### #command/view/movedown
         commands.registerCommand(Commands.MoveDown, async (item: OutLineItem) => {
            NotesCat.moveDown(item.tag);
-           NotesCat.save(extensionContext);
-           tagOutLineProvider.refresh(); 
         }));
 
     extensionContext.subscriptions.push(
@@ -889,7 +888,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 placeHolder: 'search keyword',
             });
             NotesCat.refresh(result);
-            tagOutLineProvider.refresh(); 
         }));
 
     function showAttachStatus(){
@@ -937,7 +935,7 @@ function updateStateWrap(textEditor:vscode.TextEditor,extensionContext: Extensio
         return;
     }
     if (!Notes.has(path)) {
-        Notes.set(path, new NoteFile(path, NoteMode.Detached, configuration, statusBarItem,tagOutLineProvider,fileOutLineProvider));
+        Notes.set(path, new NoteFile(path, NoteMode.Detached, configuration, statusBarItem,fileOutLineProvider));
         ++detachedFileNum;
     }
     Notes.get(path).setStatusBarItemText();

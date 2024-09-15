@@ -73,8 +73,8 @@ export class NestedTag{
         return this.getFullTag() == tag.getFullTag();
     }
 
-    contain(tag:NestedTag):boolean{
-        return (this.getFullTag()+'/').includes(tag.getFullTag()+'/');
+    startsWith(tag:NestedTag):boolean{
+        return (this.getFullTag()+'/').startsWith(tag.getFullTag()+'/');
     }
 
     update(line:string){
