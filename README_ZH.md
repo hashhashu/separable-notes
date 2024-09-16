@@ -81,6 +81,7 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * add outline edit for view of `sepNotes.md`(move left/right)
 * outline for `sepNotes.md` can be adjusted by drag and drop
 * outline order for `sepNotes_category` can be adjusted by drag and drop
+* optimize cursor response
 
 #### 0.1.6
 * relative path is used instead of original absolute path to make it more portable

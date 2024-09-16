@@ -1,14 +1,14 @@
 import {ExtensionContext,commands,workspace,window } from 'vscode';
 import * as vscode from 'vscode';
 import { logger } from "./logging/logger";
-import { Constants, MdType, NoteMode } from "./constants/constants";
+import { Constants, MdType, NoteMode, OutLineItemType } from "./constants/constants";
 import { getConfiguration, Configuration } from "./configuration";
 import { Activatable } from "./activatable";
 import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getMdPos, getLineNumberUp, getMdUserRandomNote, decode, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, getRelativePath} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberUp, getMdUserRandomNote, decode, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, getRelativePath, isSepNotesCatFile} from './utils/utils';
 import * as fs from 'fs';
 import { NestedTag } from './core/tag';
 import { NotesCat } from './core/notesCat';
@@ -32,6 +32,8 @@ let tagOutLineDragAndDrop:TagOutLineDragAndDrop;
 let fileOutLineProvider:FileOutLineProvider;
 let fileOutLineTreeView:vscode.TreeView<OutLineItem>;
 let fileOutLineDragAndDrop:FileOutLineDragAndDrop;
+let tagJumpPos:number = 0;
+let Jumped:boolean = false;
 
 export async function activate(extensionContext: ExtensionContext): Promise<boolean> {
     logger.info(
@@ -96,8 +98,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     ratelimiterSep = new RateLimiter(1,1000);
     ratelimiterUpdate = new RateLimiter(1,2000);
     
-// sepNotes ### sync markdown with source and vice versa #content_change
     extensionContext.subscriptions.push(
+// sepNotes ### sync markdown with source and vice versa #changeEvent/content
         workspace.onDidChangeTextDocument((event)=>{
             if (window.activeTextEditor && event.document === window.activeTextEditor.document) {
                 if(event.contentChanges.length > 0){
@@ -492,7 +494,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         vscode.languages.registerHoverProvider({ scheme: 'file'},{provideHover})
     );
 	extensionContext.subscriptions.push(
-// sepNotes ### sync markdown files  #command/global/syncmdwithall #command/menu/syncmdwithsrc
+// sepNotes ### sync markdown files  #command/global/syncmdwith
 		commands.registerCommand(Commands.syncMdWithSrc, async () => {
             logger.debug('syncMdWithSrc----------------------');
             NotesCat.refresh();
@@ -720,6 +722,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 	));
 
     extensionContext.subscriptions.push(
+// sepNotes ### #changeEvent/cursor
         window.onDidChangeTextEditorSelection((event)=>{
             if(!fs.existsSync(event.textEditor.document.uri.fsPath)){
                 return;
@@ -751,42 +754,35 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         vscode.window.showInformationMessage('cannot get src line');
                     }
                     else{
-                        let srcLineStart = srcLine;
-                        let srcLineEnd = srcLine;
-                        if (editorSrc.visibleRanges.length > 0) {
-                            let range = editorSrc.visibleRanges[0];
-                            let visLength = Math.floor((range.end.line - range.start.line) / 2);
-                            srcLineStart = srcLine - visLength;
-                            srcLineEnd = srcLine + visLength;
-                        }
-                        logger.debug('srcLine:' + srcLine.toString() + ' start:' + srcLineStart.toString() + ' end:' + srcLineEnd.toString());
-                        editorSrc.revealRange(new vscode.Range(srcLineStart, 0, srcLineEnd, 0));
+                        logger.debug('srcLine:' + srcLine.toString());
+                        editorSrc.revealRange(new vscode.Range(srcLine, 0, srcLine, 0),vscode.TextEditorRevealType.AtTop);
                     }
                 }
             }
             // src
             else{
                 editorSrc = activeEditor;
+                let path;
                 for(let editor of vscode.window.visibleTextEditors){
-                    if(editor.document.uri.fsPath.endsWith(Constants.sepNotesFileName)){
+                    path = editor.document.uri.fsPath; 
+                    if(isSepNotesFile(path) || (Jumped && isSepNotesCatFile(path))){
                         editorSepNotes = editor;
+                        Jumped = false;
                         break;
                     }
                 }
                 if(editorSepNotes){
-                    let path = editorSrc.document.uri.fsPath;
+                    path = editorSrc.document.uri.fsPath;
                     if (Notes.has(path)) {
-                        let mdLine = getMdPos(path, curLine);
-                        let mdLineStart = mdLine;
-                        let mdLineEnd = mdLine;
-                        if(editorSepNotes.visibleRanges.length > 0){
-                            let range = editorSepNotes.visibleRanges[0];
-                            let visLength  = Math.floor((range.end.line - range.start.line)/2);
-                            mdLineStart = mdLine - visLength;
-                            mdLineEnd = mdLine + visLength; 
+                        let mdLine;
+                        if(isSepNotesFile(editorSepNotes.document.uri.fsPath)){
+                            mdLine = NoteFileTree.getMdPos(curLine);
+                        } 
+                        else{
+                            mdLine = tagJumpPos;
                         }
-                        logger.debug('mdLine:'+mdLine.toString()+' start:'+mdLineStart.toString()+' end:'+mdLineEnd.toString());
-                        editorSepNotes.revealRange(new vscode.Range(mdLineStart, 0, mdLineEnd, 0));
+                        logger.debug('mdLine:'+mdLine.toString());
+                        editorSepNotes.revealRange(new vscode.Range(mdLine, 0, mdLine, 0),vscode.TextEditorRevealType.AtTop);
                     }
                     else if(!Notes.has(path) || !Notes.get(path).isAttached()){
                         vscode.window.showInformationMessage(getRelativePath(path)+' is not attached');
@@ -796,7 +792,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 
             // tree view item show
             if(fileOutLineTreeView.visible){
-                let item = fileOutLineProvider.getItemByPos(curLine + 1);
+                let item = fileOutLineProvider.getItemByPos(curLine);
                 if (item) {
                     fileOutLineTreeView.reveal(item, { focus: false, select: true });
                 }
@@ -821,6 +817,13 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                             line,
                             0
                         );
+                        if(item.itemType == OutLineItemType.codeBlock){
+                            if(NotesCat.tagPos.has(item.tag.getFullTag())){
+                                tagJumpPos = NotesCat.tagPos.get(item.tag.getFullTag());
+                            }
+                            Jumped = true;
+                            logger.debug('tagjumppos:'+tagJumpPos.toString());
+                        }
                         textEditor.selection = new vscode.Selection(range.start, range.start);
                         textEditor.revealRange(range,vscode.TextEditorRevealType.AtTop);
                     } catch (e) {

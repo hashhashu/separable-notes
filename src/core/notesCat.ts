@@ -249,6 +249,7 @@ export class NotesCat{
                 tmpOutLineItem.line = getLineNumber(line);
                 tmpOutLineItem.code = removeLineNumber(line).trimLeft();
                 tmpOutLineItem.label = tmpOutLineItem.code;
+                tmpOutLineItem.tag.copyTag(curNestedTag);
                 children.push(tmpOutLineItem);
                 tmpOutLineItem = new OutLineItem(vscode.TreeItemCollapsibleState.None);
                 isFirstCode = false;

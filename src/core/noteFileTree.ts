@@ -121,6 +121,7 @@ export class NoteFileTree{
         return this.childrens.get(parentTag.getFullTag());
     }
     static getItemByPos(pos:number):OutLineItem{
+        pos++;
         let children = this.childrens.get('');
         if(children.length > 0){
             let i = 0;
@@ -273,5 +274,18 @@ export class NoteFileTree{
     }
     static getContentLines(){
         return splitIntoLines(decode(fs.readFileSync(Constants.sepNotesFilePath),'utf-8'));
+    }
+    static getMdPos(srcPos:number){
+        let ret = 0;
+        let item = this.getItemByPos(srcPos);
+        if(item){
+            for(let noteblock of this.noteFileContent){
+                if(noteblock.noteLine == item.line){
+                    ret = noteblock.changedLine;
+                    break;
+                }
+            }
+        }
+        return ret;
     }
 }

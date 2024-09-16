@@ -359,39 +359,7 @@ export function canAttachFile(path:string):boolean{
   }
 }
 
-export function getMdPos(srcPath:string,srcPos:number){
-    let content = fs.readFileSync(Constants.sepNotesFilePath).toString();
-    let lines = splitIntoLines(content);
-    let lineIdentity = new LineIdentity(srcPath);
-    let inCode = false;
-    let fileStart = false;
-    let lineNumber = 0;
-    for(let line of lines){
-      if (!fileStart) {
-        if (lineIdentity.isCurFileStart(line)) {
-          fileStart = true;
-          inCode = false;
-        }
-      }
-      else if(!inCode){
-        if(lineIdentity.isCodeStart(line)){
-          inCode = true;
-        }
-      }
-      else {
-        if(lineIdentity.isCodeEnd(line)){
-          inCode = false;
-        }
-        else{
-          if((getLineNumber(line) >= srcPos) || lineIdentity.isFileStart(line)) {
-            break;
-          }
-        }
-      }
-      ++lineNumber;
-    }
-    return lineNumber;
-}
+
 
 export function getMdUserRandomNote():string{
     let content = fs.readFileSync(Constants.sepNotesFilePath).toString();
