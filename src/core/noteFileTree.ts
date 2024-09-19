@@ -242,27 +242,60 @@ export class NoteFileTree{
                 destOutline = '###';
             }
             let childOutline = destOutline + '#';
-            for(let noteLineNumber of noteLineNumbers){
-                logger.debug('notelinenumber:'+noteLineNumber.toString());
+            let linenumberIndex = 0;
+            let noteLineNumber;
+            let block:NoteBlock;
+            // tow pointer
+            while(linenumberIndex < noteLineNumbers.length){
                 while(noteIndex < this.noteFileContent.length
-                      && this.noteFileContent[noteIndex].noteLine < noteLineNumber){
+                      && this.noteFileContent[noteIndex].noteLine < noteLineNumbers[linenumberIndex]){
                         noteIndex += 1;
                 }
-                let block = this.noteFileContent[noteIndex];
+                if(noteIndex >= this.noteFileContent.length){
+                    break;
+                }
+                block = this.noteFileContent[noteIndex];
+                while(linenumberIndex < noteLineNumbers.length
+                      && block.noteLine > noteLineNumbers[linenumberIndex]){
+                    linenumberIndex += 1;
+                }
+                if(linenumberIndex >= noteLineNumbers.length){
+                    break;
+                }
+                noteLineNumber = noteLineNumbers[linenumberIndex];
+                logger.debug('notelinenumber:'+noteLineNumber.toString());
+
+                let befOutLine = block.outline;
+                let afterOutline = childOutline;
                 if(noteLineNumber == destNoteLine || block.outline == childOutline){
-                    block.outline = destOutline;
+                    afterOutline = destOutline;
                 }
-                else{
-                    block.outline = childOutline;
+                block.outline = afterOutline;
+                while(true){
+                    block.note = block.outline +' ' + block.note;
+                    let blockNote = splitIntoLines(block.note);
+                    for(let i = 0;i<blockNote.length;i++){
+                        const prefix = getPrefix(srcContentLines[block.noteLine - 1 + i],this.note.configuration.noteId)
+                        srcContentLines[block.noteLine - 1 + i] = prefix + blockNote[i];
+                    }
+                    newMdContentLines = [...newMdContentLines,...mdContentLines.slice(lastMdIndex,block.changedLine),...blockNote];
+                    lastMdIndex = block.changedLine + block.noteLineCount;
+                    noteIndex += 1;
+                    if(noteLineNumber != destNoteLine 
+                       && noteIndex < this.noteFileContent.length 
+                       && (this.noteFileContent[noteIndex].outline > befOutLine
+                           || (befOutLine != '' && this.noteFileContent[noteIndex].outline == '') )){
+                        block = this.noteFileContent[noteIndex];
+                        if(block.outline == ''){
+                            block.outline = befOutLine + '#';
+                        }
+                        block.outline = afterOutline + ("#").repeat(block.outline.length - befOutLine.length);
+                    }
+                    else{
+                        break;
+                    }
                 }
-                block.note = block.outline +' ' + block.note;
-                let blockNote = splitIntoLines(block.note);
-                for(let i = 0;i<blockNote.length;i++){
-                    const prefix = getPrefix(srcContentLines[block.noteLine - 1 + i],this.note.configuration.noteId)
-                    srcContentLines[block.noteLine - 1 + i] = prefix + blockNote[i];
-                }
-                newMdContentLines = [...newMdContentLines,...mdContentLines.slice(lastMdIndex,block.changedLine),...blockNote];
-                lastMdIndex = block.changedLine + block.noteLineCount;
+                linenumberIndex += 1;
             }
             newMdContentLines = [...newMdContentLines, ...mdContentLines.slice(lastMdIndex)];
             writeFile(Constants.sepNotesFilePath,addEof(newMdContentLines.join('\n')));

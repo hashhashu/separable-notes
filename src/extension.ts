@@ -858,7 +858,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }));
 
     extensionContext.subscriptions.push(
-// sepNotes ### #command/view/moveleft
+// sepNotes ### #command/view/moveRight
         commands.registerCommand(Commands.MoveRight, async (item: OutLineItem) => {
            NoteFileTree.MoveRight(item.line);
            updateStateNote(extensionContext);

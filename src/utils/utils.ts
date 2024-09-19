@@ -5,7 +5,6 @@ import * as vscode from 'vscode';
 import path from "path";
 import { Constants } from '../constants/constants';
 import * as fs from 'fs'; 
-import { LineIdentity } from '../core/LineIdentity';
 import { NestedTag } from '../core/tag';
 
 export function randomString(length: number, extended: boolean = false) {
