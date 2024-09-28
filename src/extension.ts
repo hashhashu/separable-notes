@@ -852,7 +852,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     extensionContext.subscriptions.push(
 // sepNotes ### #command/view/moveleft
         commands.registerCommand(Commands.MoveLeft, async (item: OutLineItem) => {
-           NoteFileTree.MoveLeft(item.line);
+           NoteFileTree.MoveLeft(item);
            updateStateNote(extensionContext);
            NoteFileTree.refresh(Notes.get(item.path));
         }));
@@ -860,7 +860,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     extensionContext.subscriptions.push(
 // sepNotes ### #command/view/moveRight
         commands.registerCommand(Commands.MoveRight, async (item: OutLineItem) => {
-           NoteFileTree.MoveRight(item.line);
+           NoteFileTree.MoveRight(item);
            updateStateNote(extensionContext);
            NoteFileTree.refresh(Notes.get(item.path));
         }));

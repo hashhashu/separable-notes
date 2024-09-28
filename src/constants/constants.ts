@@ -47,6 +47,8 @@ export namespace Constants {
     export const TagOrder = 'separableNotes.tagOrder';
 
     export const glineIdentity = new LineIdentity();
+
+    export const normalTag = '##################';
 }
 
 export namespace Commands {

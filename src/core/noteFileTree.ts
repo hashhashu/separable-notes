@@ -28,7 +28,6 @@ export class NoteFileTree{
         let lineIdentity = new LineIdentity(path);
         let curNestedTag = new NestedTag('',true);
         let noteContents = new Array<string>();
-        let normalTag = '##################';
         let linenumber = 0;
         let noteLineNumber = 0;
         tagPos.set('',null);
@@ -65,7 +64,7 @@ export class NoteFileTree{
                                 noteContent = cutOutLineMarker(noteContent);
                             }
                             else {
-                                curNestedTag.update(normalTag + ' ' + noteLineNumber.toString());
+                                curNestedTag.update(Constants.normalTag + ' ' + noteLineNumber.toString());
                             }
 
                             this.noteFileContent.push(new NoteBlock(codeLineNumber,noteContent,noteLineCount,removeLineNumber(contentLines[linenumber + 1]),noteStart,outline,noteLineNumber));
@@ -158,13 +157,24 @@ export class NoteFileTree{
         }
         return true;
     }
-    static MoveLeft(noteLineNumber:number){
-        this.Move(noteLineNumber,true);
+    static MoveLeft(item:OutLineItem){
+        let destOutline = '###';
+        if(item.parent){
+            destOutline = item.parent.tag.getLastOutline();
+        }
+        this.Move(item.line,true,destOutline);
     }
-    static MoveRight(noteLineNumber:number){
-        this.Move(noteLineNumber,false);
+    static MoveRight(item:OutLineItem){
+        let destOutline = '';
+        if(this.childrens.has(item.tag.getFullTag())){
+            destOutline = this.childrens.get(item.tag.getFullTag())[0].tag.getLastOutline();
+            if(destOutline == Constants.normalTag){
+                destOutline = '';
+            }
+        }
+        this.Move(item.line,false,destOutline);
     }
-    static Move(noteLineNumber:number,left:boolean){
+    static Move(noteLineNumber:number,left:boolean,destOutline:string){
         logger.debug('Move start');
         if(!this.checkIsMatch()){
             vscode.window.showWarningMessage('src file is not matched, need to refresh first');
@@ -175,44 +185,7 @@ export class NoteFileTree{
             let contentLines = this.getContentLines();
             if((left && (block.outline == '' || block.outline.length >= 3)
                || (!left && block.outline != ''))){
-                let satisfyOutLine = new Array<string>();
-                let tempOutline = '';
-                for(let j = index - 1;j <= (index +1); j++){
-                    if(j< 0 || j == index || j >= this.noteFileContent.length){
-                        continue;
-                    }
-                    if(this.noteFileContent[j].outline != ''){
-                        tempOutline = this.noteFileContent[j].outline;
-                        if((left && (block.outline == '' || block.outline.length > tempOutline.length))
-                           || (!left && (block.outline.length < tempOutline.length))){
-                            satisfyOutLine.push(tempOutline);
-                        }
-                    }
-                }
-
-                if(satisfyOutLine.length == 1){
-                    block.outline = satisfyOutLine[0];
-                }
-                else if(satisfyOutLine.length == 2){
-                    if((left && satisfyOutLine[0].length > satisfyOutLine[1].length)
-                       || (!left && satisfyOutLine[0].length < satisfyOutLine[1].length)){
-                        block.outline = satisfyOutLine[0];
-                    }
-                    else{
-                        block.outline = satisfyOutLine[1];
-                    }
-                }
-                else if(satisfyOutLine.length == 0){
-                    if(left && block.outline != ''){
-                        block.outline = block.outline.substring(0,block.outline.length - 1);
-                    }
-                    else if(!left){
-                        block.outline = '';
-                    }
-                }
-                if (left && block.outline == '') {
-                    block.outline = '###';
-                }
+                block.outline = destOutline;
                 block.note = block.outline +' ' + block.note;
                 contentLines = [...contentLines.slice(0,block.changedLine),...splitIntoLines(block.note),...contentLines.slice(block.changedLine + block.noteLineCount)];
                 writeFile(Constants.sepNotesFilePath,addEof(contentLines.join('\n')));
@@ -238,9 +211,6 @@ export class NoteFileTree{
             let lastMdIndex = 0;
             noteLineNumbers.push(destNoteLine);
             noteLineNumbers.sort((a,b)=> a - b);
-            if(destOutline == ''){
-                destOutline = '###';
-            }
             let childOutline = destOutline + '#';
             let linenumberIndex = 0;
             let noteLineNumber;
@@ -283,9 +253,11 @@ export class NoteFileTree{
                     noteIndex += 1;
                     if(noteLineNumber != destNoteLine 
                        && noteIndex < this.noteFileContent.length 
-                       && (this.noteFileContent[noteIndex].outline > befOutLine
-                           || (befOutLine != '' && this.noteFileContent[noteIndex].outline == '') )){
+                       && ((this.noteFileContent[noteIndex].outline == '') 
+                           ||(this.noteFileContent[noteIndex].outline > befOutLine 
+                              && befOutLine != '') )){
                         block = this.noteFileContent[noteIndex];
+                        logger.debug('destoutline:'+destOutline+'befouline:'+befOutLine+' outline:'+block.outline+' note:'+block.note);
                         if(block.outline == ''){
                             block.outline = befOutLine + '#';
                         }

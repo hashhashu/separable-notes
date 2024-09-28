@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { OutLineItemType } from "../constants/constants";
+import { Constants, OutLineItemType } from "../constants/constants";
 import { NestedTag } from "./tag";
 import { NotesCat } from './notesCat';
 import { NoteFileTree } from './noteFileTree';
@@ -119,7 +119,14 @@ export class FileOutLineDragAndDrop implements vscode.TreeDragAndDropController<
 			return;
 		}
 		const noteLineNumbers: number[] = transferItem.value;
-		NoteFileTree.DrapAndDrop(target.line,target.tag.getLastOutline(),noteLineNumbers);
+		let destOutline = '###';
+		if(target.tag.getLastOutline() != Constants.normalTag){
+			destOutline = target.tag.getLastOutline();
+		}
+		else if(target.parent){
+			destOutline = target.parent.tag.getLastOutline()+'#';
+		}
+		NoteFileTree.DrapAndDrop(target.line,destOutline,noteLineNumbers);
 		
 	}
 

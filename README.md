@@ -144,33 +144,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 
 
 ### TODO
-* [x] adjust note pos
-* [x] reorganize note in category
-* [x] import notes into workspace
 * support block level note(such as /* */)
-* record note history
-* [x] order note
-* keyword can be defined
-* note block like jupyter notebook
-* [x] log time microsecond about every step
-* [x] support describe category in `sepNotes_category.md`
-* support auto lable order in `sepNotes_category.md`
-* optimize refresh mechanism 
-* [x] netsted tags like other notes app(such as obsidian)
-* syncpos optimize(行数对应，不一定要在中间，有一个明显的渲染指示)
-* syncpos 增加双击响应事件
-* [x] when refresh should check if it's newest
-* 在独立的文件中定义顺序
-* auto complete for nested tags
-* 优化sepnotes里的编辑体验
-* sepnotes 加入刷新按钮 或者 快捷命令
-* [x] tag identify optimize
-* [x] use relative path
-
-* [x] Sidebar Fixed Navigation
-
-* 加入按钮(查找,折叠,刷新)
-
 
 
 Please star :star: it if you like it, Thanks.
