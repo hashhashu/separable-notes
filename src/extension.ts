@@ -26,6 +26,7 @@ let inAll = false;
 let ratelimiter:RateLimiter;
 let ratelimiterSep:RateLimiter;
 let ratelimiterUpdate:RateLimiter;
+let ratelimiterChangeSelection:RateLimiter;
 let mdLineChangeCount = 0;
 let tagOutLineProvider:TagOutLineProvider;
 let tagOutLineDragAndDrop:TagOutLineDragAndDrop;
@@ -92,6 +93,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     ratelimiter = new RateLimiter(1,1000);
     ratelimiterSep = new RateLimiter(1,1000);
     ratelimiterUpdate = new RateLimiter(1,2000);
+    ratelimiterChangeSelection = new RateLimiter(1,1000);
     
     extensionContext.subscriptions.push(
 // sepNotes ### sync markdown with source and vice versa #changeEvent/content
@@ -719,6 +721,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     extensionContext.subscriptions.push(
 // sepNotes ### #changeEvent/cursor
         window.onDidChangeTextEditorSelection((event)=>{
+            if(!ratelimiterChangeSelection.isAllowed()){
+                return;
+            }
             if(!fs.existsSync(event.textEditor.document.uri.fsPath)){
                 return;
             }
@@ -763,7 +768,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     path = editor.document.uri.fsPath; 
                     if(isSepNotesFile(path) || (Jumped && isSepNotesCatFile(path))){
                         editorSepNotes = editor;
-                        Jumped = false;
                         break;
                     }
                 }
@@ -787,12 +791,14 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }
 
             // tree view item show
-            if(fileOutLineTreeView.visible){
+            if(fileOutLineTreeView.visible && !Jumped){
                 let item = fileOutLineProvider.getItemByPos(curLine);
                 if (item) {
                     fileOutLineTreeView.reveal(item, { focus: false, select: true });
                 }
             }
+
+            Jumped = false;
             logger.debug('onDidChangeTextEditorSelection end');
         }));
 
