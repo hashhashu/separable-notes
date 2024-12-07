@@ -73,6 +73,7 @@ export namespace Commands {
     export const MoveRight = 'separableNotes.MoveRight';
     export const copyTag = 'separableNotes.copyTag'; 
     export const copyOutline = 'separableNotes.copyOutline'; 
+    export const rename = 'separableNotes.rename'; 
 }
 export enum NoteMode{  Detached = 0,     Attached = 1}
 export enum MdType{ None = 0, sepNotes = 1, sepNotesCat = 2 }

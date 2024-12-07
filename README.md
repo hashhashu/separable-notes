@@ -74,6 +74,11 @@ if you change this, you should also change the configuration for todo-tree or ot
 ```
 
 ### ChangeLog
+#### 0.1.8
+* tag can be renamed in sidebar of `sepNotes_category`
+* button refresh will call `syncMdWithSrc` first and this command is removed from menu
+
+
 #### 0.1.7
 * add outline view for `sepNotes.md` in sidebar explore view
 * command `separableNotes.syncPos` is abandon and cursor response is added instead

@@ -33,6 +33,7 @@ export  class OutLineItem extends vscode.TreeItem{
                 "command": "separableNotes.jumpToNoteLine",
                 "arguments": [this]
             }
+			this.tooltip = label + '  line:' + linep.toString();
         }
         else{
             this.tooltip = NotesCat.getTagDesc(tagp);

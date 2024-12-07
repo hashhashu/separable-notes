@@ -117,9 +117,11 @@ export class NoteFileTree{
         return this.childrens.get('');
     }
     static getChildren(parentTag:NestedTag):Array<OutLineItem>{
+        logger.debug('parent:'+parentTag.getFullTag()+' length:'+this.childrens.get(parentTag.getFullTag()).length.toString());
         return this.childrens.get(parentTag.getFullTag());
     }
     static getItemByPos(pos:number):OutLineItem{
+        logger.debug('getItemByPos start');
         pos++;
         let children = this.childrens.get('');
         if(children.length > 0){

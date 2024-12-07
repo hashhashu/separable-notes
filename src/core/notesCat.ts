@@ -322,4 +322,86 @@ export class NotesCat{
       let tagLength = nextNodePos - this.tagPos.get(tag.getFullTag());
       return tagLength;
     }
+    static rename(tag:NestedTag,newLabel:string):Map<string,NotesSrcChanged>{
+      logger.debug('rename start old:'+tag.getFullTag()+' newlabel:'+newLabel);
+      let tagStart = this.tagPos.get(tag.getFullTag());
+      let contentLines = this.contentLines;
+      let curNestedTag = new NestedTag();
+      curNestedTag.copyTag(tag);
+      let line:string;
+      let enterCodeBlock = false;
+      let path = '';
+      let count = 0;
+      let srcChanges = new Map<string,NotesSrcChanged>();
+      for(let i = tagStart + 1;i<contentLines.length; i++){
+        line = contentLines[i];
+        if(Constants.glineIdentity.isTagOutLine(line)){
+          curNestedTag.update(line);
+          if(curNestedTag.getLevel() <= tag.getLevel())
+          {
+            break;
+          }
+        }
+        else if(Constants.glineIdentity.isFileStart(line)){
+          path = getSrcFileFromLine(line);
+          if(!srcChanges.has(path)){
+            srcChanges.set(path,new NotesSrcChanged(path,tag.getFullTag(),newLabel));
+            logger.debug('src path added:'+path);
+          }
+          enterCodeBlock = false;
+          count = 0;
+        }
+        else if(Constants.glineIdentity.isCodeStart(line)){
+          enterCodeBlock = !enterCodeBlock;
+        }
+        else if(enterCodeBlock){
+          if(count > 0){
+            let offset = getLineNumber(line) - i + 1;
+            srcChanges.get(path).updateLine(count,offset);
+            count = 0;
+          }
+        }
+        else{
+          srcChanges.get(path).add(i);
+          count += 1;
+        } 
+      }
+      if(this.tagOrder.has(tag.getFullTag())){
+        this.tagOrder.set(newLabel,this.tagOrder.get(tag.getFullTag()));
+        this.save();
+      }
+      logger.debug('rename end');
+      return srcChanges;
+    }
+}
+
+export class NotesSrcChanged{
+  path:string;
+  oriTag:string;
+  newTag:string;
+  linenumbers:Array<number> = new Array<number>(); 
+  constructor(pathp:string,oriTagp:string,newTagp:string){
+    this.path = pathp;
+    this.oriTag = '#'+oriTagp;
+    this.newTag = '#'+newTagp;
+  }
+  add(linenumber:number){
+    this.linenumbers.push(linenumber);
+  }
+  updateLine(count:number,offset:number){
+    logger.debug('offset:'+offset.toString());
+    let length = this.linenumbers.length;
+    for(let i = 0;i<count;i++){
+      logger.debug('ori:'+this.linenumbers[length - i - 1].toString());
+      this.linenumbers[length - i - 1] += offset;
+    }
+  }
+  getContent(contentLinesp:Array<String>):string{
+    for(let i = 0;i<this.linenumbers.length;i++){
+      let regex = new RegExp(this.oriTag,'g');
+      contentLinesp[this.linenumbers[i] - 1] = contentLinesp[this.linenumbers[i] - 1].replace(regex,this.newTag);
+      logger.debug('number:'+this.linenumbers[i].toString() + '  src:'+contentLinesp[this.linenumbers[i] - 1]);
+    }
+    return contentLinesp.join('\n');
+  }
 }

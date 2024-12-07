@@ -62,8 +62,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         dragAndDropController:tagOutLineDragAndDrop
     });
     vscode.commands.registerCommand(Commands.refresh, () => {
-        NotesCat.refresh();
-        tagOutLineProvider.refresh();
+        vscode.commands.executeCommand(Commands.syncMdWithSrc);
     });
     NotesCat.extensionContext = extensionContext;
     NotesCat.tagOutLineProvider = tagOutLineProvider;
@@ -77,11 +76,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     });
     NoteFileTree.fileOutLineProvider = fileOutLineProvider;
     vscode.commands.registerCommand(Commands.refreshSepNotes, () => {
-        let activeEditor = vscode.window.activeTextEditor;
-        let path = activeEditor.document.uri.fsPath;
-        if(Notes.has(path)){
-            NoteFileTree.refresh(Notes.get(path));
-        }
+       vscode.commands.executeCommand(Commands.syncMdWithSrc); 
     });
 
     let activeEditor = vscode.window.activeTextEditor;
@@ -733,6 +728,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             if(!activeEditor){
                 return;
             }
+            logger.debug('onDidChangeTextEditorSelection start');
             let editorSepNotes:vscode.TextEditor = null;
             let editorSrc:vscode.TextEditor = null;
             // markdown
@@ -797,6 +793,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     fileOutLineTreeView.reveal(item, { focus: false, select: true });
                 }
             }
+            logger.debug('onDidChangeTextEditorSelection end');
         }));
 
     extensionContext.subscriptions.push(
@@ -887,6 +884,33 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 placeHolder: 'search keyword',
             });
             NotesCat.refresh(result);
+        }));
+
+    extensionContext.subscriptions.push(
+// sepNotes ### #command/view/rename
+        commands.registerCommand(Commands.rename, async (item: OutLineItem) => {
+            commands.executeCommand(Commands.syncMdWithSrc);
+            if(isAllAttached()){
+                const newLabel = await window.showInputBox({
+                    value: item.tag.getLastTag(),
+                    placeHolder: 'new name',
+                });
+                if(newLabel && newLabel.length > 0){
+                    let newTag:string;
+                    newTag = item.tag.getParentTag();
+                    if(newTag.length > 0){
+                        newTag += '/';
+                    }
+                    newTag += newLabel;
+                    let srcChanges = NotesCat.rename(item.tag,newTag);
+                    for(let srcchange of srcChanges.values()){
+                        let note = Notes.get(srcchange.path);
+                        note.writeFile(srcchange.getContent(note.getContentLines()));
+                        logger.debug('write path:'+note.path);
+                    }
+                    commands.executeCommand(Commands.syncMdWithSrc);
+                }
+            }
         }));
 
     function showAttachStatus(){
@@ -987,5 +1011,13 @@ function updateMdStatus(){
     writeFile(Constants.sepNotesFilePath,content);
 }
 
+function isAllAttached():boolean{
+    for(let [_,note] of Notes){
+        if((!note.isAttached()) && note.blocks.length > 0){
+            return false;
+        }
+    }
+    return true;
+}
 
 
