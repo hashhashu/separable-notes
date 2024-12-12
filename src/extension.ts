@@ -734,6 +734,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 return;
             }
             logger.debug('onDidChangeTextEditorSelection start');
+            if(Jumped){
+                logger.debug('jumped');
+            }
             let editorSepNotes:vscode.TextEditor = null;
             let editorSrc:vscode.TextEditor = null;
             // markdown
@@ -914,7 +917,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         note.writeFile(srcchange.getContent(note.getContentLines()));
                         logger.debug('write path:'+note.path);
                     }
-                    commands.executeCommand(Commands.syncMdWithSrc);
+                    setTimeout(()=>{
+                        commands.executeCommand(Commands.syncMdWithSrc);
+                    },500);
                 }
             }
         }));
