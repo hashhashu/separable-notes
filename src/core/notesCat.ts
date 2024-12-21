@@ -213,7 +213,10 @@ export class NotesCat{
     static getChildren(parentTag:NestedTag):Array<OutLineItem>{
       logger.debug('getChildren start parent:'+ parentTag.getFullTag());
       let children:Array<OutLineItem>;
-      if(!this.childrens.get(parentTag.getFullTag())){
+      if(this.childrens.has(parentTag.getFullTag())){
+        children = this.childrens.get(parentTag.getFullTag());
+      }
+      else if(this.tagPos.has(parentTag.getFullTag())){
         let startpos = this.tagPos.get(parentTag.getFullTag());
         logger.debug('startpos:'+startpos.toString());
         let contentLines = this.contentLines.slice(startpos);
@@ -261,9 +264,6 @@ export class NotesCat{
           }
         }
         this.childrens.set(parentTag.getFullTag(),children);
-      }
-      else{
-        children = this.childrens.get(parentTag.getFullTag());
       }
       logger.debug('getChildren end');
       return children;

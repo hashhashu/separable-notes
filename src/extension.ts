@@ -898,13 +898,14 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     extensionContext.subscriptions.push(
 // sepNotes ### #command/view/rename
         commands.registerCommand(Commands.rename, async (item: OutLineItem) => {
-            commands.executeCommand(Commands.syncMdWithSrc);
+
             if(isAllAttached()){
                 const newLabel = await window.showInputBox({
                     value: item.tag.getLastTag(),
                     placeHolder: 'new name',
                 });
                 if(newLabel && newLabel.length > 0){
+                    commands.executeCommand(Commands.syncMdWithSrc);
                     let newTag:string;
                     newTag = item.tag.getParentTag();
                     if(newTag.length > 0){
@@ -921,6 +922,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         commands.executeCommand(Commands.syncMdWithSrc);
                     },500);
                 }
+            }
+            else{
+               window.showWarningMessage('src file is not matched, need to refresh first'); 
             }
         }));
 
