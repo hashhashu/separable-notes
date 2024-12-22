@@ -77,6 +77,7 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * tag can be renamed in sidebar of `sepNotes_category`
 * button refresh will call `syncMdWithSrc` first and this command is removed from menu
 * fix bug about `sepnotes` show duplicate content in the sidebar when click on the `sepNotes_category`
+* improve user experience of tag search 
 
 #### 0.1.7
 * add outline view for `sepNotes.md` in explorer view 

@@ -78,6 +78,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * tag can be renamed in sidebar of `sepNotes_category`
 * button refresh will call `syncMdWithSrc` first and this command is removed from menu
 * fix bug about `sepnotes` show duplicate content in the sidebar when click on the `sepNotes_category`
+* improve user experience of tag search 
 
 
 #### 0.1.7

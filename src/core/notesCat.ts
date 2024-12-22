@@ -11,71 +11,34 @@ export class NotesCat{
     static tagPos: Map<string,number> = new Map<string,number>();
     static tagOrder: Map<string,string>;
     static childrens: Map<string,Array<OutLineItem>> = new Map<string,Array<OutLineItem>>();
-    static searchTag: string = '';
     static descs: Map<string, string> = new Map<string,string>();
+    static addedTag = new Set<string>();
     static extensionContext;
     static tagOutLineProvider;
-    static refresh(searchTagp:string = ''){
+    static refresh(){
       logger.debug('NotesCat refresh start');
-      this.searchTag = searchTagp;
       this.contentLines = this.getContentLines();
       this.tagPos.clear();
       this.childrens.clear();
+      this.addedTag.clear();
       let headings = new Array<OutLineItem>();
       let curNestedTag = new NestedTag();
-      let tempTags = new Array<NestedTag>();
       let linenumber = 0;
       this.refreshDesc();
       for(let line of this.contentLines){
         if(Constants.glineIdentity.isTagOutLine(line)){
           curNestedTag.update(line);
           this.tagPos.set(curNestedTag.getFullTag(),linenumber);
-          if(this.searchTag == '' || curNestedTag.includes(this.searchTag)){
-            if(this.searchTag != ''){
-              tempTags.push(new NestedTag(curNestedTag.getFullTag()));
-            }
-            // only first level
-            else if(NestedTag.getOutLine(line).length == 1){
-              let tag = NestedTag.getOutLineTag(line);
-              headings.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,new NestedTag(tag),OutLineItemType.Tag));
-            }
+          // only first level
+          if(NestedTag.getOutLine(line).length == 1){
+            let tag = NestedTag.getOutLineTag(line);
+            this.addedTag.add(tag);
+            headings.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,new NestedTag(tag),OutLineItemType.Tag));
           }
         }
         linenumber = linenumber + 1;
       }
-      if(this.searchTag == ''){
-        this.childrens.set('',headings);
-      }
-      else{
-        let added = new Set<string>();
-        for(let index = tempTags.length - 1;index>=0;index--){
-          curNestedTag = tempTags[index];
-          // all levels
-          let skipNotConKey = true;
-          for (let i = 0; i < curNestedTag.getLevel(); i++) {
-            if (skipNotConKey) {
-              if (!curNestedTag.getLastTag(i + 1).includes(this.searchTag)) {
-                continue;
-              }
-              else {
-                skipNotConKey = false;
-              }
-            }
-
-            let tag = curNestedTag.getParentTag(i);
-            if (!added.has(tag)) {
-              added.add(tag);
-              let item = new OutLineItem(vscode.TreeItemCollapsibleState.Expanded, new NestedTag(tag), OutLineItemType.Tag);
-              let parent = curNestedTag.getParentTag(i + 1);
-              if (!this.childrens.has(parent)) {
-                let children = new Array<OutLineItem>();
-                this.childrens.set(parent, children);
-              }
-              this.childrens.get(parent).push(item);
-            }
-          }
-        }
-      }
+      this.childrens.set('',headings);
       this.load();
       this.tagOutLineProvider.refresh();
       logger.debug('NotesCat refresh end');
@@ -210,7 +173,8 @@ export class NotesCat{
     static getTreeViewRoot():Array<OutLineItem>{
       return this.childrens.get('');
     }
-    static getChildren(parentTag:NestedTag):Array<OutLineItem>{
+    static getChildren(parent:OutLineItem):Array<OutLineItem>{
+      let parentTag = parent.tag;
       logger.debug('getChildren start parent:'+ parentTag.getFullTag());
       let children:Array<OutLineItem>;
       if(this.childrens.has(parentTag.getFullTag())){
@@ -253,6 +217,7 @@ export class NotesCat{
                 tmpOutLineItem.code = removeLineNumber(line).trimLeft();
                 tmpOutLineItem.label = tmpOutLineItem.code;
                 tmpOutLineItem.tag.copyTag(curNestedTag);
+                tmpOutLineItem.parent = parent;
                 children.push(tmpOutLineItem);
                 tmpOutLineItem = new OutLineItem(vscode.TreeItemCollapsibleState.None);
                 isFirstCode = false;
@@ -372,6 +337,52 @@ export class NotesCat{
       }
       logger.debug('rename end');
       return srcChanges;
+    }
+
+    static getItems():Array<string>{
+      return Array.from(this.tagPos.keys());
+    }
+
+    static revealItem(sTag:string):OutLineItem{
+      logger.debug('revealItem start');
+      let tag = new NestedTag(sTag);
+      let item:OutLineItem;
+      let parentItem:OutLineItem = null;
+      let parentTag = '';
+      for (let i = tag.getLevel() - 1; i >=0; i--) {
+        let curTag = tag.getParentTag(i);
+        if (!this.addedTag.has(curTag)) {
+          this.addedTag.add(curTag);
+          item = new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed, new NestedTag(curTag), OutLineItemType.Tag);
+          item.parent = parentItem;
+          if (!this.childrens.has(parentTag)) {
+            let children = new Array<OutLineItem>();
+            this.childrens.set(parentTag, children);
+          }
+          this.childrens.get(parentTag).push(item);
+        }
+        // fetch existed item
+        else{
+          let children = this.childrens.get(parentTag);
+          for(let child of children){
+            if(child.tag.getFullTag() == curTag){
+              item = child;
+              break;
+            }
+          }
+        }
+        parentItem = item;
+        parentTag = curTag;
+        logger.debug('item:'+item.tag.getFullTag());
+      }
+      logger.debug(item.tag.getFullTag());
+      logger.debug('-------------------');
+      if(item.parent){
+        logger.debug(item.parent.tag.getFullTag());
+      }
+      this.tagOutLineProvider.refresh();
+      logger.debug('revealItem end');
+      return item;
     }
 }
 

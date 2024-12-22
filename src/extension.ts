@@ -29,6 +29,7 @@ let ratelimiterUpdate:RateLimiter;
 let ratelimiterChangeSelection:RateLimiter;
 let mdLineChangeCount = 0;
 let tagOutLineProvider:TagOutLineProvider;
+let tagOutLineTreeView:vscode.TreeView<OutLineItem>;
 let tagOutLineDragAndDrop:TagOutLineDragAndDrop;
 let fileOutLineProvider:FileOutLineProvider;
 let fileOutLineTreeView:vscode.TreeView<OutLineItem>;
@@ -58,7 +59,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 
     tagOutLineProvider = new TagOutLineProvider();
     tagOutLineDragAndDrop = new TagOutLineDragAndDrop();
-    vscode.window.createTreeView('tagOutLine', {
+    tagOutLineTreeView = vscode.window.createTreeView('tagOutLine', {
         treeDataProvider: tagOutLineProvider, showCollapseAll: true, manageCheckboxStateManually:true,
         dragAndDropController:tagOutLineDragAndDrop
     });
@@ -888,11 +889,13 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     extensionContext.subscriptions.push(
 // sepNotes ### #command/view/filtertag
         commands.registerCommand(Commands.filterTag, async () => {
-            const result = await window.showInputBox({
-                value: NotesCat.searchTag,
-                placeHolder: 'search keyword',
-            });
-            NotesCat.refresh(result);
+            const pick = await window.showQuickPick(NotesCat.getItems());
+            if(pick){
+                let item = NotesCat.revealItem(pick); 
+                if(item){
+                    tagOutLineTreeView.reveal(item, { focus: true, select: true, expand: true }); 
+                }
+            }
         }));
 
     extensionContext.subscriptions.push(

@@ -62,10 +62,14 @@ export class TagOutLineProvider implements vscode.TreeDataProvider<OutLineItem> 
 
 	getChildren(element?: OutLineItem): Thenable<OutLineItem[]> {
 		if (element) {
-			return Promise.resolve(NotesCat.getChildren(element.tag));
+			return Promise.resolve(NotesCat.getChildren(element));
 		} else {
             return Promise.resolve(NotesCat.getTreeViewRoot());
 		}
+	}
+
+	getParent(element: OutLineItem): vscode.ProviderResult<OutLineItem> {
+		return element.parent;
 	}
 }
 
