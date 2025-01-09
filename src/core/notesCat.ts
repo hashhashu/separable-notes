@@ -197,7 +197,10 @@ export class NotesCat{
               break;
             }
             if (curNestedTag.getLevel() == (parentTag.getLevel() + 1)) {
-              children.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,curNestedTag, OutLineItemType.Tag));
+              this.addedTag.add(curNestedTag.getFullTag());
+              let item = new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,curNestedTag, OutLineItemType.Tag);
+              item.parent = parent;
+              children.push(item);
               enterOutLine = true;
             }
           }
@@ -352,23 +355,14 @@ export class NotesCat{
       for (let i = tag.getLevel() - 1; i >=0; i--) {
         let curTag = tag.getParentTag(i);
         if (!this.addedTag.has(curTag)) {
-          this.addedTag.add(curTag);
-          item = new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed, new NestedTag(curTag), OutLineItemType.Tag);
-          item.parent = parentItem;
-          if (!this.childrens.has(parentTag)) {
-            let children = new Array<OutLineItem>();
-            this.childrens.set(parentTag, children);
-          }
-          this.childrens.get(parentTag).push(item);
+          this.getChildren(parentItem);
         }
         // fetch existed item
-        else{
-          let children = this.childrens.get(parentTag);
-          for(let child of children){
-            if(child.tag.getFullTag() == curTag){
-              item = child;
-              break;
-            }
+        let children = this.childrens.get(parentTag);
+        for(let child of children){
+          if(child.tag.getFullTag() == curTag){
+            item = child;
+            break;
           }
         }
         parentItem = item;
