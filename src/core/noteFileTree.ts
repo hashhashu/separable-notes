@@ -1,6 +1,6 @@
 import { Constants, MdType, OutLineItemType } from "../constants/constants";
 import { logger } from "../logging/logger";
-import { addEof, cutOutLineMarker, decode, getAnnoFromMd, getLineNumber, removeLineNumber, splitIntoLines, writeFile, getPrefix } from "../utils/utils";
+import { addEof, cutOutLineMarker, decode, getAnnoFromMd, getLineNumber, removeLineNumber, splitIntoLines, writeFile, getPrefix, joinEof } from "../utils/utils";
 import { LineIdentity } from "./LineIdentity";
 import { NoteBlock, NoteFile } from "./note";
 import { NestedTag } from "./tag";
@@ -190,7 +190,7 @@ export class NoteFileTree{
                 block.outline = destOutline;
                 block.note = block.outline +' ' + block.note;
                 contentLines = [...contentLines.slice(0,block.changedLine),...splitIntoLines(block.note),...contentLines.slice(block.changedLine + block.noteLineCount)];
-                writeFile(Constants.sepNotesFilePath,addEof(contentLines.join('\n')));
+                writeFile(Constants.sepNotesFilePath,joinEof(contentLines));
                 let anno = getAnnoFromMd(null, block.changedLine, contentLines);
                 let linenumber = anno.linenumber;
                 if (linenumber >= 0) {
@@ -272,8 +272,8 @@ export class NoteFileTree{
                 linenumberIndex += 1;
             }
             newMdContentLines = [...newMdContentLines, ...mdContentLines.slice(lastMdIndex)];
-            writeFile(Constants.sepNotesFilePath,addEof(newMdContentLines.join('\n')));
-            this.note.writeFile(addEof(srcContentLines.join('\n')));
+            writeFile(Constants.sepNotesFilePath,joinEof(newMdContentLines));
+            this.note.writeFile(joinEof(srcContentLines));
             this.note.refreshMdCat();
             this.refresh(this.note);
         }

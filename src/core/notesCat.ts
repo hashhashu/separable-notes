@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { Constants, OutLineItemType } from "../constants/constants";
-import { addEof, getLineNumber, getSrcFileFromLine, removeLineNumber, splitIntoLines,writeFile } from "../utils/utils";
+import { addEof, getLineNumber, getSrcFileFromLine, joinEof, removeLineNumber, splitIntoLines,writeFile } from "../utils/utils";
 import { NestedTag } from "./tag";
 import { OutLineItem } from "./treeView";
 import * as fs from 'fs';
@@ -115,7 +115,7 @@ export class NotesCat{
                            ...this.contentLines.slice(pos1,pos2), ...this.contentLines.slice(pos2+tagLength2)];
       }
       this.tagOrder.set(tag2.getFullTag(),order1);
-      writeFile(Constants.sepNotesCategoryFilePath,addEof(this.contentLines.join('\n')));
+      writeFile(Constants.sepNotesCategoryFilePath,joinEof(this.contentLines));
       this.save();
       this.refresh();
       logger.debug('swapOrder end');
@@ -401,12 +401,12 @@ export class NotesSrcChanged{
       this.linenumbers[length - i - 1] += offset;
     }
   }
-  getContent(contentLinesp:Array<String>):string{
+  getContent(contentLinesp:Array<string>):string{
     for(let i = 0;i<this.linenumbers.length;i++){
       let regex = new RegExp(this.oriTag,'g');
       contentLinesp[this.linenumbers[i] - 1] = contentLinesp[this.linenumbers[i] - 1].replace(regex,this.newTag);
       logger.debug('number:'+this.linenumbers[i].toString() + '  src:'+contentLinesp[this.linenumbers[i] - 1]);
     }
-    return addEof(contentLinesp.join('\n'));
+    return joinEof(contentLinesp);
   }
 }

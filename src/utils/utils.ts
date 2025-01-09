@@ -47,6 +47,10 @@ export function addEof(s:string):string{
   return s + '\n';
 }
 
+export function joinEof(lines:string[]):string{
+  return addEof(lines.join('\n'));
+}
+
 export function addMdEof(s:string):string{
   return s + '  \n';
 }

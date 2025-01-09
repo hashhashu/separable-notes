@@ -8,7 +8,7 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberUp, getMdUserRandomNote, decode, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, getRelativePath, isSepNotesCatFile} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberUp, getMdUserRandomNote, decode, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, getRelativePath, isSepNotesCatFile, joinEof} from './utils/utils';
 import * as fs from 'fs';
 import { NestedTag } from './core/tag';
 import { NotesCat } from './core/notesCat';
@@ -1071,7 +1071,7 @@ function updateMdStatus(){
     status = status.replace('#Time',now.toLocaleDateString()+'  '+now.toLocaleTimeString());
     let lines = splitIntoLines(content);
     lines[1] = status;
-    content = addEof(lines.join('\n'));
+    content = joinEof(lines);
     logger.debug('updateMdStatus:'+status);
     writeFile(Constants.sepNotesFilePath,content);
 }
