@@ -407,6 +407,6 @@ export class NotesSrcChanged{
       contentLinesp[this.linenumbers[i] - 1] = contentLinesp[this.linenumbers[i] - 1].replace(regex,this.newTag);
       logger.debug('number:'+this.linenumbers[i].toString() + '  src:'+contentLinesp[this.linenumbers[i] - 1]);
     }
-    return contentLinesp.join('\n');
+    return addEof(contentLinesp.join('\n'));
   }
 }

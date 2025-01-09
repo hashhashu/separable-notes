@@ -141,6 +141,14 @@
       {
         "command": "separableNotes.rename",
         "title": "rename"
+      },
+      {
+        "command": "separableNotes.addHeader",
+        "title": "addHeader"
+      },
+      {
+        "command": "separableNotes.removeHeader",
+        "title": "removeHeader"
       }
     ],
     "views": {
@@ -221,6 +229,16 @@
         },
         {
           "command": "separableNotes.rename",
+          "group": "separableNotes@2", 
+          "when": "view == tagOutLine"
+        },
+        {
+          "command": "separableNotes.addHeader",
+          "group": "separableNotes@2", 
+          "when": "view == tagOutLine"
+        },
+        {
+          "command": "separableNotes.removeHeader",
           "group": "separableNotes@2", 
           "when": "view == tagOutLine"
         },

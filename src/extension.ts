@@ -1,7 +1,7 @@
 import {ExtensionContext,commands,workspace,window } from 'vscode';
 import * as vscode from 'vscode';
 import { logger } from "./logging/logger";
-import { Constants, MdType, NoteMode, OutLineItemType } from "./constants/constants";
+import { Constants, MdType, NoteMode, OutLineItemType, RenameType } from "./constants/constants";
 import { getConfiguration, Configuration } from "./configuration";
 import { Activatable } from "./activatable";
 import { Commands } from "./constants/constants";
@@ -901,35 +901,82 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     extensionContext.subscriptions.push(
 // sepNotes ### #command/view/rename
         commands.registerCommand(Commands.rename, async (item: OutLineItem) => {
+            rename(RenameType.renameTag,item);
+        }));
 
-            if(isAllAttached()){
-                const newLabel = await window.showInputBox({
-                    value: item.tag.getLastTag(),
-                    placeHolder: 'new name',
+    extensionContext.subscriptions.push(
+// sepNotes ### #command/view/addHeader
+        commands.registerCommand(Commands.addHeader, async (item: OutLineItem) => {
+            rename(RenameType.addHeader,item);
+        }));
+
+    extensionContext.subscriptions.push(
+// sepNotes ### #command/view/removeHeader
+        commands.registerCommand(Commands.removeHeader, async (item: OutLineItem) => {
+            rename(RenameType.removeHeader,item);
+        }));
+
+    async function rename(renameType:RenameType, item:OutLineItem){
+        let sValue = '';
+        let sHint = '';
+        let canContinue = false;
+        if(renameType == RenameType.renameTag){
+            sHint = 'new name';
+            sValue = item.tag.getLastTag();
+        }
+        else if(renameType == RenameType.addHeader){
+            sHint = 'header name';
+        }
+        if(isAllAttached()){
+            let newLabel = '';
+            let newTag:string = '';
+            if(renameType != RenameType.removeHeader){
+                newLabel = await window.showInputBox({
+                    value: sValue,
+                    placeHolder: sHint,
                 });
                 if(newLabel && newLabel.length > 0){
-                    commands.executeCommand(Commands.syncMdWithSrc);
-                    let newTag:string;
                     newTag = item.tag.getParentTag();
                     if(newTag.length > 0){
                         newTag += '/';
                     }
-                    newTag += newLabel;
-                    let srcChanges = NotesCat.rename(item.tag,newTag);
-                    for(let srcchange of srcChanges.values()){
-                        let note = Notes.get(srcchange.path);
-                        note.writeFile(srcchange.getContent(note.getContentLines()));
-                        logger.debug('write path:'+note.path);
+                    if(renameType == RenameType.renameTag){
+                        newTag += newLabel;
                     }
-                    setTimeout(()=>{
-                        commands.executeCommand(Commands.syncMdWithSrc);
-                    },500);
+                    else if(renameType == RenameType.addHeader){
+                        newTag += (newLabel + '/' + item.tag.getLastTag());
+                    }
+                    canContinue = true;
                 }
             }
-            else{
-               window.showWarningMessage('src file is not matched, need to refresh first'); 
+            else if(renameType == RenameType.removeHeader){
+                newTag = item.tag.getParentTag();
+                if(newTag.length > 0){
+                    newTag = item.tag.getParentTag(2);
+                    if(newTag.length > 0){
+                        newTag += '/';
+                    }
+                    newTag += item.tag.getLastTag();
+                    canContinue = true;
+                }
             }
-        }));
+            if(canContinue){
+                commands.executeCommand(Commands.syncMdWithSrc);
+                let srcChanges = NotesCat.rename(item.tag,newTag);
+                for(let srcchange of srcChanges.values()){
+                    let note = Notes.get(srcchange.path);
+                    note.writeFile(srcchange.getContent(note.getContentLines()));
+                    logger.debug('write path:'+note.path);
+                }
+                setTimeout(()=>{
+                    commands.executeCommand(Commands.syncMdWithSrc);
+                },500);
+            }
+        }
+        else{
+            window.showWarningMessage('src file is not matched, need to refresh first'); 
+        }
+    }
 
     function showAttachStatus(){
         let activeEditor = vscode.window.activeTextEditor;
