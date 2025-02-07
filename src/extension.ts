@@ -617,6 +617,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     }
 
 	extensionContext.subscriptions.push(
+// sepNotes #command/view/openSepNotes
 		commands.registerCommand(Commands.openSepNotes, async () => {
             vscode.workspace.openTextDocument(Constants.sepNotesFilePath).then(document => {  
                 vscode.window.showTextDocument(document);  
@@ -809,15 +810,21 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     extensionContext.subscriptions.push(
 // sepNotes ### #command/view/jumptoline
         commands.registerCommand(Commands.jumpToNoteLine, async (item: OutLineItem) => {
-            vscode.window.showTextDocument(vscode.Uri.file(item.path), { preview: true, preserveFocus: true }).then(
+            let path = item.path;
+            if(item.itemType == OutLineItemType.Tag){
+                path = Constants.sepNotesCategoryFilePath;
+            }
+            vscode.window.showTextDocument(vscode.Uri.file(path), { preview: true, preserveFocus: true }).then(
                 textEditor => {
                     try {
-                        let note = Notes.get(item.path);
                         let line = item.line;
-                        if(note && !note.isAttached()){
-                            line = note.getDetachedLine(line);
+                        if(item.itemType != OutLineItemType.Tag){
+                            let note = Notes.get(item.path);
+                            if(note && !note.isAttached()){
+                                line = note.getDetachedLine(line);
+                            }
+                            line = line - 1;
                         }
-                        line = line - 1;
                         let range = new vscode.Range(
                             line,
                             0,
@@ -834,12 +841,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         textEditor.selection = new vscode.Selection(range.start, range.start);
                         textEditor.revealRange(range,vscode.TextEditorRevealType.AtTop);
                     } catch (e) {
-                        vscode.window.showWarningMessage("Failed to navigate to bookmark (3): " + e);
+                        vscode.window.showWarningMessage("Failed to jump: " + e);
                         return;
                     }
-                },
-                rejectReason => {
-                    vscode.window.showWarningMessage("Failed to navigate to bookmark (2): " + rejectReason.message);
                 }
             );
         }));

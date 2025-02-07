@@ -74,6 +74,10 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 
 
 ### 变更日志
+#### 0.1.9
+* add `gotoTag` to quickly jump to tag symobol in `sepNotes_category`
+
+#### 0.1.8
 * tag can be renamed in sidebar of `sepNotes_category`
 * button refresh will call `syncMdWithSrc` first and this command is removed from menu
 * fix bug about `sepnotes` show duplicate content in the sidebar when click on the `sepNotes_category`

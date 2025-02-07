@@ -2,7 +2,7 @@
   "name": "separable-notes",
   "displayName": "separable notes",
   "description": "Inline Code Note Management",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "engines": {
     "vscode": "^1.42.0"
   },
@@ -149,6 +149,10 @@
       {
         "command": "separableNotes.removeHeader",
         "title": "removeHeader"
+      },
+      {
+        "command": "separableNotes.jumpToNoteLine",
+        "title": "gotoTag"
       }
     ],
     "views": {
@@ -234,12 +238,17 @@
         },
         {
           "command": "separableNotes.addHeader",
-          "group": "separableNotes@2", 
+          "group": "separableNotes@3", 
           "when": "view == tagOutLine"
         },
         {
           "command": "separableNotes.removeHeader",
-          "group": "separableNotes@2", 
+          "group": "separableNotes@4", 
+          "when": "view == tagOutLine"
+        },
+        {
+          "command": "separableNotes.jumpToNoteLine",
+          "group": "separableNotes@5", 
           "when": "view == tagOutLine"
         },
         {

@@ -33,7 +33,7 @@ export class NotesCat{
           if(NestedTag.getOutLine(line).length == 1){
             let tag = NestedTag.getOutLineTag(line);
             this.addedTag.add(tag);
-            headings.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,new NestedTag(tag),OutLineItemType.Tag));
+            headings.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,new NestedTag(tag),OutLineItemType.Tag,'','',linenumber));
           }
         }
         linenumber = linenumber + 1;
@@ -198,7 +198,7 @@ export class NotesCat{
             }
             if (curNestedTag.getLevel() == (parentTag.getLevel() + 1)) {
               this.addedTag.add(curNestedTag.getFullTag());
-              let item = new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,curNestedTag, OutLineItemType.Tag);
+              let item = new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,curNestedTag, OutLineItemType.Tag,'','',this.tagPos.get(curNestedTag.getFullTag()));
               item.parent = parent;
               children.push(item);
               enterOutLine = true;

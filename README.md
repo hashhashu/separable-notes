@@ -74,6 +74,9 @@ if you change this, you should also change the configuration for todo-tree or ot
 ```
 
 ### ChangeLog
+#### 0.1.9
+* add `gotoTag` to quickly jump to tag symobol in `sepNotes_category`
+
 #### 0.1.8
 * tag can be renamed in sidebar of `sepNotes_category`
 * button refresh will call `syncMdWithSrc` first and this command is removed from menu
