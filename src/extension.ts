@@ -180,6 +180,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                                     window.showWarningMessage('file:' + getRelativePath(srcPath) + ' is not attached, changes won\'t sync with src file');
                                 }
                             }
+                            else if(isSepNotesCatFile(event.document.uri.fsPath)){
+                                NotesCat.refresh(splitIntoLines(event.document.getText()));
+                            }
                         }
                         mdLineChangeCount = 0;
                     }
@@ -495,7 +498,6 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 // sepNotes ### sync markdown files  #command/global/syncmdwith
 		commands.registerCommand(Commands.syncMdWithSrc, async () => {
             logger.debug('syncMdWithSrc----------------------');
-            NotesCat.refresh();
             fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
             let contentMd = Constants.sepNotesFileHead + getMdUserRandomNote();
             let contentMdCat = Constants.sepNotesCatDesc;

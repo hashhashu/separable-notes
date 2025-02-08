@@ -76,6 +76,8 @@ if you change this, you should also change the configuration for todo-tree or ot
 ### ChangeLog
 #### 0.1.9
 * add `gotoTag` to quickly jump to tag symobol in `sepNotes_category`
+* description about tag can be refreshed immediately
+* fix bug that commands(such as `remove header`) won't take effect when tag has description
 
 #### 0.1.8
 * tag can be renamed in sidebar of `sepNotes_category`

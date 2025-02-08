@@ -15,9 +15,9 @@ export class NotesCat{
     static addedTag = new Set<string>();
     static extensionContext;
     static tagOutLineProvider;
-    static refresh(){
+    static refresh(contentLines = this.getContentLines()){
       logger.debug('NotesCat refresh start');
-      this.contentLines = this.getContentLines();
+      this.contentLines = contentLines;
       this.tagPos.clear();
       this.childrens.clear();
       this.addedTag.clear();
@@ -123,12 +123,11 @@ export class NotesCat{
     static refreshDesc(){
       logger.debug('NotesCat refreshDesc start');
       this.descs.clear();
-      let contentLines = this.getContentLines();
       let curNestedTag = new NestedTag();
       let desc = '';
       let tagStart = false;
       let crossDesc = false;
-      for (let line of contentLines) {
+      for (let line of this.contentLines) {
         if (!tagStart) {
           if (!Constants.glineIdentity.isTagOutLine(line)) {
             continue;
@@ -292,7 +291,8 @@ export class NotesCat{
     }
     static rename(tag:NestedTag,newLabel:string):Map<string,NotesSrcChanged>{
       logger.debug('rename start old:'+tag.getFullTag()+' newlabel:'+newLabel);
-      let tagStart = this.tagPos.get(tag.getFullTag());
+      let tagFullTag = tag.getFullTag();
+      let tagStart = this.tagPos.get(tagFullTag);
       let contentLines = this.contentLines;
       let curNestedTag = new NestedTag();
       curNestedTag.copyTag(tag);
@@ -301,19 +301,27 @@ export class NotesCat{
       let path = '';
       let count = 0;
       let srcChanges = new Map<string,NotesSrcChanged>();
-      for(let i = tagStart + 1;i<contentLines.length; i++){
+      for(let i = tagStart;i<contentLines.length; i++){
         line = contentLines[i];
         if(Constants.glineIdentity.isTagOutLine(line)){
           curNestedTag.update(line);
-          if(curNestedTag.getLevel() <= tag.getLevel())
+          if(i > tagStart && curNestedTag.getLevel() <= tag.getLevel())
           {
             break;
+          }
+          path = '';
+          // replace desc tag
+          let curFullTag = curNestedTag.getFullTag();
+          if(this.descs.has(curFullTag)){
+            let content = this.descs.get(curFullTag);
+            this.descs.delete(curFullTag);
+            this.descs.set(curFullTag.replace(tagFullTag,newLabel),content);
           }
         }
         else if(Constants.glineIdentity.isFileStart(line)){
           path = getSrcFileFromLine(line);
           if(!srcChanges.has(path)){
-            srcChanges.set(path,new NotesSrcChanged(path,tag.getFullTag(),newLabel));
+            srcChanges.set(path,new NotesSrcChanged(path,tagFullTag,newLabel));
             logger.debug('src path added:'+path);
           }
           enterCodeBlock = false;
@@ -329,13 +337,14 @@ export class NotesCat{
             count = 0;
           }
         }
-        else{
+        // inline notes
+        else if(path != ''){
           srcChanges.get(path).add(i);
           count += 1;
         } 
       }
-      if(this.tagOrder.has(tag.getFullTag())){
-        this.tagOrder.set(newLabel,this.tagOrder.get(tag.getFullTag()));
+      if(this.tagOrder.has(tagFullTag)){
+        this.tagOrder.set(newLabel,this.tagOrder.get(tagFullTag));
         this.save();
       }
       logger.debug('rename end');
