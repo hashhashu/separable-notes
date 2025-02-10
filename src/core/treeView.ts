@@ -36,8 +36,8 @@ export  class OutLineItem extends vscode.TreeItem{
 			this.tooltip = label + '  line:' + linep.toString();
         }
         else{
-            this.tooltip = NotesCat.getTagDesc(tagp);
-            this.description = NotesCat.getTagDesc(tagp);
+            this.tooltip = NotesCat.getTagDesc(tagp.getFullTag());
+            this.description = this.tooltip;
         }
 		this.parent = parent;
     }

@@ -500,24 +500,13 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             logger.debug('syncMdWithSrc----------------------');
             fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
             let contentMd = Constants.sepNotesFileHead + getMdUserRandomNote();
-            let contentMdCat = Constants.sepNotesCatDesc;
-            let contentByCatAll:Map<string,string> = NotesCat.descs;
             let contentgetRet:{"content":string,"contentByCat":Map<string,string>};
-            let sortedCat:Array<string>;
             let notAttached = false;
-            let lastNestedTag = new NestedTag();
             for(let [_,note] of Notes){
                 if(note.isAttached()){
                     contentgetRet = note.getMdFromSrc();
                     contentMd += contentgetRet.content;
-                    for(let [key,value] of contentgetRet.contentByCat){
-                        if(!contentByCatAll.has(key)){
-                            contentByCatAll.set(key,value);
-                        }
-                        else{
-                            contentByCatAll.set(key,contentByCatAll.get(key) + value);
-                        }
-                    }
+                    NotesCat.updateNote(contentgetRet.contentByCat,note.path);
                 }
                 else if(note.blocks.length > 0){
                     notAttached = true;
@@ -529,17 +518,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }
             else{
                 writeFile(Constants.sepNotesFilePath, contentMd);
-                sortedCat = Array.from(contentByCatAll.keys());
-                sortedCat.sort((a,b)=>NestedTag.compareNestedTag(a,b));
-                for(let tag of sortedCat){
-                    logger.debug('lastNestedTag:'+lastNestedTag.tags.join('/')+' tag:'+tag);
-                    for(let outline of lastNestedTag.needAddOutLine(tag)){
-                        contentMdCat += addEof(outline);
-                    }
-                    contentMdCat += contentByCatAll.get(tag);
-                    lastNestedTag.setTags(tag);
-                }
-                writeFile(Constants.sepNotesCategoryFilePath, contentMdCat); 
+                NotesCat.writeFileAccodingNodes();
                 for(let [_,note] of Notes){
                     note.clearCache();
                 }
@@ -834,8 +813,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                             0
                         );
                         if(item.itemType == OutLineItemType.codeBlock){
-                            if(NotesCat.tagPos.has(item.tag.getFullTag())){
-                                tagJumpPos = NotesCat.tagPos.get(item.tag.getFullTag());
+                            if(NotesCat.hasTag(item.tag.getFullTag())){
+                                tagJumpPos = NotesCat.getTagPos(item.tag.getFullTag());
                             }
                             Jumped = true;
                             logger.debug('tagjumppos:'+tagJumpPos.toString());

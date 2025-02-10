@@ -8,27 +8,39 @@ import { logger } from '../logging/logger';
 
 export class NotesCat{
     static contentLines: string[];
-    static tagPos: Map<string,number> = new Map<string,number>();
+    static notesCatNodes:Map<string,NotesCatNode> = new Map<string,NotesCatNode>();
     static tagOrder: Map<string,string>;
     static childrens: Map<string,Array<OutLineItem>> = new Map<string,Array<OutLineItem>>();
-    static descs: Map<string, string> = new Map<string,string>();
     static addedTag = new Set<string>();
     static extensionContext;
     static tagOutLineProvider;
     static refresh(contentLines = this.getContentLines()){
       logger.debug('NotesCat refresh start');
       this.contentLines = contentLines;
-      this.tagPos.clear();
       this.childrens.clear();
       this.addedTag.clear();
+      this.notesCatNodes.clear();
       let headings = new Array<OutLineItem>();
       let curNestedTag = new NestedTag();
-      let linenumber = 0;
-      this.refreshDesc();
+      let linenumber = -1;
+      let notesCatNode;
+      let crossDesc = false;
+      let tagStart = false;
+      let path = '';
       for(let line of this.contentLines){
+        linenumber = linenumber + 1;
+        // skip the beginning
+        if (!tagStart && !Constants.glineIdentity.isTagOutLine(line)) {
+          continue;
+        }
+        else{
+          tagStart = true;
+        }
         if(Constants.glineIdentity.isTagOutLine(line)){
           curNestedTag.update(line);
-          this.tagPos.set(curNestedTag.getFullTag(),linenumber);
+          notesCatNode = new NotesCatNode(linenumber);
+          this.notesCatNodes.set(curNestedTag.getFullTag(),notesCatNode);
+          crossDesc = false;
           // only first level
           if(NestedTag.getOutLine(line).length == 1){
             let tag = NestedTag.getOutLineTag(line);
@@ -36,7 +48,19 @@ export class NotesCat{
             headings.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,new NestedTag(tag),OutLineItemType.Tag,'','',linenumber));
           }
         }
-        linenumber = linenumber + 1;
+        else if (!crossDesc) {
+          if (Constants.glineIdentity.isFileStart(line)) {
+            path = getSrcFileFromLine(line);
+            notesCatNode.addNotes(path,addEof(line));
+            crossDesc = true;
+          }
+          else {
+            notesCatNode.tagDescs += addEof(line);
+          }
+        }
+        else{
+          notesCatNode.addNotes(path,addEof(line));
+        }
       }
       this.childrens.set('',headings);
       this.load();
@@ -54,7 +78,7 @@ export class NotesCat{
       }
       let toDelete = [];
       for(let [key,_] of this.tagOrder){
-        if(!this.tagPos.has(key)){
+        if(!this.notesCatNodes.has(key)){
           toDelete.push(key);
         }
       }
@@ -91,8 +115,8 @@ export class NotesCat{
       let sTag1 = tag1.getFullTag();
       let tag2 = children[index2].tag;
       let sTag2 = tag2.getFullTag();
-      let pos1 = this.tagPos.get(sTag1);
-      let pos2 = this.tagPos.get(sTag2);
+      let pos1 = this.getTagPos(sTag1);
+      let pos2 = this.getTagPos(sTag2);
       let order1 = this.getOrder(tag1,1)[0];
       // move down
       if(index1 > index2){
@@ -120,53 +144,20 @@ export class NotesCat{
       this.refresh();
       logger.debug('swapOrder end');
     }
-    static refreshDesc(){
-      logger.debug('NotesCat refreshDesc start');
-      this.descs.clear();
-      let curNestedTag = new NestedTag();
-      let desc = '';
-      let tagStart = false;
-      let crossDesc = false;
-      for (let line of this.contentLines) {
-        if (!tagStart) {
-          if (!Constants.glineIdentity.isTagOutLine(line)) {
-            continue;
-          }
-          else {
-            curNestedTag.update(line);
-            tagStart = true;
-            crossDesc = false;
-          }
-        }
-        else if (Constants.glineIdentity.isTagOutLine(line)) {
-          if (desc.trim().length > 0) {
-            this.descs.set(curNestedTag.getFullTag(), desc);
-          }
-          desc = '';
-          crossDesc = false;
-          curNestedTag.update(line);
-        }
-        else if (!crossDesc) {
-          if (Constants.glineIdentity.isFileStart(line)) {
-            crossDesc = true;
-          }
-          else {
-            desc += addEof(line);
-          }
-        }
-      }
-      if (desc.trim().length > 0) {
-        this.descs.set(curNestedTag.getFullTag(), desc);
-      }
-      logger.debug('NotesCat getDesc end');
-      return this.descs;
+    static hasTagDesc(tag:string){
+      return this.getTagDesc(tag) != '';
     }
-    static getTagDesc(tagp:NestedTag){
-      if(this.descs.has(tagp.getFullTag())){
-        return this.descs.get(tagp.getFullTag());
+    static getTagDesc(tag:string){
+      if(this.hasTag(tag)){
+        return this.notesCatNodes.get(tag).tagDescs;
       }
       else{
         return '';
+      }
+    }
+    static removeTagDesc(tag:string){
+      if(this.hasTagDesc(tag)){
+        this.notesCatNodes.get(tag).removeDesc();
       }
     }
     static getTreeViewRoot():Array<OutLineItem>{
@@ -179,8 +170,8 @@ export class NotesCat{
       if(this.childrens.has(parentTag.getFullTag())){
         children = this.childrens.get(parentTag.getFullTag());
       }
-      else if(this.tagPos.has(parentTag.getFullTag())){
-        let startpos = this.tagPos.get(parentTag.getFullTag());
+      else if(this.hasTag(parentTag.getFullTag())){
+        let startpos = this.getTagPos(parentTag.getFullTag());
         logger.debug('startpos:'+startpos.toString());
         let contentLines = this.contentLines.slice(startpos);
         children = new Array<OutLineItem>();
@@ -197,7 +188,7 @@ export class NotesCat{
             }
             if (curNestedTag.getLevel() == (parentTag.getLevel() + 1)) {
               this.addedTag.add(curNestedTag.getFullTag());
-              let item = new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,curNestedTag, OutLineItemType.Tag,'','',this.tagPos.get(curNestedTag.getFullTag()));
+              let item = new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,curNestedTag, OutLineItemType.Tag,'','',this.getTagPos(curNestedTag.getFullTag()));
               item.parent = parent;
               children.push(item);
               enterOutLine = true;
@@ -273,7 +264,7 @@ export class NotesCat{
       let index = children.findIndex(item => item.tag.compareTag(tag,false) == 0);
       let nextNodePos = this.contentLines.length;
       if (index < (children.length - 1)) {
-        nextNodePos = this.tagPos.get(children[index + 1].tag.getFullTag());
+        nextNodePos = this.getTagPos(children[index + 1].tag.getFullTag());
       }
       else {
         for (let i = 1; i < tag.getLevel(); i++) {
@@ -281,18 +272,18 @@ export class NotesCat{
           let parents = this.childrens.get(tag.getParentTag(i + 1));
           let parentIndex = parents.findIndex(item => item.tag.compareString(curParent, false) == 0);
           if (parentIndex < (parents.length - 1)) {
-            nextNodePos = this.tagPos.get(parents[parentIndex + 1].tag.getFullTag());
+            nextNodePos = this.getTagPos(parents[parentIndex + 1].tag.getFullTag());
             break;
           }
         }
       }
-      let tagLength = nextNodePos - this.tagPos.get(tag.getFullTag());
+      let tagLength = nextNodePos - this.getTagPos(tag.getFullTag());
       return tagLength;
     }
     static rename(tag:NestedTag,newLabel:string):Map<string,NotesSrcChanged>{
       logger.debug('rename start old:'+tag.getFullTag()+' newlabel:'+newLabel);
       let tagFullTag = tag.getFullTag();
-      let tagStart = this.tagPos.get(tagFullTag);
+      let tagStart = this.getTagPos(tagFullTag);
       let contentLines = this.contentLines;
       let curNestedTag = new NestedTag();
       curNestedTag.copyTag(tag);
@@ -312,10 +303,18 @@ export class NotesCat{
           path = '';
           // replace desc tag
           let curFullTag = curNestedTag.getFullTag();
-          if(this.descs.has(curFullTag)){
-            let content = this.descs.get(curFullTag);
-            this.descs.delete(curFullTag);
-            this.descs.set(curFullTag.replace(tagFullTag,newLabel),content);
+          if(this.hasTagDesc(curFullTag)){
+            let tagDesc = this.getTagDesc(curFullTag);
+            this.removeTagDesc(curFullTag);
+            let newFullTag = ('#'+curFullTag).replace('#'+tagFullTag,newLabel);
+            let newNode:NotesCatNode;
+            if(!this.hasTag(newFullTag)){
+              newNode = new NotesCatNode(0,tagDesc);
+              this.notesCatNodes.set(newFullTag,newNode);
+            }
+            else{
+              this.notesCatNodes.get(newFullTag).tagDescs = tagDesc;
+            }
           }
         }
         else if(Constants.glineIdentity.isFileStart(line)){
@@ -352,7 +351,7 @@ export class NotesCat{
     }
 
     static getItems():Array<string>{
-      return Array.from(this.tagPos.keys());
+      return Array.from(this.notesCatNodes.keys());
     }
 
     static revealItem(sTag:string):OutLineItem{
@@ -387,6 +386,59 @@ export class NotesCat{
       logger.debug('revealItem end');
       return item;
     }
+    static hasTag(tag:string){
+      return this.notesCatNodes.has(tag);
+    }
+    static getTagPos(tag:string){
+      return this.notesCatNodes.get(tag).tagPos;
+    }
+
+    static writeFileAccodingNodes(){
+      let contentByCatAll:Map<string,string> = new Map<string,string>();
+      for(let [tag,node] of this.notesCatNodes){
+        contentByCatAll.set(tag,node.getContent());
+      }
+      let sortedCat:Array<string>;
+      let lastNestedTag = new NestedTag();
+      let contentMdCat = Constants.sepNotesCatDesc;
+      sortedCat = Array.from(contentByCatAll.keys());
+      sortedCat.sort((a,b)=>NestedTag.compareNestedTag(a,b));
+      for(let tag of sortedCat){
+          logger.debug('lastNestedTag:'+lastNestedTag.tags.join('/')+' tag:'+tag);
+          for(let outline of lastNestedTag.needAddOutLine(tag)){
+              contentMdCat += addEof(outline);
+          }
+          contentMdCat += contentByCatAll.get(tag);
+          lastNestedTag.setTags(tag);
+      }
+      writeFile(Constants.sepNotesCategoryFilePath, contentMdCat);       
+    }
+
+    static updateNote(srcNotes:Map<string,string>, path:string){
+      // remove
+      let toDeleteTag = new Array<string>();
+      for(let [tag,node] of this.notesCatNodes){
+        node.removeNotes(path);
+        if(node.isEmpty()){
+          toDeleteTag.push(tag);
+        }
+      }
+      for(let tag of toDeleteTag){
+        this.notesCatNodes.delete(tag);
+      }
+      // add
+      for(let [tag,content] of srcNotes){
+        let node:NotesCatNode;
+        if(this.notesCatNodes.has(tag)){
+          node = this.notesCatNodes.get(tag);
+        }
+        else{
+          node = new NotesCatNode();
+          this.notesCatNodes.set(tag,node);
+        }
+        node.addNotes(path,content);
+      }
+    }
 }
 
 export class NotesSrcChanged{
@@ -417,5 +469,39 @@ export class NotesSrcChanged{
       logger.debug('number:'+this.linenumbers[i].toString() + '  src:'+contentLinesp[this.linenumbers[i] - 1]);
     }
     return joinEof(contentLinesp);
+  }
+}
+
+export class NotesCatNode{
+  tagPos:number;
+  tagDescs:string;
+  codeNotes:Map<string,string>; //path,content
+  constructor(tagPosp = 0, tagDescsp = ''){
+    this.tagPos = tagPosp;
+    this.tagDescs = tagDescsp;
+    this.codeNotes = new Map<string,string>();
+  }
+  removeDesc(){
+    this.tagDescs = '';
+  }
+  getContent(){
+    let content = this.tagDescs;
+    for(let [_,codeNote] of this.codeNotes){
+      content += codeNote;
+    }
+    return content;
+  }
+  addNotes(path:string,content:string){
+    let oriContent = '';
+    if(this.codeNotes.has(path)){
+      oriContent = this.codeNotes.get(path);
+    }
+    this.codeNotes.set(path,oriContent + content);
+  }
+  removeNotes(path:string){
+    this.codeNotes.delete(path);
+  }
+  isEmpty(){
+    return this.tagDescs == '' && this.codeNotes.size == 0;
   }
 }
