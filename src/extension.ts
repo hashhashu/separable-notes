@@ -502,6 +502,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             let contentMd = Constants.sepNotesFileHead + getMdUserRandomNote();
             let contentgetRet:{"content":string,"contentByCat":Map<string,string>};
             let notAttached = false;
+            // to avoid something wrong with notescat file
+            NotesCat.notesCatNodes.clear();
             for(let [_,note] of Notes){
                 if(note.isAttached()){
                     contentgetRet = note.getMdFromSrc();

@@ -48,15 +48,13 @@ export class NotesCat{
             headings.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,new NestedTag(tag),OutLineItemType.Tag,'','',linenumber));
           }
         }
-        else if (!crossDesc) {
-          if (Constants.glineIdentity.isFileStart(line)) {
+        else if (Constants.glineIdentity.isFileStart(line)) {
             path = getSrcFileFromLine(line);
             notesCatNode.addNotes(path,addEof(line));
             crossDesc = true;
-          }
-          else {
+        }
+        else if(!crossDesc) {
             notesCatNode.tagDescs += addEof(line);
-          }
         }
         else{
           notesCatNode.addNotes(path,addEof(line));
@@ -394,6 +392,7 @@ export class NotesCat{
     }
 
     static writeFileAccodingNodes(){
+      logger.debug('writeFileAccodingNodes start');
       let contentByCatAll:Map<string,string> = new Map<string,string>();
       for(let [tag,node] of this.notesCatNodes){
         contentByCatAll.set(tag,node.getContent());
@@ -404,7 +403,7 @@ export class NotesCat{
       sortedCat = Array.from(contentByCatAll.keys());
       sortedCat.sort((a,b)=>NestedTag.compareNestedTag(a,b));
       for(let tag of sortedCat){
-          logger.debug('lastNestedTag:'+lastNestedTag.tags.join('/')+' tag:'+tag);
+          // logger.debug('lastNestedTag:'+lastNestedTag.tags.join('/')+' tag:'+tag);
           for(let outline of lastNestedTag.needAddOutLine(tag)){
               contentMdCat += addEof(outline);
           }
@@ -412,9 +411,11 @@ export class NotesCat{
           lastNestedTag.setTags(tag);
       }
       writeFile(Constants.sepNotesCategoryFilePath, contentMdCat);       
+      logger.debug('writeFileAccodingNodes end');
     }
 
     static updateNote(srcNotes:Map<string,string>, path:string){
+      logger.debug('updateNote start');
       // remove
       let toDeleteTag = new Array<string>();
       for(let [tag,node] of this.notesCatNodes){
@@ -438,6 +439,7 @@ export class NotesCat{
         }
         node.addNotes(path,content);
       }
+      logger.debug('updateNote end');
     }
 }
 
