@@ -380,12 +380,14 @@ export class NoteFile{
         logger.debug('refreshMdCat  start-------------------');
         let ret = this.getMdFromSrc(document);
         let contentByCat = ret.contentByCat;
-        NotesCat.updateNote(contentByCat,this.path);
-        NotesCat.writeFileAccodingNodes();
+        if(NotesCat.isModified(contentByCat,this.path)){
+          NotesCat.updateNote(contentByCat,this.path);
+          NotesCat.writeFileAccodingNodes();
+          NotesCat.refresh();
+        }
         if (this.mdChangeType == MdType.sepNotesCat) {
           this.mdChangedLine.length = 0;
         }
-        NotesCat.refresh();
         logger.debug('refreshMdCat  end-------------------');
       }
     }

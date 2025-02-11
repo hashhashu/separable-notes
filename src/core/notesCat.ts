@@ -441,6 +441,26 @@ export class NotesCat{
       }
       logger.debug('updateNote end');
     }
+
+    static isModified(srcNotes:Map<string,string>, path:string){
+      logger.debug('isModified start');
+      for(let [tag,node] of this.notesCatNodes){
+        if(node.isModified(path,srcNotes.get(tag) || '')){
+          return true;
+        }
+      }
+      for(let [tag,content] of srcNotes){
+        let hasTag = this.notesCatNodes.has(tag);
+        if(!hasTag && content != ''){
+          return true;
+        }
+        else if(hasTag && this.notesCatNodes.get(tag).isModified(path,content)){
+          return true;
+        }
+      }
+      logger.debug('isModified end');
+      return false;
+    }
 }
 
 export class NotesSrcChanged{
@@ -505,5 +525,12 @@ export class NotesCatNode{
   }
   isEmpty(){
     return this.tagDescs == '' && this.codeNotes.size == 0;
+  }
+  isModified(path:string,content:string){
+    let oriContent = '';
+    if(this.codeNotes.has(path)){
+      oriContent = this.codeNotes.get(path);
+    }
+    return oriContent != content;
   }
 }

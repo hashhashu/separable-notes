@@ -718,7 +718,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             if(!activeEditor){
                 return;
             }
-            logger.debug('onDidChangeTextEditorSelection start');
+            // logger.debug('onDidChangeTextEditorSelection start');
             if(Jumped){
                 logger.debug('jumped');
             }
@@ -787,7 +787,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }
 
             Jumped = false;
-            logger.debug('onDidChangeTextEditorSelection end');
+            // logger.debug('onDidChangeTextEditorSelection end');
         }));
 
     extensionContext.subscriptions.push(
