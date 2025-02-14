@@ -78,6 +78,8 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * add `gotoTag` to quickly jump to tag symobol in `sepNotes_category`
 * description about tag can be refreshed immediately
 * fix bug that commands(such as `remove header`) won't take effect when tag has description
+* improve logic of update(only refresh file when notes is modified)
+* add `sepNotes_metadata.json` for recording things like tag order and are more easy to transfer to another computer
 
 #### 0.1.8
 * tag can be renamed in sidebar of `sepNotes_category`

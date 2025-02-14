@@ -67,7 +67,15 @@ export class NotesCat{
     }
     static load(){
       logger.debug('load start');
-      let entries =  this.extensionContext.workspaceState.get(Constants.TagOrder);
+      let entries;
+      if(fs.existsSync(Constants.sepNotesMetadataPath)){
+        let content = fs.readFileSync(Constants.sepNotesMetadataPath,'utf8');
+        let jsonObj = JSON.parse(content);
+        entries = jsonObj.tagOrder;
+      }
+      if(!entries){
+        entries =  this.extensionContext.workspaceState.get(Constants.TagOrder);
+      }
       if(entries){
         this.tagOrder = new Map(entries.map(entry => [entry.key, entry.value]));
       }
@@ -83,11 +91,14 @@ export class NotesCat{
       for(let ele of toDelete){
         this.tagOrder.delete(ele);
       }
+      this.save();
       logger.debug('load end');
     }
     static save(){
       let entries = Array.from(this.tagOrder.entries()).map(([key,value])=>({ key, value }));
       this.extensionContext.workspaceState.update(Constants.TagOrder,entries);
+      let jsonStr = JSON.stringify({"tagOrder":entries});
+      fs.writeFileSync(Constants.sepNotesMetadataPath,jsonStr,"utf8");
     }
     static getOrder(tag:NestedTag, start: number = -1){
       let order:Array<string> = new Array<string>();

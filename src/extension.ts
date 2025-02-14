@@ -101,6 +101,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         workspace.onDidChangeTextDocument((event)=>{
             if (window.activeTextEditor && event.document === window.activeTextEditor.document) {
                 if(event.contentChanges.length > 0){
+                    // sync markdown with source files
                     let path = event.document.uri.fsPath;
                     if(Notes.has(path)){
                         let note = Notes.get(path);
@@ -138,6 +139,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                             }
                         }
                     }
+                    // sync source files with markdown
                     function syncSrcWithMdAll(){
                         for(let contentChange of event.contentChanges){
                             mdLineChangeCount -= rowsChanged(contentChange);
@@ -516,7 +518,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 }
             }
             if(notAttached){
-                window.showInformationMessage('there are files not attached'); 
+                window.showWarningMessage('there are files not attached'); 
             }
             else{
                 writeFile(Constants.sepNotesFilePath, contentMd);
