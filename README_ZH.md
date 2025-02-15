@@ -157,12 +157,31 @@ separable notes 是一个 VSCode 插件，它可以管理你的内联代码笔�
 * 如果你有任何问题，请随时提问，我会在周末回复你。
 
 
-### TODO
-* 重新匹配代码和笔记
-* sepNotes文件开头有一块用于随意记录的区域
-* 做一个匹配的事情
-* 加个命令用于显示sepnotes文件的位置
-* 检测当前是否是比较合适的位置
+### 相关笔记插件项目
+#### 开源
+* [vscode-code-annotation](https://github.com/thamara/vscode-code-annotation)[not inline][Generate Markdown summary][track line]
+  Create and track annotations from your source code without actually committing comments on your code.
+* [linenote](https://github.com/tkrkt/linenote)[not inline][track line]
+  add notes to the line of code
+* [linenoteplus](https://github.com/prmichaelsen/linenoteplus)[inline][track generated id]
+  an update of linenote
+* [vscode-sidenotes](https://github.com/cyberbiont/vscode-sidenotes)[not inline][not work for the latest vscode]
+  This extension provides you an inobtrusive way to annotate your code with external notes, that are stored separately from your document and are shown in pop-ups on hover.
+* [Marginalia](https://github.com/indiejames/marginalia)[inline][track generated id][markdown file]
+  A Visual Studio Code extension for adding embedded markdown notes to code files.
+* [code-notes](https://github.com/ChenYCL/code-notes)[not inline][track line]
+  Code Notes is a VSCode extension that allows you to add notes to your code without using comments
+* [separate-code](https://github.com/SaidTorres3/separate-code)
+* [code-annotator](https://github.com/deemale/code-annotator)[not inline][track line]
+  add notes to the line of code
+* [codebasenotes](https://github.com/Firebrand/codebasenotes)[file note][json file]
+  add notes to the line of code
+* [vscode-inline-bookmarks](https://github.com/tintinweb/vscode-inline-bookmarks)[inline][not separable]
+  Customizable inline Bookmarks for Visual Studio Code
+
+#### 还未开源
+* [ghost-note](https://marketplace.visualstudio.com/items?itemName=leytonoday.ghost-note)[not inline][track symbol]
+  Ghost Note is a VS Code extension that lets you attach comments directly to the symbols in your codebase — without modifying the source code.
 
 如果你喜欢的话，请给它点个星 :star:，谢谢。
 

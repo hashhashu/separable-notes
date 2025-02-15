@@ -157,10 +157,31 @@ if you change this, you should also change the configuration for todo-tree or ot
 ### Feedback
 * If you have any questions, feel free to ask and I'll get back to you at the weekend.
 
+### Related Notes Project
+#### open source
+* [vscode-code-annotation](https://github.com/thamara/vscode-code-annotation)[not inline][Generate Markdown summary][track line]
+  Create and track annotations from your source code without actually committing comments on your code.
+* [linenote](https://github.com/tkrkt/linenote)[not inline][track line]
+  add notes to the line of code
+* [linenoteplus](https://github.com/prmichaelsen/linenoteplus)[inline][track generated id]
+  an update of linenote
+* [vscode-sidenotes](https://github.com/cyberbiont/vscode-sidenotes)[not inline][not work for the latest vscode]
+  This extension provides you an inobtrusive way to annotate your code with external notes, that are stored separately from your document and are shown in pop-ups on hover.
+* [Marginalia](https://github.com/indiejames/marginalia)[inline][track generated id][markdown file]
+  A Visual Studio Code extension for adding embedded markdown notes to code files.
+* [code-notes](https://github.com/ChenYCL/code-notes)[not inline][track line]
+  Code Notes is a VSCode extension that allows you to add notes to your code without using comments
+* [separate-code](https://github.com/SaidTorres3/separate-code)
+* [code-annotator](https://github.com/deemale/code-annotator)[not inline][track line]
+  add notes to the line of code
+* [codebasenotes](https://github.com/Firebrand/codebasenotes)[file note][json file]
+  add notes to the line of code
+* [vscode-inline-bookmarks](https://github.com/tintinweb/vscode-inline-bookmarks)[inline][not separable]
+  Customizable inline Bookmarks for Visual Studio Code
 
-### TODO
-* support block level note(such as /* */)
-
+#### not open source
+* [ghost-note](https://marketplace.visualstudio.com/items?itemName=leytonoday.ghost-note)[not inline][track symbol]
+  Ghost Note is a VS Code extension that lets you attach comments directly to the symbols in your codebase — without modifying the source code.
 
 Please star :star: it if you like it, Thanks.
 
