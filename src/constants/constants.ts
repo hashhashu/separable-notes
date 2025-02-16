@@ -46,6 +46,7 @@ export namespace Constants {
     export const sepNotesCatDesc = sepNotesFileHeadFix + '  \n' + 'notes can be categorized as (#xxx/abc) like other nested tags, order can be adjusted via tree view in the sidebar,   \n'
                                    + 'description can be added beneath tag and will show in the sidebar '  + '-->  \n  \n';
 
+    // save id  
     export const keyNotes = 'separableNotes.notesKey';
     export const TagOrder = 'separableNotes.tagOrder';
 

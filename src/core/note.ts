@@ -1,5 +1,5 @@
 import { Constants,MdType,NoteMode} from "../constants/constants";
-import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, cutNoteId, getPrefix, getLineNumber, isEqual, writeFile, canAttachFile, removeOutlineMarker} from '../utils/utils'
+import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, getLineNumber, isEqual, writeFile, canAttachFile, removeOutlineMarker} from '../utils/utils'
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Configuration } from "../configuration";
@@ -8,6 +8,7 @@ import { NestedTag} from "./tag";
 import { LineIdentity } from "./LineIdentity";
 import { NotesCat } from "./notesCat";
 import { NoteFileTree } from "./noteFileTree";
+import { NoteId } from "./noteId";
 
 export class NoteFile{
     path: string;
@@ -22,7 +23,9 @@ export class NoteFile{
     needRefresh: boolean;
     mdChangeType: MdType;
     lineIdentity: LineIdentity;
-    constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,blocks:Array<NoteBlock> = new Array(),needrefresh:boolean = false){
+    noteLineIdMax: number;
+    constructor(filePath:string,noteMode:NoteMode,configuration:Configuration,statusbar:vscode.StatusBarItem,blocks:Array<NoteBlock> = new Array(),needrefresh:boolean = false,
+            noteLineIdMax:number = 1){
       this.path = filePath;
       this.configuration = configuration;
       this.statusbaritem = statusbar;
@@ -35,6 +38,7 @@ export class NoteFile{
       this.needRefresh = needrefresh;
       this.mdChangeType = MdType.None;
       this.lineIdentity = new LineIdentity(this.path);
+      this.noteLineIdMax = noteLineIdMax;
     }
 
     setStatusBarItemText(noteMode:NoteMode = this.noteMode){
@@ -53,7 +57,7 @@ export class NoteFile{
         this.blocks.length = 0;
         for (let i = 0; i < contentLines.length; i++) {
           let curLine = contentLines[i];
-          if (curLine.includes(this.configuration.noteId)) {
+          if (NoteId.includesNoteId(curLine)) {
             if(block.noteLineCount <= 0){
               block.note += addEof(contentLines[i]);
               block.noteLineCount += 1;
@@ -240,13 +244,6 @@ export class NoteFile{
         return false;
       }
     }
-    toJSON(): any {  
-      return {
-        path: this.path,  
-        noteMode: this.noteMode, // 确保NoteMode可以被序列化  
-        blocks: this.blocks.map(block => block.toJSON()) // 对每个NoteBlock实例调用toJSON方法  
-      };  
-    } 
     
     afterDetachOrAttach():number{
       //all files
@@ -280,13 +277,13 @@ export class NoteFile{
       let contentByCat:Map<string,string> = new Map<string,string>();
       for(let line of contentLines){
         // new start
-        if(line.includes(this.configuration.noteId)){
+        if(NoteId.includesNoteId(line)){
           if(below > 0 && below < 3){
             contentcatblock.addCodeEnd();
             contentcatblocks.push(contentcatblock);
             contentcatblock = new ContentCatBlock();
           }
-          tempContent = cutNoteId(line,this.configuration.noteId);
+          tempContent = NoteId.cutNoteId(line);
           contentcatblock.addNote(tempContent);
           below = 3;
         }
@@ -398,7 +395,7 @@ export class NoteFile{
         const contentLines = this.getContentLines(document);
         let lineCount = 1;
         for(let line of contentLines){
-          if(line.includes(this.configuration.noteId)){
+          if(NoteId.includesNoteId(line)){
             let id = getId(line);
             if(id){
               logger.debug('id:'+id);
@@ -464,7 +461,7 @@ export class NoteFile{
         logger.debug('syncSrcWithMd: start'+linenumber.toString());
         const contentLines = this.getContentLines();
         // can consider another way to add anno(now prefix + content)
-        const prefix = getPrefix(contentLines[linenumber - 2],this.configuration.noteId);
+        const prefix = NoteId.getPrefix(contentLines[linenumber - 2]);
         const annoLines = splitIntoLines(text);
         let annoConcat ='';
         for(let line of annoLines){
@@ -472,7 +469,7 @@ export class NoteFile{
         }
         let start = 0;
         for(let i = (linenumber - 2);i >= 0;i--){
-          if(!contentLines[i].includes(this.configuration.noteId)){
+          if(!NoteId.includesNoteId(contentLines[i])){
             start = i + 1;
             break;
           }
@@ -485,7 +482,7 @@ export class NoteFile{
         logger.debug('syncSrcWithMd:'+annoConcat);
         start = linenumber - 1;
         for(let i = (linenumber -1);i<contentLines.length;i++){
-          if(!contentLines[i].includes(this.configuration.noteId)){
+          if(!NoteId.includesNoteId(contentLines[i])){
             start = i;
             break;
           }
@@ -700,17 +697,23 @@ export class NoteFile{
     writeFile(content:string){
       fs.writeFileSync(this.path, encode(content, this.configuration.encoding));
     }
+    generateLineId():number{
+      this.noteLineIdMax += 1;
+      return this.noteLineIdMax;
+    }
 }
 export class serializableNoteFile{
     path: string;
     noteMode: NoteMode;
     blocks: Array<NoteBlock>;
     needRefresh?: boolean;
+    noteLineIdMax?: number;
     constructor(notefile:NoteFile){
       this.path = notefile.path;
       this.noteMode = notefile.noteMode;
       this.blocks = notefile.blocks;
       this.needRefresh = notefile.needRefresh;
+      this.noteLineIdMax = notefile.noteLineIdMax;
     }
 
     toJSON(): any {  
@@ -718,7 +721,8 @@ export class serializableNoteFile{
         path: this.path,  
         noteMode: this.noteMode, 
         blocks: this.blocks,
-        needRefresh: this.needRefresh
+        needRefresh: this.needRefresh,
+        noteLineIdMax: this.noteLineIdMax
       };  
     }  
 }
@@ -729,8 +733,8 @@ export class NoteBlock{
   noteLineCount: number; // note block lines count
   codeBelow: string; //code below(for match)
   changedLine: number;
-  outline: string;
-  noteLine: number;
+  outline: string;  //outline such as ###
+  noteLine: number; //line number for note(notes maybe multiple lines and cannot be distinguished by codeLine)
   constructor(codeLinep: number = -1, notep: string = '', noteLineCountp:number = 0, codeBelowp:string = '', changedline:number = 0, outlinep:string = '',notelinep:number = 0){
     this.codeLine = codeLinep;
     this.note = notep;

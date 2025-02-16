@@ -32,8 +32,8 @@ function _logLevel(): string {
 }
 
 function _noteId(): string{
-    let noteid = workspace.getConfiguration().get<string>('separableNotes.noteId','sepNotes ');
-    return noteid;
+    let noteid = workspace.getConfiguration().get<string>('separableNotes.noteId','sepNotes');
+    return noteid.trim();
 }
 
 function _encoding(): string{

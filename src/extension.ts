@@ -8,12 +8,13 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, cutNoteId, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberUp, getMdUserRandomNote, decode, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, getRelativePath, isSepNotesCatFile, joinEof} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberUp, getMdUserRandomNote, decode, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, getRelativePath, isSepNotesCatFile, joinEof} from './utils/utils';
 import * as fs from 'fs';
 import { NestedTag } from './core/tag';
 import { NotesCat } from './core/notesCat';
 import { FileOutLineDragAndDrop, FileOutLineProvider, OutLineItem, TagOutLineDragAndDrop, TagOutLineProvider } from './core/treeView';
 import { NoteFileTree } from './core/noteFileTree';
+import { NoteId } from './core/noteId';
 
 let configuration: Configuration;
 let activatables: Array<Activatable> = new Array();
@@ -81,12 +82,15 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
        vscode.commands.executeCommand(Commands.syncMdWithSrc); 
     });
 
+    NoteId.noteId = configuration.noteId;
+
     let activeEditor = vscode.window.activeTextEditor;
     // restore state
     serializedNotes = extensionContext.workspaceState.get(Constants.keyNotes)??new Array<serializableNoteFile>();
     for(let note of serializedNotes){
         if(fs.existsSync(note.path)){
-            Notes.set(note.path,new NoteFile(note.path,note.noteMode,configuration,statusBarItem,note.blocks,(note.needRefresh == null)?false:note.needRefresh));
+            Notes.set(note.path,new NoteFile(note.path,note.noteMode,configuration,statusBarItem,note.blocks,(note.needRefresh == null)?false:note.needRefresh,
+                                        (note.noteLineIdMax == null)?0:note.noteLineIdMax));
         }
     }
     logger.info('workspace state restored');
@@ -408,9 +412,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 let content = activeEditor.document.getText(range);
                 let lines = splitIntoLines(content);
                 let allAdd = true;
-                let noteId = configuration.noteId;
                 for(let line of lines){
-                    if(!line.includes(noteId)){
+                    if(!NoteId.includesNoteId(line)){
                         allAdd = false;
                         break;
                     }
@@ -418,13 +421,14 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 let contentNew = '';
                 if(allAdd){
                     for(let line of lines){
-                        contentNew += addEof(line.replace(new RegExp(noteId,'g'),''));
+                        contentNew += addEof(NoteId.cutNoteId(line));
                     }
                 }
                 else{
+                    let id = note.generateLineId();
                     for(let line of lines){
-                        if(!line.includes(noteId)){
-                            contentNew += addEof(noteId + line);
+                        if(!NoteId.includesNoteId(line)){
+                            contentNew += addEof(NoteId.addNoteId(id) + line);
                         } 
                         else{
                             contentNew += addEof(line);
@@ -463,11 +467,11 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }
         let curLine = position.line;
         let curContent = document.lineAt(curLine).text;
-        if(curContent.includes(configuration.noteId)){
+        if(NoteId.includesNoteId(curContent)){
             // 往上
             let lineTop = curLine;
             for(let i = curLine - 1;i >= 0; i--){
-                if(!document.lineAt(i).text.includes(configuration.noteId)){
+                if(!NoteId.includesNoteId(document.lineAt(i).text)){
                     lineTop = i + 1;   
                     break;
                 }
@@ -475,7 +479,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             // 往下
             let lineDown = curLine + 1;
             for(let i = curLine + 1;i < document.lineCount; i++){
-                if(!document.lineAt(i).text.includes(configuration.noteId)){
+                if(!NoteId.includesNoteId(document.lineAt(i).text)){
                     lineDown = i;   
                     break;
                 }
@@ -485,7 +489,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             let lines = splitIntoLines(content);
             let cutContent = '';
             for(let line of lines){
-                cutContent += addEof(cutNoteId(line,configuration.noteId));
+                cutContent += addEof(NoteId.cutNoteId(line));
             }
             let mds:vscode.MarkdownString = new vscode.MarkdownString;
             mds.appendMarkdown(cutContent);

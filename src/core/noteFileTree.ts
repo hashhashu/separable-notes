@@ -1,8 +1,9 @@
 import { Constants, MdType, OutLineItemType } from "../constants/constants";
 import { logger } from "../logging/logger";
-import { addEof, cutOutLineMarker, decode, getAnnoFromMd, getLineNumber, removeLineNumber, splitIntoLines, writeFile, getPrefix, joinEof } from "../utils/utils";
+import { addEof, cutOutLineMarker, decode, getAnnoFromMd, getLineNumber, removeLineNumber, splitIntoLines, writeFile, joinEof } from "../utils/utils";
 import { LineIdentity } from "./LineIdentity";
 import { NoteBlock, NoteFile } from "./note";
+import { NoteId } from "./noteId";
 import { NestedTag } from "./tag";
 import { OutLineItem } from "./treeView";
 import * as fs from 'fs';
@@ -121,7 +122,7 @@ export class NoteFileTree{
         return this.childrens.get(parentTag.getFullTag());
     }
     static getItemByPos(pos:number):OutLineItem{
-        logger.debug('getItemByPos start');
+        // logger.debug('getItemByPos start');
         pos++;
         let children = this.childrens.get('');
         if(children.length > 0){
@@ -247,7 +248,7 @@ export class NoteFileTree{
                     block.note = block.outline +' ' + block.note;
                     let blockNote = splitIntoLines(block.note);
                     for(let i = 0;i<blockNote.length;i++){
-                        const prefix = getPrefix(srcContentLines[block.noteLine - 1 + i],this.note.configuration.noteId)
+                        const prefix = NoteId.getPrefix(srcContentLines[block.noteLine - 1 + i])
                         srcContentLines[block.noteLine - 1 + i] = prefix + blockNote[i];
                     }
                     newMdContentLines = [...newMdContentLines,...mdContentLines.slice(lastMdIndex,block.changedLine),...blockNote];

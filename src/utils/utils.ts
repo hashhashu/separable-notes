@@ -284,10 +284,6 @@ export function getId(line:string,idOrRefer:boolean = true,identifier:string='')
   return match ? match[1] : null;  
 }
 
-export function cutNoteId(line:string,noteId:string):string{
-  return line.substring(line.indexOf(noteId)+noteId.length).trimLeft();
-}
-
 export function cutOutLineMarker(line:string):string{
   let outline = NestedTag.getOutLine(line);
   return line.substring(outline.length).trimLeft();
@@ -319,9 +315,6 @@ export function recoverOutlineMarker(line:string):string{
   }  
 }
 
-export function getPrefix(line:string,noteId:string):string{
-  return line.substring(0,line.indexOf(noteId)+noteId.length);
-}
 
 export function isSepNotesFile(path:string):boolean{
   if(path.endsWith(Constants.sepNotesFileName)){
