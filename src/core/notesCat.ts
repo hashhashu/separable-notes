@@ -174,7 +174,7 @@ export class NotesCat{
     }
     static getChildren(parent:OutLineItem):Array<OutLineItem>{
       let parentTag = parent.tag;
-      logger.debug('getChildren start parent:'+ parentTag.getFullTag());
+      // logger.debug('getChildren start parent:'+ parentTag.getFullTag());
       let children:Array<OutLineItem>;
       if(this.childrens.has(parentTag.getFullTag())){
         children = this.childrens.get(parentTag.getFullTag());
@@ -232,7 +232,7 @@ export class NotesCat{
         }
         this.childrens.set(parentTag.getFullTag(),children);
       }
-      logger.debug('getChildren end');
+      // logger.debug('getChildren end');
       return children;
     }
     static moveUp(tag:NestedTag){
@@ -472,6 +472,18 @@ export class NotesCat{
       logger.debug('isModified end');
       return false;
     }
+
+    static removeNotes(){
+      let toDeleteTag = new Array<string>();
+      for(let [tag,node] of this.notesCatNodes){
+        if(!node.hasDesc()){
+          toDeleteTag.push(tag);
+        }
+      }
+      for(let tag of toDeleteTag){
+        this.notesCatNodes.delete(tag);
+      }
+    }
 }
 
 export class NotesSrcChanged{
@@ -516,6 +528,9 @@ export class NotesCatNode{
   }
   removeDesc(){
     this.tagDescs = '';
+  }
+  hasDesc():boolean{
+    return this.tagDescs != '';
   }
   getContent(){
     let content = this.tagDescs;

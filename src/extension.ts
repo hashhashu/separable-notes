@@ -509,7 +509,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             let contentgetRet:{"content":string,"contentByCat":Map<string,string>};
             let notAttached = false;
             // to avoid something wrong with notescat file
-            NotesCat.notesCatNodes.clear();
+            NotesCat.removeNotes();
             for(let [_,note] of Notes){
                 if(note.isAttached()){
                     contentgetRet = note.getMdFromSrc();
