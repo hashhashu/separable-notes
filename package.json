@@ -36,7 +36,9 @@
     "notes",
     "comments",
     "bookmark",
-    "separable"
+    "separable",
+    "note",
+    "annotations"
   ],
   "categories": [
     "Notebooks",
@@ -60,6 +62,10 @@
       {
         "command": "separableNotes.detachAll",
         "title": "separableNotes detachAll"
+      },
+      {
+        "command": "separableNotes.fillLostId",
+        "title": "separableNotes fillLostId"
       },
       {
         "command": "separableNotes.attachAll",

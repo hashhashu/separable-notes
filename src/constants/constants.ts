@@ -82,8 +82,9 @@ export namespace Commands {
     export const rename = 'separableNotes.rename'; 
     export const addHeader = 'separableNotes.addHeader'; 
     export const removeHeader = 'separableNotes.removeHeader'; 
+    export const fillLostId = 'separableNotes.fillLostId';
 }
 export enum NoteMode{  Detached = 0,     Attached = 1}
-export enum MdType{ None = 0, sepNotes = 1, sepNotesCat = 2 }
+export enum MdType{ None = 0, sepNotes= 1, sepNotesCat = 2 }
 export enum OutLineItemType{Tag = 0, codeBlock = 1, TagAndCode = 2}
 export enum RenameType{ renameTag = 0, addHeader = 1, removeHeader = 2 }

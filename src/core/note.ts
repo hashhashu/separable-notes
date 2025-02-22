@@ -665,6 +665,39 @@ export class NoteFile{
       this.noteLineIdMax += 1;
       return this.noteLineIdMax.toString();
     }
+    fillLostId(){
+      logger.debug('fillLostId start');
+      if (this.noteMode == NoteMode.Attached) {
+        const contentLines = this.getContentLines();
+        let filledContent = '';
+        let needChange = true;
+        let id = '';
+        let containNote = true;
+        for (let i = 0; i < contentLines.length; i++) {
+          let curLine = contentLines[i];
+          if(NoteId.includesNoteId(curLine)){
+            containNote = true;
+          }
+          else{
+            containNote = false;
+          }
+          if (containNote && NoteId.getId(curLine) == ''){
+            if(needChange){
+              id = this.generateLineId();
+              needChange = false;
+            }
+            curLine = NoteId.fillLostNoteId(id,curLine);
+            NoteId.updateTime(this.path,id,TimeType.create);
+          }
+          if(!containNote){
+            needChange = true;
+          }
+          filledContent += addEof(curLine);
+        }
+        fs.writeFileSync(this.path, encode(filledContent, this.configuration.encoding));
+      }
+      logger.debug('fillLostId end');
+    }
 }
 export class serializableNoteFile{
     path: string;

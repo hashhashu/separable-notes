@@ -104,7 +104,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     ratelimiterChangeSelection = new RateLimiter(1,1000);
     
     extensionContext.subscriptions.push(
-// sepNotes ### sync markdown with source and vice versa #changeEvent/content
+// sepNotes@id80 ### sync markdown with source and vice versa #changeEvent/content
         workspace.onDidChangeTextDocument((event)=>{
             if (window.activeTextEditor && event.document === window.activeTextEditor.document) {
                 if(event.contentChanges.length > 0){
@@ -293,7 +293,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 		}));
       
 	extensionContext.subscriptions.push(
-// sepNotes #### notemode switch  #command/statusbar/notemode
+// sepNotes@id81 #### notemode switch  #command/statusbar/notemode
 		commands.registerCommand(Commands.NoteModeSwitch, async () => {
             activeEditor = vscode.window.activeTextEditor;
             if (!activeEditor) {
@@ -336,7 +336,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }
 	));
 	extensionContext.subscriptions.push(
-// sepNotes ### attach all #command/global/attachall
+// sepNotes@id82 ### attach all #command/global/attachall
 		commands.registerCommand(Commands.attachAll, async () => {
             if(!inAll){
                 logger.debug('attachAll-------------------------');
@@ -394,13 +394,13 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     }
 
 	extensionContext.subscriptions.push(
-// sepNotes ### detach all #command/global/detachall
+// sepNotes@id83 ### detach all #command/global/detachall
 		commands.registerCommand(Commands.detachAll, async () => {
             detachAll();
         }
 	));
 	extensionContext.subscriptions.push(
-// sepNotes ### add comment and remove comment #command/menu/noteit
+// sepNotes@id84 ### add comment and remove comment #command/menu/noteit
 		commands.registerCommand(Commands.noteIt, async () => {
             activeEditor = vscode.window.activeTextEditor;
             let path = activeEditor.document.uri.fsPath;
@@ -521,7 +521,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         vscode.languages.registerHoverProvider({ scheme: 'file'},{provideHover})
     );
 	extensionContext.subscriptions.push(
-// sepNotes ### sync markdown files  #command/global/syncmdwith
+// sepNotes@id85 ### sync markdown files  #command/global/syncmdwith
 		commands.registerCommand(Commands.syncMdWithSrc, async () => {
             logger.debug('syncMdWithSrc----------------------');
             fs.copyFileSync(Constants.sepNotesFilePath,Constants.sepNotesBakFilePath);
@@ -560,7 +560,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 	));
     
     //markdown definition in src file 
-// sepNotes ### #definition
+// sepNotes@id86 ### #definition
     function provideDefinition(document:vscode.TextDocument, position:vscode.Position, token) {
         const line		= document.lineAt(position);
         let lineNumber = getLineNumber(line.text);
@@ -601,7 +601,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     }
 
 	extensionContext.subscriptions.push(
-// sepNotes #command/view/openSepNotes
+// sepNotes@id87 #command/view/openSepNotes
 		commands.registerCommand(Commands.openSepNotes, async () => {
             vscode.workspace.openTextDocument(Constants.sepNotesFilePath).then(document => {  
                 vscode.window.showTextDocument(document);  
@@ -626,7 +626,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 	));
 
 	extensionContext.subscriptions.push(
-// sepNotes ### #command/global/importnotes
+// sepNotes@id88 ### #command/global/importnotes
 		commands.registerCommand(Commands.importNotes, async () => {
             if(!inAll){
                 logger.debug('importNotes---------------');
@@ -705,7 +705,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 	));
 
     extensionContext.subscriptions.push(
-// sepNotes ### #changeEvent/cursor
+// sepNotes@id89 ### #changeEvent/cursor
         window.onDidChangeTextEditorSelection((event)=>{
             if(!ratelimiterChangeSelection.isAllowed()){
                 return;
@@ -799,7 +799,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }));
 
     extensionContext.subscriptions.push(
-// sepNotes ### #command/view/jumptoline
+// sepNotes@id90 ### #command/view/jumptoline
         commands.registerCommand(Commands.jumpToNoteLine, async (item: OutLineItem) => {
             let path = item.path;
             if(item.itemType == OutLineItemType.Tag){
@@ -860,19 +860,19 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }));
 
     extensionContext.subscriptions.push(
-// sepNotes ### #command/view/moveup
+// sepNotes@id91 ### #command/view/moveup
         commands.registerCommand(Commands.MoveUp, async (item: OutLineItem) => {
            NotesCat.moveUp(item.tag);
         }));
 
     extensionContext.subscriptions.push(
-// sepNotes ### #command/view/movedown
+// sepNotes@id92 ### #command/view/movedown
         commands.registerCommand(Commands.MoveDown, async (item: OutLineItem) => {
            NotesCat.moveDown(item.tag);
         }));
 
     extensionContext.subscriptions.push(
-// sepNotes ### #command/view/moveleft
+// sepNotes@id93 ### #command/view/moveleft
         commands.registerCommand(Commands.MoveLeft, async (item: OutLineItem) => {
            NoteFileTree.MoveLeft(item);
            updateStateNote(extensionContext);
@@ -880,7 +880,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }));
 
     extensionContext.subscriptions.push(
-// sepNotes ### #command/view/moveRight
+// sepNotes@id94 ### #command/view/moveRight
         commands.registerCommand(Commands.MoveRight, async (item: OutLineItem) => {
            NoteFileTree.MoveRight(item);
            updateStateNote(extensionContext);
@@ -888,21 +888,21 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }));
 
     extensionContext.subscriptions.push(
-// sepNotes ### #command/view/copytag
+// sepNotes@id95 ### #command/view/copytag
         commands.registerCommand(Commands.copyTag, async (item: OutLineItem) => {
             vscode.env.clipboard.writeText('#' + item.tag.getFullTag());
             window.showInformationMessage(item.tag.getFullTag()+' copied');
         }));
 
     extensionContext.subscriptions.push(
-// sepNotes ### #command/view/copyOutline
+// sepNotes@id96 ### #command/view/copyOutline
         commands.registerCommand(Commands.copyOutline, async (item: OutLineItem) => {
             vscode.env.clipboard.writeText(item.tag.getLastOutline());
             window.showInformationMessage(item.tag.getLastOutline()+' copied');
         }));
 
     extensionContext.subscriptions.push(
-// sepNotes ### #command/view/filtertag
+// sepNotes@id97 ### #command/view/filtertag
         commands.registerCommand(Commands.filterTag, async () => {
             const pick = await window.showQuickPick(NotesCat.getItems());
             if(pick){
@@ -914,19 +914,19 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         }));
 
     extensionContext.subscriptions.push(
-// sepNotes ### #command/view/rename
+// sepNotes@id98 ### #command/view/rename
         commands.registerCommand(Commands.rename, async (item: OutLineItem) => {
             rename(RenameType.renameTag,item);
         }));
 
     extensionContext.subscriptions.push(
-// sepNotes ### #command/view/addHeader
+// sepNotes@id99 ### #command/view/addHeader
         commands.registerCommand(Commands.addHeader, async (item: OutLineItem) => {
             rename(RenameType.addHeader,item);
         }));
 
     extensionContext.subscriptions.push(
-// sepNotes ### #command/view/removeHeader
+// sepNotes@id100 ### #command/view/removeHeader
         commands.registerCommand(Commands.removeHeader, async (item: OutLineItem) => {
             rename(RenameType.removeHeader,item);
         }));
@@ -992,6 +992,15 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             window.showWarningMessage('src file is not matched, need to refresh first'); 
         }
     }
+
+    extensionContext.subscriptions.push(
+// sepNotes@id16 ### #command/view/fillLostId
+        commands.registerCommand(Commands.fillLostId, async () => {
+            for (let [_, note] of Notes) {
+                note.fillLostId();
+            }
+            window.showInformationMessage('fillLostId over');
+        }));
 
     function showAttachStatus(){
         let activeEditor = vscode.window.activeTextEditor;

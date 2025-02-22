@@ -29,7 +29,7 @@ export class NoteId{
         this.extensionContext.workspaceState.update(Constants.LineInfo,entries);
     }
 
-    static updateTime(path:string = '',id:string = '1', timeType:TimeType = TimeType.access){
+    static updateTime(path:string = '',id:string = '', timeType:TimeType = TimeType.access){
         if(path != '' && id != ''){
             let pathConId = path+':'+id.toString();
             if(this.lineInfo.has(pathConId)){
@@ -38,8 +38,8 @@ export class NoteId{
             else{
                 this.lineInfo.set(pathConId,new LineExtraInfo());
             }
+            this.save();
         }
-        this.save();
     }
 
     static includesNoteId(line:string):boolean{
@@ -62,7 +62,7 @@ export class NoteId{
         let prefix = this.getPrefix(line);
         if(prefix.length > 0){
             let pattern = new RegExp('@id(\\d+)');
-            let match = line.match(pattern);
+            let match = prefix.match(pattern);
             if(match && match.length > 1){
                 return match[1];
             }
@@ -70,14 +70,24 @@ export class NoteId{
         return '';
     }
     static printId(path,id:string):string{
-        let pathConId = path+':'+id.toString();
-        if(this.lineInfo.has(pathConId)){
-            return this.lineInfo.get(pathConId).printTime();
+        if(path != '' && id != ''){
+            let pathConId = path+':'+id.toString();
+            if(this.lineInfo.has(pathConId)){
+                return this.lineInfo.get(pathConId).printTime();
+            }
         }
         return '';
     }
-    static addNoteId(lineId:string):string{
-        return this.noteId+'@id'+ lineId+' ';
+    static addNoteId(lineId:string, prefix:string = this.noteId):string{
+        return prefix+'@id'+ lineId+' ';
+    }
+    static fillLostNoteId(lineId:string,line:string):string{
+        let id = this.getId(line);
+        if(id == ''){
+            let prefix = this.getPrefix(line).trimRight();
+            return this.addNoteId(lineId,prefix) + this.cutNoteId(line);
+        }
+        return line;
     }
 }
 // extra info for line(modify time)
