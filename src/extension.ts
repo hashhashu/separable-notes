@@ -710,7 +710,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             if(!ratelimiterChangeSelection.isAllowed()){
                 return;
             }
-            if(!fs.existsSync(event.textEditor.document.uri.fsPath)){
+            let path = event.textEditor.document.uri.fsPath;
+            if(!fs.existsSync(path)){
                 return;
             }
             let curLine = event.selections[0].active.line;
@@ -751,8 +752,14 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }
             // src
             else{
+                // update access time
+                let lineContent = activeEditor.document.lineAt(curLine).text;
+                if(NoteId.includesNoteId(lineContent)){
+                    let id = NoteId.getId(lineContent);
+                    NoteId.updateTime(path,id,TimeType.access);
+                }
+                // postion align
                 editorSrc = activeEditor;
-                let path;
                 for(let editor of vscode.window.visibleTextEditors){
                     path = editor.document.uri.fsPath; 
                     if(isSepNotesFile(path) || (Jumped && isSepNotesCatFile(path))){
@@ -804,8 +811,28 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         let line = item.line;
                         if(item.itemType != OutLineItemType.Tag){
                             let note = Notes.get(item.path);
-                            if(note && !note.isAttached()){
-                                line = note.getDetachedLine(line);
+                            if(note){
+                                if(!note.isAttached()){
+                                    line = note.getDetachedLine(line);
+                                }
+                                // when click from sepnotes_category, update time (click from sepnotes doesn't need it(onDidChangeTextEditorSelection will do it))
+                                else if(item.itemType == OutLineItemType.codeBlock){
+                                    if(!note.isMatch(line,item.code)){
+                                        vscode.window.showWarningMessage("src file not matched ");
+                                    }
+                                    else{
+                                        let noteLine = line - 1;
+                                        let document = textEditor.document;
+                                        if(!NoteId.includesNoteId(document.lineAt(noteLine).text)){
+                                            noteLine -= 1;
+                                        }
+                                        let lineContent = document.lineAt(noteLine).text;
+                                        if(NoteId.includesNoteId(lineContent)){
+                                            let id = NoteId.getId(lineContent);
+                                            NoteId.updateTime(item.path,id,TimeType.access);
+                                        }
+                                    }
+                                }
                             }
                             line = line - 1;
                         }
