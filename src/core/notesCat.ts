@@ -83,13 +83,43 @@ export class NotesCat{
         this.tagOrder = new Map<string,string>();
       }
       let toDelete = [];
-      for(let [key,_] of this.tagOrder){
-        if(!this.notesCatNodes.has(key)){
+      for(let [key,value] of this.tagOrder){
+        if((!this.notesCatNodes.has(key))
+          || (key == value))
+        {
           toDelete.push(key);
         }
       }
       for(let ele of toDelete){
         this.tagOrder.delete(ele);
+      }
+      // avoid abnormal situation(tag lost) that tow value correspond to same value
+      let anchorValue = new Map<string,Array<string>>();
+      for(let [key,_] of this.notesCatNodes){
+        if(!this.tagOrder.has(key)){
+          if(anchorValue.has(key)){
+            anchorValue.get(key).push(key);
+          }
+          else{
+            anchorValue.set(key,[key]);
+          }
+        }
+      }
+      for(let [key,value] of this.tagOrder){
+        value = (new NestedTag(key).getParentTag())+'/'+value;
+        if(anchorValue.has(value)){
+          anchorValue.get(value).push(key);
+        }
+        else{
+          anchorValue.set(value,[key]);
+        }
+      }
+      for(let [_,values] of anchorValue){
+        if(values.length > 1){
+          for(let value of values){
+            this.tagOrder.delete(value);
+          }
+        }
       }
       this.save();
       logger.debug('load end');
@@ -414,6 +444,7 @@ export class NotesCat{
       sortedCat = Array.from(contentByCatAll.keys());
       sortedCat.sort((a,b)=>NestedTag.compareNestedTag(a,b));
       for(let tag of sortedCat){
+        logger.debug('tag:'+tag);
           // logger.debug('lastNestedTag:'+lastNestedTag.tags.join('/')+' tag:'+tag);
           for(let outline of lastNestedTag.needAddOutLine(tag)){
               contentMdCat += addEof(outline);
