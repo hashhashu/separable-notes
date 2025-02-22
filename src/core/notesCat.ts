@@ -484,6 +484,34 @@ export class NotesCat{
         this.notesCatNodes.delete(tag);
       }
     }
+
+    // add $ after #   (#)->(#$)
+    static removeOutlineMarker(line:string):string{
+      const regex = /^\s*#+\s+/;   
+      const match = line.match(regex);
+      if(match){
+        return line.replace(/^(\s*#+)(.*)/,(match, prefix, suffix) => {
+          return prefix + '$' + suffix;  
+        }); 
+      }
+      else{
+        return line;
+      }  
+    }
+
+    // remove $ after #  (#$)->(#)
+    static recoverOutlineMarker(line:string):string{
+      const regex = /^\s*#+\$\s+/;   
+      const match = line.match(regex);
+      if(match){
+        return line.replace(/^(\s*#+\$)(.*)/, (match, prefix, suffix) => {
+          return prefix.substring(0,prefix.length - 1) + suffix;  
+        });
+      }
+      else{
+        return line;
+      }  
+    }
 }
 
 export class NotesSrcChanged{

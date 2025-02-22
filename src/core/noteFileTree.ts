@@ -1,6 +1,6 @@
 import { Constants, MdType, OutLineItemType } from "../constants/constants";
 import { logger } from "../logging/logger";
-import { addEof, cutOutLineMarker, decode, getAnnoFromMd, getLineNumber, removeLineNumber, splitIntoLines, writeFile, joinEof } from "../utils/utils";
+import { addEof, decode, getAnnoFromMd, getLineNumber, removeLineNumber, splitIntoLines, writeFile, joinEof } from "../utils/utils";
 import { LineIdentity } from "./LineIdentity";
 import { NoteBlock, NoteFile } from "./note";
 import { NoteId } from "./noteId";
@@ -8,6 +8,7 @@ import { NestedTag } from "./tag";
 import { OutLineItem } from "./treeView";
 import * as fs from 'fs';
 import * as vscode from 'vscode';
+// part of sepNotes.md(according to path)
 export class NoteFileTree{
     static childrens: Map<string,Array<OutLineItem>> = new Map<string,Array<OutLineItem>>();
     static noteFileContent: Array<NoteBlock> = new Array<NoteBlock>();
@@ -62,7 +63,7 @@ export class NoteFileTree{
                             if (lineIdentity.isTagOutLine(noteContent)) {
                                 outline = NestedTag.getOutLine(noteContent);
                                 curNestedTag.update(outline + ' ' + noteLineNumber.toString());
-                                noteContent = cutOutLineMarker(noteContent);
+                                noteContent = NoteFileTree.cutOutLineMarker(noteContent);
                             }
                             else {
                                 curNestedTag.update(Constants.normalTag + ' ' + noteLineNumber.toString());
@@ -295,5 +296,10 @@ export class NoteFileTree{
             }
         }
         return ret;
+    }
+    // remove outline (###)->()
+    static cutOutLineMarker(line:string):string{
+        let outline = NestedTag.getOutLine(line);
+        return line.substring(outline.length).trimLeft();
     }
 }

@@ -5,7 +5,7 @@ import * as vscode from 'vscode';
 import path from "path";
 import { Constants } from '../constants/constants';
 import * as fs from 'fs'; 
-import { NestedTag } from '../core/tag';
+import { NotesCat } from '../core/notesCat';
 
 export function randomString(length: number, extended: boolean = false) {
     let text = "";
@@ -247,12 +247,11 @@ export function getAnnoFromMd(documment:vscode.TextDocument,startpos:number,cont
             return {"text":'',"linenumber":-1,"codeBelow":''};
           }
     if(isSepNotesCat){
-      ret += addEof(recoverOutlineMarker(line));
+      ret += addEof(NotesCat.recoverOutlineMarker(line));
     }
     else{
       ret += addEof(line);
     }
-    
   }
   logger.debug('start:'+start.toString()+' end:'+end.toString());
   return {"text":ret,"linenumber":getLineNumber(lines[end+2]),"codeBelow":removeLineNumber(lines[end+2])};
@@ -269,52 +268,6 @@ export function getMatchLineCount(documment:vscode.TextDocument,matchText:string
   }
   return count;
 }
-
-export function getId(line:string,idOrRefer:boolean = true,identifier:string=''):string|null{
-  let regex;
-  if(idOrRefer){
-    regex = new RegExp(`@id\\s*=\\s*([^\\s]+)`) ;  
-  }
-  else{
-    regex = new RegExp(`${identifier}@refid\\s*=\\s*([^\\s]+)`) ;  
-  }
-  
-  const match = line.match(regex);  
-  
-  return match ? match[1] : null;  
-}
-
-export function cutOutLineMarker(line:string):string{
-  let outline = NestedTag.getOutLine(line);
-  return line.substring(outline.length).trimLeft();
-}
-
-export function removeOutlineMarker(line:string):string{
-  const regex = /^\s*#+\s+/;   
-  const match = line.match(regex);
-  if(match){
-    return line.replace(/^(\s*#+)(.*)/,(match, prefix, suffix) => {
-      return prefix + '$' + suffix;  
-    }); 
-  }
-  else{
-    return line;
-  }  
-}
-
-export function recoverOutlineMarker(line:string):string{
-  const regex = /^\s*#+\$\s+/;   
-  const match = line.match(regex);
-  if(match){
-    return line.replace(/^(\s*#+\$)(.*)/, (match, prefix, suffix) => {
-      return prefix.substring(0,prefix.length - 1) + suffix;  
-    });
-  }
-  else{
-    return line;
-  }  
-}
-
 
 export function isSepNotesFile(path:string):boolean{
   if(path.endsWith(Constants.sepNotesFileName)){

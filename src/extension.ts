@@ -8,13 +8,13 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, getId, RateLimiter, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberUp, getMdUserRandomNote, decode, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, getRelativePath, isSepNotesCatFile, joinEof} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, RateLimiter, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberUp, getMdUserRandomNote, decode, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, getRelativePath, isSepNotesCatFile, joinEof} from './utils/utils';
 import * as fs from 'fs';
 import { NestedTag } from './core/tag';
 import { NotesCat } from './core/notesCat';
 import { FileOutLineDragAndDrop, FileOutLineProvider, OutLineItem, TagOutLineDragAndDrop, TagOutLineProvider } from './core/treeView';
 import { NoteFileTree } from './core/noteFileTree';
-import { NoteId } from './core/noteId';
+import { NoteId, TimeType } from './core/noteId';
 
 let configuration: Configuration;
 let activatables: Array<Activatable> = new Array();
@@ -70,6 +70,9 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     NotesCat.extensionContext = extensionContext;
     NotesCat.tagOutLineProvider = tagOutLineProvider;
     NotesCat.refresh();
+
+    NoteId.extensionContext = extensionContext;
+    NoteId.load();
 
     fileOutLineProvider = new FileOutLineProvider();
     fileOutLineDragAndDrop = new FileOutLineDragAndDrop();
@@ -132,19 +135,30 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         // sync markdown with source
                         else if(note.isAttached()){
                             if(ratelimiter.isAllowed()){
-                                note.refresh(event.document,getMdStatus());
+                                syncMdWithSrcOnChange(note);
                             }
                             else{
                                 setTimeout(function(){
                                     if(ratelimiter.isAllowed()){
-                                        note.refresh(event.document,getMdStatus());
+                                        syncMdWithSrcOnChange(note);
                                     }
                                 },1200);
                             }
                         }
                     }
+                    // sync markdown with source
+                    function syncMdWithSrcOnChange(note:NoteFile){
+                        note.refresh(event.document,getMdStatus());
+                        let lines = splitIntoLines(event.document.getText());
+                        for(let contentChange of event.contentChanges){
+                            let startpos = contentChange.range.start.line;
+                            let line = lines[startpos];
+                            let id = NoteId.getId(line);
+                            NoteId.updateTime(path,id,TimeType.modify);
+                        }
+                    }
                     // sync source files with markdown
-                    function syncSrcWithMdAll(){
+                    function syncSrcWithMdAllOnChange(){
                         for(let contentChange of event.contentChanges){
                             mdLineChangeCount -= rowsChanged(contentChange);
                         }
@@ -198,12 +212,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                             mdLineChangeCount += rowsChanged(contentChange);
                         }
                         if(ratelimiterSep.isAllowed()){
-                            syncSrcWithMdAll();
+                            syncSrcWithMdAllOnChange();
                         }
                         else{
                             setTimeout(function () {
                                 if (ratelimiterSep.isAllowed()) {
-                                    syncSrcWithMdAll();
+                                    syncSrcWithMdAllOnChange();
                                 }
                             }, 1200);
                         }
@@ -434,6 +448,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                             contentNew += addEof(line);
                         }
                     }
+                    NoteId.updateTime(note.path,id,TimeType.create);
                 }
                 let selection = activeEditor.selection;
                 activeEditor.edit(editBuilder => {  
@@ -459,7 +474,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             updateState(activeEditor,extensionContext);
         }
 	));
-// sepNotes ### hover for inline code #hover
+// sepNotes@id15 ### hover for inline code #hover
     function provideHover(document:vscode.TextDocument, position:vscode.Position, token){
         let path = document.uri.fsPath;
         if(!Notes.has(path) || !Notes.get(path).isAttached()){
@@ -468,6 +483,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
         let curLine = position.line;
         let curContent = document.lineAt(curLine).text;
         if(NoteId.includesNoteId(curContent)){
+            let id = NoteId.getId(curContent);
             // 往上
             let lineTop = curLine;
             for(let i = curLine - 1;i >= 0; i--){
@@ -492,7 +508,11 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 cutContent += addEof(NoteId.cutNoteId(line));
             }
             let mds:vscode.MarkdownString = new vscode.MarkdownString;
-            mds.appendMarkdown(cutContent);
+            mds.appendText(cutContent);
+            let extraInfo = NoteId.printId(path,id); 
+            if(extraInfo != ''){
+                mds.appendText(extraInfo);
+            }
             return new vscode.Hover(mds,range);
         }
     }
@@ -568,37 +588,12 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 return new vscode.Location(vscode.Uri.file(filePath), new vscode.Position(lineNumber - 1, position.character - 2 - lineNumber.toString().length));
             }
         }
-        let id = getId(line.text,false,configuration.noteId);
-        if(id){
-            for(let [_,note] of Notes){
-                let ret = note.matchId(id);
-                if(ret.line > 0){
-                    return new vscode.Location(vscode.Uri.file(note.path), new vscode.Position(ret.line - 1, 0));
-                }
-            }
-        }
     }
     
 
     extensionContext.subscriptions.push(vscode.languages.registerDefinitionProvider(['markdown'],{
         provideDefinition
         })
-    );
-
-    // markdown completion for id in src
-    function provideCompletionItems(document:vscode.TextDocument, position:vscode.Position, token, context) {
-        let ret: vscode.CompletionItem[] = new Array();
-        for (let [_, note] of Notes) {
-            for (let id of note.getIds()) {
-                logger.debug(id.note);
-                ret.push(new vscode.CompletionItem('#'+configuration.noteId+'@refid=' + id.note, vscode.CompletionItemKind.Field));
-            }
-        }
-        return ret;
-    }
-    extensionContext.subscriptions.push(vscode.languages.registerCompletionItemProvider(['markdown'],{
-        provideCompletionItems
-        },'@')
     );
 
     for (let activatable of activatables) {

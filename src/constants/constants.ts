@@ -49,6 +49,7 @@ export namespace Constants {
     // save id  
     export const keyNotes = 'separableNotes.notesKey';
     export const TagOrder = 'separableNotes.tagOrder';
+    export const LineInfo   = 'separableNotes.lineInfo';
 
     export const glineIdentity = new LineIdentity();
 

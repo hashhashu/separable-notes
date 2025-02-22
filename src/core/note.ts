@@ -1,5 +1,5 @@
 import { Constants,MdType,NoteMode} from "../constants/constants";
-import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getId, getLineNumber, isEqual, writeFile, canAttachFile, removeOutlineMarker} from '../utils/utils'
+import {encode,decode, splitIntoLines, addEof, getLanguageIdetifier, getLineNumber, isEqual, writeFile, canAttachFile} from '../utils/utils'
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Configuration } from "../configuration";
@@ -8,7 +8,7 @@ import { NestedTag} from "./tag";
 import { LineIdentity } from "./LineIdentity";
 import { NotesCat } from "./notesCat";
 import { NoteFileTree } from "./noteFileTree";
-import { NoteId } from "./noteId";
+import { NoteId, TimeType } from "./noteId";
 
 export class NoteFile{
     path: string;
@@ -389,46 +389,7 @@ export class NoteFile{
       }
     }
 
-    refreshId(document:vscode.TextDocument = null){
-      if(this.isAttached()){
-        this.ids.length = 0;
-        const contentLines = this.getContentLines(document);
-        let lineCount = 1;
-        for(let line of contentLines){
-          if(NoteId.includesNoteId(line)){
-            let id = getId(line);
-            if(id){
-              logger.debug('id:'+id);
-              this.ids.push(new NoteBlock(lineCount,id));
-            }
-          }
-          ++lineCount;
-        }
-      }
-    }
-
-    getIds(){
-      return this.ids;
-    }
-
-    matchId(ido:string,document:vscode.TextDocument = null){
-      if(this.isAttached()){
-        for(let idi of this.ids){
-          if(idi.note == ido){
-            let ret = '';
-            const contentLines = this.getContentLines(document);
-            for(let i = idi.codeLine ; i<Math.min(contentLines.length,idi.codeLine+3) ;i++){
-              ret += addEof(contentLines[i-1]);
-            }
-            return {"line":idi.codeLine,"content":ret};
-          }
-        }
-      }
-      return {"line":0,"content":''};
-    }
-
     refresh(document:vscode.TextDocument = null, mdStatus:string){
-      this.refreshId(document);
       this.refreshMd(document,mdStatus);
       this.refreshMdCat(document);
       this.needRefresh = false;
@@ -461,7 +422,10 @@ export class NoteFile{
         logger.debug('syncSrcWithMd: start'+linenumber.toString());
         const contentLines = this.getContentLines();
         // can consider another way to add anno(now prefix + content)
-        const prefix = NoteId.getPrefix(contentLines[linenumber - 2]);
+        let line = contentLines[linenumber - 2];
+        const prefix = NoteId.getPrefix(line);
+        let id = NoteId.getId(line);
+        NoteId.updateTime(this.path,id,TimeType.modify);
         const annoLines = splitIntoLines(text);
         let annoConcat ='';
         for(let line of annoLines){
@@ -697,9 +661,9 @@ export class NoteFile{
     writeFile(content:string){
       fs.writeFileSync(this.path, encode(content, this.configuration.encoding));
     }
-    generateLineId():number{
+    generateLineId():string{
       this.noteLineIdMax += 1;
-      return this.noteLineIdMax;
+      return this.noteLineIdMax.toString();
     }
 }
 export class serializableNoteFile{
@@ -766,7 +730,7 @@ class ContentCatBlock{
   }
   addNote(contentP:string){
     this.content += addEof(contentP);
-    this.contentCat += addEof(removeOutlineMarker(contentP));
+    this.contentCat += addEof(NotesCat.removeOutlineMarker(contentP));
     this.addKeywords(NestedTag.getTag(contentP));
   }
   addCodeBegin(identifier:string){
