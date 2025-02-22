@@ -787,10 +787,16 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             }
 
             // tree view item show
-            if(fileOutLineTreeView.visible && !Jumped){
-                let item = fileOutLineProvider.getItemByPos(curLine);
-                if (item) {
+            let item = fileOutLineProvider.getItemByPos(curLine);
+            if(item){
+                if(fileOutLineTreeView.visible && !Jumped){
                     fileOutLineTreeView.reveal(item, { focus: false, select: true });
+                }
+                //update access time
+                let lineContent = activeEditor.document.lineAt(item.line - 1).text;
+                if(NoteId.includesNoteId(lineContent)){
+                    let id = NoteId.getId(lineContent);
+                    NoteId.updateTime(path,id,TimeType.access);
                 }
             }
 
