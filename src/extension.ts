@@ -786,17 +786,19 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 }
             }
 
-            // tree view item show
+            // `sepnotes` tree view item show
             let item = fileOutLineProvider.getItemByPos(curLine);
             if(item){
                 if(fileOutLineTreeView.visible && !Jumped){
                     fileOutLineTreeView.reveal(item, { focus: false, select: true });
                 }
                 //update access time
-                let lineContent = activeEditor.document.lineAt(item.line - 1).text;
-                if(NoteId.includesNoteId(lineContent)){
-                    let id = NoteId.getId(lineContent);
-                    NoteId.updateTime(path,id,TimeType.access);
+                if(Math.abs(item.line - curLine) < 10){
+                    let lineContent = activeEditor.document.lineAt(item.line - 1).text;
+                    if(NoteId.includesNoteId(lineContent)){
+                        let id = NoteId.getId(lineContent);
+                        NoteId.updateTime(path,id,TimeType.access);
+                    }
                 }
             }
 

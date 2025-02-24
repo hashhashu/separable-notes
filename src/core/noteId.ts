@@ -1,5 +1,6 @@
 import { Constants } from "../constants/constants";
 import { logger } from "../logging/logger";
+import { RateLimiter } from "../utils/utils";
 
 // noteid(for store extra info on line)
 export enum TimeType{
@@ -11,6 +12,7 @@ export class NoteId{
     static noteId:string;
     static lineInfo:Map<string,LineExtraInfo>;
     static extensionContext;
+    static ratelimiterSave:RateLimiter;
 
     static load(){
         logger.debug('NoteId load start');
@@ -21,12 +23,15 @@ export class NoteId{
         else{
             this.lineInfo = new Map<string,LineExtraInfo>();
         }
+        this.ratelimiterSave = new RateLimiter(1,1000);
         logger.debug('NoteId load end');
     }
 
     static save(){
+        logger.debug('NoteId save start');
         let entries = Array.from(this.lineInfo.entries()).map(([key,value])=>({ key, value }));
         this.extensionContext.workspaceState.update(Constants.LineInfo,entries);
+        logger.debug('NoteId save end');
     }
 
     static updateTime(path:string = '',id:string = '', timeType:TimeType = TimeType.access){
@@ -38,7 +43,16 @@ export class NoteId{
             else{
                 this.lineInfo.set(pathConId,new LineExtraInfo());
             }
-            this.save();
+            if(this.ratelimiterSave.isAllowed()){
+                this.save();
+            }
+            else{
+                setTimeout(function(){
+                    if(NoteId.ratelimiterSave.isAllowed()){
+                        NoteId.save();
+                    }
+                },1200);
+            }
         }
     }
 

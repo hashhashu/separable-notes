@@ -444,7 +444,6 @@ export class NotesCat{
       sortedCat = Array.from(contentByCatAll.keys());
       sortedCat.sort((a,b)=>NestedTag.compareNestedTag(a,b));
       for(let tag of sortedCat){
-        logger.debug('tag:'+tag);
           // logger.debug('lastNestedTag:'+lastNestedTag.tags.join('/')+' tag:'+tag);
           for(let outline of lastNestedTag.needAddOutLine(tag)){
               contentMdCat += addEof(outline);

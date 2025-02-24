@@ -378,6 +378,7 @@ export class RateLimiter {
   private refillRate: number; // tokens per second  
   
   constructor(maxTokens: number, refillRate: number) {  
+    maxTokens = maxTokens - 1 + 0.01;  //if 1 initial 0.01
     this.tokens = maxTokens;  
     this.lastRefillTime = Date.now();  
     this.maxTokens = maxTokens;  
