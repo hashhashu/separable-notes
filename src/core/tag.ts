@@ -154,18 +154,21 @@ export class NestedTag{
         return c.compareString(b,adjusted);
     }
 
+    // (# abc) -> (#)
     static getOutLine(line:string){
         const regex = /^(#+)\s+/;   
         const match = line.match(regex);  
         return (match && match.length > 1) ? match[1] : '';
     }
 
+    // (#  abc) -> (abc)
     static getOutLineTag(line:string){
         const regex = /^#+\s+([^\s]+)/;   
         const match = line.match(regex);  
         return (match && match.length > 1) ? match[1] : '';
     }
 
+    // (#abc/def) -> (abc/def)
     static getTag(line:string):Array<string>{
         const regex = /(?:^|\s)#([^\s#]+)/g;   
         let match;

@@ -802,6 +802,16 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 }
             }
 
+            //`sepnotes_category` tree view(if tag num is 1)
+            let lineContent = activeEditor.document.lineAt(curLine).text;
+            let tags =  NestedTag.getTag(lineContent);
+            if(tags.length == 1 && tagOutLineTreeView.visible){
+                let item = NotesCat.revealItem(tags[0]);
+                if(item){
+                    tagOutLineTreeView.reveal(item, { focus: true, select: true, expand: true }); 
+                }             
+            }
+
             Jumped = false;
             // logger.debug('onDidChangeTextEditorSelection end');
         }));
