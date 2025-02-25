@@ -27,6 +27,8 @@ export class NotesCat{
       let crossDesc = false;
       let tagStart = false;
       let path = '';
+      let tmpOutLineItem:OutLineItem;
+      let firstLevel = false;
       for(let line of this.contentLines){
         linenumber = linenumber + 1;
         // skip the beginning
@@ -41,11 +43,14 @@ export class NotesCat{
           notesCatNode = new NotesCatNode(linenumber);
           this.notesCatNodes.set(curNestedTag.getFullTag(),notesCatNode);
           crossDesc = false;
+          firstLevel = false;
           // only first level
           if(NestedTag.getOutLine(line).length == 1){
             let tag = NestedTag.getOutLineTag(line);
             this.addedTag.add(tag);
-            headings.push(new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,new NestedTag(tag),OutLineItemType.Tag,'','',linenumber));
+            tmpOutLineItem = new OutLineItem(vscode.TreeItemCollapsibleState.Collapsed,new NestedTag(tag),OutLineItemType.Tag,'','',linenumber); 
+            headings.push(tmpOutLineItem);
+            firstLevel = true;
           }
         }
         else if (Constants.glineIdentity.isFileStart(line)) {
@@ -55,6 +60,9 @@ export class NotesCat{
         }
         else if(!crossDesc) {
             notesCatNode.tagDescs += addEof(line);
+            if(firstLevel){
+              tmpOutLineItem.updateTagDesc();
+            }
         }
         else{
           notesCatNode.addNotes(path,addEof(line));

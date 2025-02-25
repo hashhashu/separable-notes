@@ -41,6 +41,13 @@ export  class OutLineItem extends vscode.TreeItem{
         }
 		this.parent = parent;
     }
+
+	updateTagDesc(){
+		if(this.itemType == OutLineItemType.Tag){
+			this.tooltip = NotesCat.getTagDesc(this.tag.getFullTag());
+			this.description = this.tooltip;
+		}
+	}
 }
 
 
