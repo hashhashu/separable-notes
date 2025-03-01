@@ -35,7 +35,7 @@ export class NoteHistoryBlock{
     constructor(pathp:string, idp:string, notep:string){
         this.path = pathp;
         this.id = idp;
-        this.note = NoteId.cutNoteId(notep);
+        this.note = NoteId.cutOutLineMarker(NoteId.cutNoteId(notep));
     }
     toJSON(): any {  
       return {

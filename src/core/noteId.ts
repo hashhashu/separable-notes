@@ -2,6 +2,7 @@ import { Constants } from "../constants/constants";
 import { logger } from "../logging/logger";
 import { RateLimiter } from "../utils/utils";
 import { NoteHistory, NoteHistoryBlock } from "./noteHistory";
+import { NestedTag } from "./tag";
 
 // noteid(for store extra info on line)
 export enum TimeType{
@@ -90,6 +91,11 @@ export class NoteId{
         let prefix = this.getPrefix(line);
         return line.substring(prefix.length).trimLeft();
     }
+    // remove outline (###)->()
+    static cutOutLineMarker(line:string):string{
+        let outline = NestedTag.getOutLine(line);
+        return line.substring(outline.length).trimLeft();
+    }
     static getPrefix(line:string):string{
         let pattern = new RegExp('\\b'+this.noteId+'(@id\\d+)? ');
         let match = pattern.exec(line);
@@ -132,6 +138,15 @@ export class NoteId{
     }
     static getLineKey(path:string = '',id:string = ''){
         return path+':'+id;
+    }
+    static getAccessTime(path:string = '',id:string = ''):string{
+        if(path != '' && id != ''){
+            let pathConId = this.getLineKey(path,id);
+            if(this.lineInfo.has(pathConId)){
+                return (new Date(this.lineInfo.get(pathConId).accessTime)).toLocaleString();
+            }
+        }
+        return '';
     }
 }
 // extra info for line(modify time)

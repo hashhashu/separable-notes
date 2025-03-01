@@ -63,7 +63,7 @@ export class NoteFileTree{
                             if (lineIdentity.isTagOutLine(noteContent)) {
                                 outline = NestedTag.getOutLine(noteContent);
                                 curNestedTag.update(outline + ' ' + noteLineNumber.toString());
-                                noteContent = NoteFileTree.cutOutLineMarker(noteContent);
+                                noteContent = NoteId.cutOutLineMarker(noteContent);
                             }
                             else {
                                 curNestedTag.update(Constants.normalTag + ' ' + noteLineNumber.toString());
@@ -296,10 +296,5 @@ export class NoteFileTree{
             }
         }
         return ret;
-    }
-    // remove outline (###)->()
-    static cutOutLineMarker(line:string):string{
-        let outline = NestedTag.getOutLine(line);
-        return line.substring(outline.length).trimLeft();
     }
 }

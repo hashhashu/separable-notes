@@ -6,6 +6,7 @@ import { NoteFileTree } from './noteFileTree';
 import { logger } from '../logging/logger';
 import { NoteHistory } from './noteHistory';
 import { getRelativePath } from '../utils/utils';
+import { NoteId } from './noteId';
 
 export  class OutLineItem extends vscode.TreeItem{  
     tag: NestedTag = new NestedTag();
@@ -37,7 +38,7 @@ export  class OutLineItem extends vscode.TreeItem{
                 "arguments": [this]
             }
 			if(this.itemType == OutLineItemType.NoteHistory){
-				this.tooltip = getRelativePath(this.path);
+				this.tooltip =  codep + '\n ' + getRelativePath(this.path)+'\n '+NoteId.getAccessTime(this.path,this.line.toString());
 			}
 			else{
 				this.tooltip = label + '  line:' + linep.toString();
