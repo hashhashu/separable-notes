@@ -699,7 +699,6 @@ export class NoteFile{
     getLineFromId(id:string):number{
       if(this.isAttached()){
         const contentLines = this.getContentLines();
-        this.blocks.length = 0;
         for (let i = 0; i < contentLines.length; i++) {
           let curLine = contentLines[i];
           if (NoteId.includesNoteId(curLine)
@@ -716,6 +715,22 @@ export class NoteFile{
         } 
       }
       return 0;
+    }
+    getNoteFromNoteLine(noteLine:number):string{
+      noteLine = this.getDetachedLine(noteLine);
+      let lastNote = '';
+      if(!this.isAttached()){
+        for(let block of this.blocks){
+          if(block.codeLine <= noteLine){
+            lastNote = block.note;
+          }
+          else{
+            break;
+          }
+        } 
+      }
+      logger.debug('noteline:'+noteLine+' '+lastNote);
+      return lastNote;
     }
 }
 export class serializableNoteFile{

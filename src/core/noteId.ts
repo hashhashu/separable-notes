@@ -41,21 +41,6 @@ export class NoteId{
         logger.debug('NoteId save start');
         let entries = Array.from(this.lineInfo.entries()).map(([key,value])=>({ key, value }));
         this.extensionContext.workspaceState.update(Constants.LineInfo,entries);
-
-        // remove duplicate
-        let addedLine = new Set();
-        let addedLength = 0;
-        let newHistory= new Array<NoteHistoryBlock>();
-        for(let i = this.lineAccessHistory.length - 1; i>=0 ;i--){
-            let lineHistory = this.lineAccessHistory[i];
-            let id = lineHistory.id;
-            if(id != '' && !addedLine.has(id) && addedLength <= Constants.lineHistoryMaxNum){
-                addedLine.add(id);
-                ++addedLength;
-                newHistory.push(lineHistory);
-            }
-        }
-        this.lineAccessHistory = newHistory.reverse();
         this.extensionContext.workspaceState.update(Constants.LineAccessHistroy,this.lineAccessHistory);
         NoteHistory.refresh();
         logger.debug('NoteId save end');
@@ -71,6 +56,21 @@ export class NoteId{
                 this.lineInfo.set(pathConId,new LineExtraInfo());
             }
             this.lineAccessHistory.push(new NoteHistoryBlock(path,id,content));
+            // remove duplicate
+            let addedLine = new Set();
+            let addedLength = 0;
+            let newHistory= new Array<NoteHistoryBlock>();
+            for(let i = this.lineAccessHistory.length - 1; i>=0 ;i--){
+                let lineHistory = this.lineAccessHistory[i];
+                let id = lineHistory.id;
+                if(id != '' && !addedLine.has(id) && addedLength <= Constants.lineHistoryMaxNum){
+                    addedLine.add(id);
+                    ++addedLength;
+                    newHistory.push(lineHistory);
+                }
+            }
+            this.lineAccessHistory = newHistory.reverse();
+            
             if(this.ratelimiterSave.isAllowed()){
                 this.save();
             }

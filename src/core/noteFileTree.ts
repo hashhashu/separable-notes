@@ -130,10 +130,10 @@ export class NoteFileTree{
             let i = 0;
             let lastItem = children[0];
             while(i <= children.length){
-                if(i < children.length && children[i].line == pos){
+                if(i < children.length && this.note.getDetachedLine(children[i].line) == pos){
                     return children[i];
                 }
-                else if(i == children.length ||  children[i].line > pos){
+                else if(i == children.length || this.note.getDetachedLine(children[i].line) > pos){
                     if(this.childrens.has(lastItem.tag.getFullTag())){
                         children = this.childrens.get(lastItem.tag.getFullTag());
                         i = 0;

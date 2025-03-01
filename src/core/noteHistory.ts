@@ -10,6 +10,7 @@ export class NoteHistory{
     static noteHistoryProvider;
     static refresh(){
         logger.debug('NoteHistory refresh start');
+        this.childrens.clear();
         let items = new Array<OutLineItem>();
         let lineAccessHistory = NoteId.lineAccessHistory.reverse().slice(0,Constants.lineHistoryMaxNum);
         for(let block of lineAccessHistory){

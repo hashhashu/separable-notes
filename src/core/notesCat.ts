@@ -5,6 +5,7 @@ import { NestedTag } from "./tag";
 import { OutLineItem } from "./treeView";
 import * as fs from 'fs';
 import { logger } from '../logging/logger';
+import { NoteId, TimeType } from './noteId';
 
 export class NotesCat{
     static contentLines: string[];
@@ -577,6 +578,8 @@ export class NotesSrcChanged{
     for(let i = 0;i<this.linenumbers.length;i++){
       let regex = new RegExp(this.oriTag,'g');
       contentLinesp[this.linenumbers[i] - 1] = contentLinesp[this.linenumbers[i] - 1].replace(regex,this.newTag);
+      let content = contentLinesp[this.linenumbers[i] - 1];
+      NoteId.updateTime(this.path,NoteId.getId(content),TimeType.modify,content);
       logger.debug('number:'+this.linenumbers[i].toString() + '  src:'+contentLinesp[this.linenumbers[i] - 1]);
     }
     return joinEof(contentLinesp);

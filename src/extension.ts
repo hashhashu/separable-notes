@@ -803,8 +803,13 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     fileOutLineTreeView.reveal(item, { focus: false, select: true });
                 }
                 //update access time
-                if(Math.abs(item.line - curLine) < 10){
-                    let lineContent = activeEditor.document.lineAt(item.line - 1).text;
+                path = editorSrc.document.uri.fsPath;
+                let note = Notes.get(path);
+                if(Math.abs(note.getDetachedLine(item.line) - curLine) < 10){
+                    let lineContent = activeEditor.document.lineAt(item.line - 1).text;    
+                    if(!note.isAttached()){
+                        lineContent = note.getNoteFromNoteLine(item.line);
+                    }
                     if(NoteId.includesNoteId(lineContent)){
                         let id = NoteId.getId(lineContent);
                         NoteId.updateTime(path,id,TimeType.access,lineContent);
