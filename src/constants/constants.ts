@@ -50,6 +50,9 @@ export namespace Constants {
     export const keyNotes = 'separableNotes.notesKey';
     export const TagOrder = 'separableNotes.tagOrder';
     export const LineInfo   = 'separableNotes.lineInfo';
+    export const LineAccessHistroy = 'separableNotes.lineAccessHistroy';
+
+    export const lineHistoryMaxNum = 50;
 
     export const glineIdentity = new LineIdentity();
 
@@ -86,5 +89,5 @@ export namespace Commands {
 }
 export enum NoteMode{  Detached = 0,     Attached = 1}
 export enum MdType{ None = 0, sepNotes= 1, sepNotesCat = 2 }
-export enum OutLineItemType{Tag = 0, codeBlock = 1, TagAndCode = 2}
+export enum OutLineItemType{Tag = 0, codeBlock = 1, TagAndCode = 2, NoteHistory = 3}
 export enum RenameType{ renameTag = 0, addHeader = 1, removeHeader = 2 }

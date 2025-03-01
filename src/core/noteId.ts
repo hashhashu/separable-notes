@@ -1,6 +1,7 @@
 import { Constants } from "../constants/constants";
 import { logger } from "../logging/logger";
 import { RateLimiter } from "../utils/utils";
+import { NoteHistory, NoteHistoryBlock } from "./noteHistory";
 
 // noteid(for store extra info on line)
 export enum TimeType{
@@ -11,6 +12,7 @@ export enum TimeType{
 export class NoteId{
     static noteId:string;
     static lineInfo:Map<string,LineExtraInfo>;
+    static lineAccessHistory: Array<NoteHistoryBlock>;
     static extensionContext;
     static ratelimiterSave:RateLimiter;
 
@@ -23,6 +25,13 @@ export class NoteId{
         else{
             this.lineInfo = new Map<string,LineExtraInfo>();
         }
+        entries =  this.extensionContext.workspaceState.get(Constants.LineAccessHistroy);
+        if(entries){
+            this.lineAccessHistory = entries;
+        }
+        else{
+            this.lineAccessHistory = new Array<NoteHistoryBlock>();
+        }
         this.ratelimiterSave = new RateLimiter(1,1000);
         logger.debug('NoteId load end');
     }
@@ -31,18 +40,36 @@ export class NoteId{
         logger.debug('NoteId save start');
         let entries = Array.from(this.lineInfo.entries()).map(([key,value])=>({ key, value }));
         this.extensionContext.workspaceState.update(Constants.LineInfo,entries);
+
+        // remove duplicate
+        let addedLine = new Set();
+        let addedLength = 0;
+        let newHistory= new Array<NoteHistoryBlock>();
+        for(let i = this.lineAccessHistory.length - 1; i>=0 ;i--){
+            let lineHistory = this.lineAccessHistory[i];
+            let id = lineHistory.id;
+            if(id != '' && !addedLine.has(id) && addedLength <= Constants.lineHistoryMaxNum){
+                addedLine.add(id);
+                ++addedLength;
+                newHistory.push(lineHistory);
+            }
+        }
+        this.lineAccessHistory = newHistory.reverse();
+        this.extensionContext.workspaceState.update(Constants.LineAccessHistroy,this.lineAccessHistory);
+        NoteHistory.refresh();
         logger.debug('NoteId save end');
     }
 
-    static updateTime(path:string = '',id:string = '', timeType:TimeType = TimeType.access){
+    static updateTime(path:string = '',id:string = '', timeType:TimeType = TimeType.access, content = ''){
         if(path != '' && id != ''){
-            let pathConId = path+':'+id.toString();
+            let pathConId = this.getLineKey(path,id);
             if(this.lineInfo.has(pathConId)){
                 this.lineInfo.get(pathConId).updateTime(timeType);
             }
             else{
                 this.lineInfo.set(pathConId,new LineExtraInfo());
             }
+            this.lineAccessHistory.push(new NoteHistoryBlock(path,id,content));
             if(this.ratelimiterSave.isAllowed()){
                 this.save();
             }
@@ -102,6 +129,9 @@ export class NoteId{
             return this.addNoteId(lineId,prefix) + this.cutNoteId(line);
         }
         return line;
+    }
+    static getLineKey(path:string = '',id:string = ''){
+        return path+':'+id;
     }
 }
 // extra info for line(modify time)

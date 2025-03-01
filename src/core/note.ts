@@ -16,7 +16,6 @@ export class NoteFile{
     statusbaritem:vscode.StatusBarItem;
     configuration: Configuration;
     blocks: Array<NoteBlock>;
-    ids: Array<NoteBlock>;
     mdChangedLine: Array<NoteBlock>;
     respondCount: number;
     inProcess: boolean;
@@ -33,7 +32,6 @@ export class NoteFile{
       this.blocks = blocks;
       this.respondCount = 0;
       this.inProcess = false;
-      this.ids = new Array();
       this.mdChangedLine = new Array();
       this.needRefresh = needrefresh;
       this.mdChangeType = MdType.None;
@@ -425,7 +423,7 @@ export class NoteFile{
         let line = contentLines[linenumber - 2];
         const prefix = NoteId.getPrefix(line);
         let id = NoteId.getId(line);
-        NoteId.updateTime(this.path,id,TimeType.modify);
+        NoteId.updateTime(this.path,id,TimeType.modify,line);
         const annoLines = splitIntoLines(text);
         let annoConcat ='';
         for(let line of annoLines){
@@ -687,7 +685,7 @@ export class NoteFile{
               needChange = false;
             }
             curLine = NoteId.fillLostNoteId(id,curLine);
-            NoteId.updateTime(this.path,id,TimeType.create);
+            NoteId.updateTime(this.path,id,TimeType.create,curLine);
           }
           if(!containNote){
             needChange = true;
@@ -697,6 +695,27 @@ export class NoteFile{
         fs.writeFileSync(this.path, encode(filledContent, this.configuration.encoding));
       }
       logger.debug('fillLostId end');
+    }
+    getLineFromId(id:string):number{
+      if(this.isAttached()){
+        const contentLines = this.getContentLines();
+        this.blocks.length = 0;
+        for (let i = 0; i < contentLines.length; i++) {
+          let curLine = contentLines[i];
+          if (NoteId.includesNoteId(curLine)
+              && NoteId.getId(curLine) == id) {
+            return i;
+          }
+        }
+      }
+      else{
+        for(let block of this.blocks){
+          if(NoteId.getId(block.note) == id){
+            return block.codeLine;
+          }
+        } 
+      }
+      return 0;
     }
 }
 export class serializableNoteFile{

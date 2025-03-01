@@ -12,9 +12,10 @@ import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, RateLimiter, is
 import * as fs from 'fs';
 import { NestedTag } from './core/tag';
 import { NotesCat } from './core/notesCat';
-import { FileOutLineDragAndDrop, FileOutLineProvider, OutLineItem, TagOutLineDragAndDrop, TagOutLineProvider } from './core/treeView';
+import { FileOutLineDragAndDrop, FileOutLineProvider, NoteHistoryProvider, OutLineItem, TagOutLineDragAndDrop, TagOutLineProvider } from './core/treeView';
 import { NoteFileTree } from './core/noteFileTree';
 import { NoteId, TimeType } from './core/noteId';
+import { NoteHistory } from './core/noteHistory';
 
 let configuration: Configuration;
 let activatables: Array<Activatable> = new Array();
@@ -35,6 +36,8 @@ let tagOutLineDragAndDrop:TagOutLineDragAndDrop;
 let fileOutLineProvider:FileOutLineProvider;
 let fileOutLineTreeView:vscode.TreeView<OutLineItem>;
 let fileOutLineDragAndDrop:FileOutLineDragAndDrop;
+let noteHistoryProvider:NoteHistoryProvider;
+let noteHistoryTreeView:vscode.TreeView<OutLineItem>;
 let tagJumpPos:number = 0;
 let Jumped:boolean = false;
 
@@ -84,6 +87,13 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
     vscode.commands.registerCommand(Commands.refreshSepNotes, () => {
        vscode.commands.executeCommand(Commands.syncMdWithSrc); 
     });
+
+    noteHistoryProvider = new NoteHistoryProvider();
+    noteHistoryTreeView = vscode.window.createTreeView('noteHistory', {
+        treeDataProvider: noteHistoryProvider
+    });
+    NoteHistory.noteHistoryProvider = noteHistoryProvider;
+    NoteHistory.refresh();
 
     NoteId.noteId = configuration.noteId;
 
@@ -154,7 +164,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                             let startpos = contentChange.range.start.line;
                             let line = lines[startpos];
                             let id = NoteId.getId(line);
-                            NoteId.updateTime(path,id,TimeType.modify);
+                            NoteId.updateTime(path,id,TimeType.modify,line);
                         }
                     }
                     // sync source files with markdown
@@ -448,7 +458,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                             contentNew += addEof(line);
                         }
                     }
-                    NoteId.updateTime(note.path,id,TimeType.create);
+                    NoteId.updateTime(note.path,id,TimeType.create,contentNew);
                 }
                 let selection = activeEditor.selection;
                 activeEditor.edit(editBuilder => {  
@@ -756,7 +766,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 let lineContent = activeEditor.document.lineAt(curLine).text;
                 if(NoteId.includesNoteId(lineContent)){
                     let id = NoteId.getId(lineContent);
-                    NoteId.updateTime(path,id,TimeType.access);
+                    NoteId.updateTime(path,id,TimeType.access,lineContent);
                 }
                 // postion align
                 editorSrc = activeEditor;
@@ -797,7 +807,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                     let lineContent = activeEditor.document.lineAt(item.line - 1).text;
                     if(NoteId.includesNoteId(lineContent)){
                         let id = NoteId.getId(lineContent);
-                        NoteId.updateTime(path,id,TimeType.access);
+                        NoteId.updateTime(path,id,TimeType.access,lineContent);
                     }
                 }
             }
@@ -808,7 +818,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             if(tags.length == 1 && tagOutLineTreeView.visible){
                 let item = NotesCat.revealItem(tags[0]);
                 if(item){
-                    tagOutLineTreeView.reveal(item, { focus: true, select: true, expand: true }); 
+                    tagOutLineTreeView.reveal(item, { focus: false, select: true }); 
                 }             
             }
 
@@ -827,7 +837,14 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                 textEditor => {
                     try {
                         let line = item.line;
-                        if(item.itemType != OutLineItemType.Tag){
+                        if(item.itemType == OutLineItemType.NoteHistory){
+                            let note = Notes.get(item.path);
+                            line = 0;
+                            if(note){
+                                line = note.getLineFromId(item.line.toString());
+                            }
+                        }
+                        else if(item.itemType != OutLineItemType.Tag){
                             let note = Notes.get(item.path);
                             if(note){
                                 if(!note.isAttached()){
@@ -847,7 +864,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                                         let lineContent = document.lineAt(noteLine).text;
                                         if(NoteId.includesNoteId(lineContent)){
                                             let id = NoteId.getId(lineContent);
-                                            NoteId.updateTime(item.path,id,TimeType.access);
+                                            NoteId.updateTime(item.path,id,TimeType.access,lineContent);
                                         }
                                     }
                                 }

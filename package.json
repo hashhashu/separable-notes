@@ -170,6 +170,10 @@
         {
           "id": "fileOutLine",
           "name": "sepNotes"
+        },
+        {
+          "id": "noteHistory",
+          "name": "sepNotes_history"
         }
       ]
     },

@@ -81,6 +81,7 @@ if you change this, you should also change the configuration for todo-tree or ot
 * improve logic of update(only refresh file when notes is modified)
 * add `sepNotes_metadata.json` for recording things like tag order and are more easy to transfer to another computer
 * add id for notes and `separableNotes fillLostId` for filling lost id(id is used to record info like modify time etc) 
+* add `sepNotes_history` to track notes access history
 
 #### 0.1.8
 * tag can be renamed in sidebar of `sepNotes_category`
