@@ -12,8 +12,10 @@ export class NoteHistory{
         logger.debug('NoteHistory refresh start');
         this.childrens.clear();
         let items = new Array<OutLineItem>();
-        let lineAccessHistory = NoteId.lineAccessHistory.reverse().slice(0,Constants.lineHistoryMaxNum);
-        for(let block of lineAccessHistory){
+        let lineAccessHistory = NoteId.lineAccessHistory.slice();
+        let length = lineAccessHistory.length;
+        for(let i = length - 1;i >= Math.max(0,length - Constants.lineHistoryMaxNum); i--){
+            let block = lineAccessHistory[i];
             items.push(new OutLineItem(vscode.TreeItemCollapsibleState.None,new NestedTag(),OutLineItemType.NoteHistory,block.path,block.note,Number(block.id)));
         }
         this.childrens.set('',items);
