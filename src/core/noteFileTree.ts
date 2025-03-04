@@ -130,12 +130,18 @@ export class NoteFileTree{
             let i = 0;
             let lastItem = children[0];
             while(i <= children.length){
+                // hit (same pos)
                 if(i < children.length && this.note.getDetachedLine(children[i].line) == pos){
                     return children[i];
                 }
+                // need to go to child of child
                 else if(i == children.length || this.note.getDetachedLine(children[i].line) > pos){
                     if(this.childrens.has(lastItem.tag.getFullTag())){
                         children = this.childrens.get(lastItem.tag.getFullTag());
+                        // if the first child is larger,then return parent
+                        if(this.note.getDetachedLine(children[0].line) > pos){
+                            return lastItem;
+                        }
                         i = 0;
                         lastItem = children[0];
                     }
@@ -143,6 +149,7 @@ export class NoteFileTree{
                         return lastItem;
                     }
                 }
+                // go to next child
                 else{
                     lastItem = children[i];
                     i+=1;

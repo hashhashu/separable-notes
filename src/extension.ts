@@ -800,7 +800,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             let item = fileOutLineProvider.getItemByPos(curLine);
             if(item){
                 if(fileOutLineTreeView.visible && !Jumped){
-                    fileOutLineTreeView.reveal(item, { focus: false, select: true });
+                    fileOutLineTreeView.reveal(item, { focus: false, select: true, expand: 1});
                 }
                 //update access time
                 path = editorSrc.document.uri.fsPath;
