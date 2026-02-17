@@ -677,7 +677,8 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
                         }
                         else if(!inCode){
                             if(anno.length > 0 || line.trim().length > 0){
-                                anno += addEof('//' + configuration.noteId + line);
+                                let id = note.generateLineId();
+                                anno += addEof('//' + NoteId.addNoteId(id) + line);
                                 ++lineCount;
                             }
                         }
