@@ -202,7 +202,7 @@ class LineExtraInfo{
         this.accessTime = date.getTime();
     }
     printTime():string{
-        return 'modify time:'+(new Date(this.modifyTime)).toLocaleString()+'  access time:'+(new Date(this.accessTime)).toLocaleString();
+        return 'create time:'+(new Date(this.createTime)).toLocaleString()+'  access time:'+(new Date(this.accessTime)).toLocaleString();
     }
     toJSON(): any {  
         return {  
