@@ -8,7 +8,7 @@ import { Commands } from "./constants/constants";
 
 import { isConfigurationChangeAware } from "./configurationChangeAware";
 import {NoteBlock, NoteFile,serializableNoteFile} from './core/note'
-import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, RateLimiter, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberUp, getMdUserRandomNote, decode, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, getRelativePath, isSepNotesCatFile, joinEof} from './utils/utils';
+import { addEof, splitIntoLines, getLineNumber,getSrcFileFromMd, RateLimiter, isSepNotesFile, getAnnoFromMd, rowsChanged, getLineNumberUp, getMdUserRandomNote, decode, getSrcFileFromLine, getMatchLineCount, getLineNumberDown, writeFile, canAttachFile, canSync, getRelativePath, isSepNotesCatFile, joinEof,getMetaData, getFullPath} from './utils/utils';
 import * as fs from 'fs';
 import { NestedTag } from './core/tag';
 import { NotesCat } from './core/notesCat';
@@ -16,6 +16,7 @@ import { FileOutLineDragAndDrop, FileOutLineProvider, NoteHistoryProvider, OutLi
 import { NoteFileTree } from './core/noteFileTree';
 import { NoteId, TimeType } from './core/noteId';
 import { NoteHistory } from './core/noteHistory';
+import path from 'path';
 
 let configuration: Configuration;
 let activatables: Array<Activatable> = new Array();
@@ -99,9 +100,20 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
 
     let activeEditor = vscode.window.activeTextEditor;
     // restore state
-    serializedNotes = extensionContext.workspaceState.get(Constants.keyNotes)??new Array<serializableNoteFile>();
+    let jsonObj = getMetaData(Constants.sepnotesKeyNotesPath);
+    if(jsonObj){
+        serializedNotes = jsonObj.notesKey;
+    }
+    else
+    {
+        serializedNotes = extensionContext.workspaceState.get(Constants.keyNotes)??new Array<serializableNoteFile>();
+    }
+
     for(let note of serializedNotes){
-        if(fs.existsSync(note.path)){
+        if(!path.isAbsolute(note.path)){
+            note.path = getFullPath(note.path);
+        }
+        if(fs.existsSync(getFullPath(note.path))){
             Notes.set(note.path,new NoteFile(note.path,note.noteMode,configuration,statusBarItem,note.blocks,(note.needRefresh == null)?false:note.needRefresh,
                                         (note.noteLineIdMax == null)?0:note.noteLineIdMax));
         }
@@ -839,12 +851,15 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             if(item.itemType == OutLineItemType.Tag){
                 path = Constants.sepNotesCategoryFilePath;
             }
+            else if(item.itemType == OutLineItemType.NoteHistory){
+                path = getFullPath(path);
+            }
             vscode.window.showTextDocument(vscode.Uri.file(path), { preview: true, preserveFocus: true }).then(
                 textEditor => {
                     try {
                         let line = item.line;
                         if(item.itemType == OutLineItemType.NoteHistory){
-                            let note = Notes.get(item.path);
+                            let note = Notes.get(path);
                             line = 0;
                             if(note){
                                 line = note.getLineFromId(item.line.toString());
@@ -1114,6 +1129,12 @@ function updateStateNote(extensionContext: ExtensionContext){
             serializedNotes.push(new serializableNoteFile(note));
         }
     }
+    for(let senote of serializedNotes)
+    {
+        senote.path = getRelativePath(senote.path);
+    }
+    let jsonStr = JSON.stringify({"notesKey":serializedNotes});
+    fs.writeFileSync(Constants.sepnotesKeyNotesPath,jsonStr,"utf8");
     extensionContext.workspaceState.update(Constants.keyNotes,serializedNotes);
 }
 function getMdStatus():string{

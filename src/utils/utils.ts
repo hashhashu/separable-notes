@@ -64,9 +64,20 @@ export function getFileName(filePath:string):string{
 }
 
 export function getRelativePath(filePath:string):string{
-  filePath = filePath.replace(/\\/g,'\\\\',);
-  filePath = path.relative(Constants.workspaceFolder,filePath);
+  if(path.isAbsolute(filePath))
+  {
+    filePath = filePath.replace(/\\/g,'\\\\',);
+    filePath = path.relative(Constants.workspaceFolder,filePath);
+  }
   return filePath;
+}
+
+export function getFullPath(filepath:string):string{
+  if(!path.isAbsolute(filepath))
+  {
+    filepath = path.join(Constants.workspaceFolder,filepath);
+  }
+  return filepath;
 }
 
 export function getLanguageIdetifier(associations:{ [extension: string]: string },filePath:string):string{
@@ -198,7 +209,7 @@ export function getSrcFileFromLine(line:string){
       ret = link.split('](')[1].split(')')[0];
     }
     if (ret.length > 0) {
-      ret = path.join(Constants.workspaceFolder,ret);
+      ret = getFullPath(ret);
       return ret;
     }
   }
@@ -369,6 +380,15 @@ export function getMax(a:number,b:number):number{
 }
 export function getMin(a:number,b:number):number{
   return a < b? a:b;
+}
+
+export function getMetaData(path:string){
+  if(fs.existsSync(path)){
+    let content = fs.readFileSync(path,'utf8');
+    let jsonObj = JSON.parse(content);
+    return jsonObj;
+  }
+  return null;
 }
 
 export class RateLimiter {  

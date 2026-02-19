@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { Constants, OutLineItemType } from "../constants/constants";
-import { addEof, getLineNumber, getSrcFileFromLine, joinEof, removeLineNumber, splitIntoLines,writeFile } from "../utils/utils";
+import { addEof, getLineNumber, getMetaData, getSrcFileFromLine, joinEof, removeLineNumber, splitIntoLines,writeFile } from "../utils/utils";
 import { NestedTag } from "./tag";
 import { OutLineItem } from "./treeView";
 import * as fs from 'fs';
@@ -77,12 +77,11 @@ export class NotesCat{
     static load(){
       logger.debug('load start');
       let entries;
-      if(fs.existsSync(Constants.sepNotesMetadataPath)){
-        let content = fs.readFileSync(Constants.sepNotesMetadataPath,'utf8');
-        let jsonObj = JSON.parse(content);
+      let jsonObj = getMetaData(Constants.sepNotesMetadataPath);
+      if(jsonObj){
         entries = jsonObj.tagOrder;
       }
-      if(!entries){
+      else{
         entries =  this.extensionContext.workspaceState.get(Constants.TagOrder);
       }
       if(entries){

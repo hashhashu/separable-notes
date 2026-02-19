@@ -1,8 +1,9 @@
 import { Constants } from "../constants/constants";
 import { logger } from "../logging/logger";
-import { RateLimiter } from "../utils/utils";
+import { RateLimiter,getMetaData, getRelativePath} from "../utils/utils";
 import { NoteHistory, NoteHistoryBlock } from "./noteHistory";
 import { NestedTag } from "./tag";
+import * as fs from 'fs';
 
 // noteid(for store extra info on line)
 export enum TimeType{
@@ -19,14 +20,27 @@ export class NoteId{
 
     static load(){
         logger.debug('NoteId load start');
-        let entries =  this.extensionContext.workspaceState.get(Constants.LineInfo);
+        let entries;
+        let jsonObj = getMetaData(Constants.sepnotesLineInfoPath);
+        if(jsonObj){
+            entries = jsonObj.lineInfo;
+        }
+        else{
+            entries =  this.extensionContext.workspaceState.get(Constants.LineInfo);
+        }
         if(entries){
             this.lineInfo = new Map(entries.map(entry => [entry.key, new LineExtraInfo(entry.value.createTime,entry.value.modifyTime,entry.value.accessTime)]));
         }
         else{
             this.lineInfo = new Map<string,LineExtraInfo>();
         }
-        entries =  this.extensionContext.workspaceState.get(Constants.LineAccessHistroy);
+        jsonObj = getMetaData(Constants.sepnotesLineAccessHistroyPath);
+        if(jsonObj){
+            entries = jsonObj.lineAccessHistroy;
+        }
+        else{
+            entries =  this.extensionContext.workspaceState.get(Constants.LineAccessHistroy);
+        }
         if(entries){
             this.lineAccessHistory = entries;
         }
@@ -39,7 +53,11 @@ export class NoteId{
 
     static save(){
         logger.debug('NoteId save start');
-        let entries = Array.from(this.lineInfo.entries()).map(([key,value])=>({ key, value }));
+        let entries = Array.from(this.lineInfo.entries()).map(([key,value])=>({ key:this.getLineKeyRelative(key), value }));
+        let jsonStr = JSON.stringify({"lineInfo":entries});
+        fs.writeFileSync(Constants.sepnotesLineInfoPath,jsonStr,"utf8");
+        jsonStr = JSON.stringify({"lineAccessHistroy":this.lineAccessHistory});
+        fs.writeFileSync(Constants.sepnotesLineAccessHistroyPath,jsonStr,"utf8");
         this.extensionContext.workspaceState.update(Constants.LineInfo,entries);
         this.extensionContext.workspaceState.update(Constants.LineAccessHistroy,this.lineAccessHistory);
         NoteHistory.refresh();
@@ -47,6 +65,7 @@ export class NoteId{
     }
 
     static updateTime(path:string = '',id:string = '', timeType:TimeType = TimeType.access, content = ''){
+        path = getRelativePath(path);
         if(path != '' && id != ''){
             let pathConId = this.getLineKey(path,id);
             if(this.lineInfo.has(pathConId)){
@@ -117,6 +136,7 @@ export class NoteId{
         return '';
     }
     static printId(path,id:string):string{
+        path = getRelativePath(path);
         if(path != '' && id != ''){
             let pathConId = path+':'+id.toString();
             if(this.lineInfo.has(pathConId)){
@@ -139,6 +159,13 @@ export class NoteId{
     static getLineKey(path:string = '',id:string = ''){
         return path+':'+id;
     }
+
+    static getLineKeyRelative(key:string){
+        let parts = key.split(':')
+        let path = getRelativePath(parts[0])
+        return this.getLineKey(path,parts[1])
+    }
+
     static getAccessTime(path:string = '',id:string = ''):string{
         if(path != '' && id != ''){
             let pathConId = this.getLineKey(path,id);
