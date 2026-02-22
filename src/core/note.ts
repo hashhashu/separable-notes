@@ -675,6 +675,7 @@ export class NoteFile{
           let curLine = contentLines[i];
           if(NoteId.includesNoteId(curLine)){
             containNote = true;
+            this.noteLineIdMax = Math.max(this.noteLineIdMax,Number(NoteId.getId(curLine)));
           }
           else{
             containNote = false;

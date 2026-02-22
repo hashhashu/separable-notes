@@ -1055,6 +1055,7 @@ export async function activate(extensionContext: ExtensionContext): Promise<bool
             for (let [_, note] of Notes) {
                 note.fillLostId();
             }
+            updateStateNote(extensionContext);
             window.showInformationMessage('fillLostId over');
         }));
 
